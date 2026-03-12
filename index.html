@@ -8,417 +8,372 @@
     <!-- SDKs -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, addDoc, onSnapshot, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, addDoc, onSnapshot, updateDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        try {
+            const firebaseConfig = JSON.parse(__firebase_config);
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-        window.db = db;
-        window.auth = auth;
-        window.appId = appId;
-        window.fs = { collection, doc, addDoc, onSnapshot, updateDoc, serverTimestamp };
+            window.db = db;
+            window.auth = auth;
+            window.appId = appId;
+            window.fs = { collection, doc, addDoc, onSnapshot, updateDoc, serverTimestamp, query, where };
 
-        // Rule 3: Auth First
-        const initAuth = async () => {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
-            }
-        };
-        initAuth();
+            const initAuth = async () => {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            };
+            initAuth();
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                window.currentUser = user;
-                console.log("Authenticated:", user.uid);
-            }
-        });
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    window.currentUser = user;
+                }
+            });
+        } catch (e) { console.error("Firebase Configuration is missing"); }
     </script>
 
     <style>
-        :root { 
-            --primary: #248bcf; 
-            --secondary: #1e293b;
-            --bg: #f8fafc; 
-            --success: #10b981;
-            --danger: #ef4444;
-            --text: #0f172a;
-        }
-        
+        :root { --primary: #248bcf; --bg: #f4f7f9; --success: #28a745; --dark: #1e293b; --error: #dc3545; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: var(--bg); 
-            margin: 0; 
-            padding: 0;
-            direction: rtl; 
-            color: var(--text);
-            overflow-x: hidden;
-        }
-
-        /* Container for mobile padding */
-        .container { padding: 16px; padding-bottom: 100px; }
-
-        .header { text-align: center; padding: 20px 0; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .logo { width: 70px; height: 70px; background: var(--primary); border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 30px; border: 4px solid #dbeafe; }
-
-        .card { background: white; border-radius: 20px; padding: 16px; margin-bottom: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #f1f5f9; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0 0 80px 0; direction: rtl; color: #333; }
         
-        .upload-zone { 
-            border: 2px dashed var(--primary); 
-            padding: 30px 10px; 
-            text-align: center; 
-            border-radius: 15px; 
-            background: #f0f9ff; 
-            color: var(--primary);
-            cursor: pointer;
-        }
+        .header { text-align: center; padding: 15px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .logo-circle { width: 75px; height: 75px; background: white url('logo.png') no-repeat center; background-size: contain; border-radius: 50%; margin: 0 auto 10px; border: 3px solid var(--primary); }
+        
+        .container { padding: 15px; }
+        .card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        
+        .upload-area { border: 2px dashed var(--primary); padding: 25px; text-align: center; color: var(--primary); cursor: pointer; border-radius: 15px; background: #f0f9ff; }
+        .upload-area b { display: block; font-size: 1.1rem; margin-bottom: 5px; }
 
-        .label { font-weight: bold; margin-bottom: 10px; display: block; font-size: 0.95rem; }
+        .btn-group { display: flex; gap: 8px; margin: 10px 0; }
+        .opt-btn { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 10px; cursor: pointer; font-weight: bold; background: white; font-size: 0.9rem; }
+        .opt-btn.active { background: var(--primary) !important; color: white !important; border-color: var(--primary); }
 
-        .option-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .opt-btn { 
-            padding: 14px; 
-            border: 1px solid #e2e8f0; 
-            border-radius: 12px; 
-            background: white; 
-            font-weight: bold; 
-            cursor: pointer;
-            transition: 0.2s;
-            font-size: 0.9rem;
-        }
-        .opt-btn.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 12px rgba(36,139,207,0.3); }
-
-        .input-field { 
-            width: 100%; 
-            padding: 14px; 
-            border: 1px solid #e2e8f0; 
-            border-radius: 12px; 
-            margin-bottom: 12px; 
-            outline: none; 
-            font-size: 1rem;
-            background: #fcfcfc;
-        }
+        .input-field { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 12px; margin-bottom: 10px; background: #fafafa; font-size: 1rem; outline: none; }
         .input-field:focus { border-color: var(--primary); background: white; }
 
-        /* Invoice Style */
-        .invoice { background: var(--secondary); color: white; border-radius: 20px; padding: 20px; margin-top: 20px; }
-        .inv-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.9rem; color: #cbd5e1; }
-        .inv-total { border-top: 1px dashed #475569; margin-top: 15px; padding-top: 15px; text-align: center; }
-        .total-amount { font-size: 1.8rem; font-weight: bold; color: #4ade80; display: block; }
+        .invoice { background: var(--dark); color: white; border-radius: 15px; padding: 20px; margin-top: 15px; }
+        .inv-line { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; }
+        .total-price { font-size: 1.4rem; color: #4eff4e; text-align: center; margin-top: 15px; border-top: 1px dashed #555; padding-top: 15px; font-weight: bold; }
 
-        .btn-action { 
-            width: 100%; 
-            padding: 16px; 
-            border: none; 
-            border-radius: 15px; 
-            font-weight: bold; 
-            font-size: 1.1rem; 
-            cursor: pointer; 
-            margin-top: 10px;
-        }
-        .btn-confirm { background: var(--success); color: white; }
-        .btn-location { background: #64748b; color: white; font-size: 0.9rem; }
-
-        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; border-top: 1px solid #e2e8f0; z-index: 100; }
-        .nav-item { flex: 1; text-align: center; padding: 15px; color: #94a3b8; font-size: 0.85rem; font-weight: bold; cursor: pointer; }
-        .nav-item.active { color: var(--primary); }
-
-        /* File List */
-        .file-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
-        .file-info { font-size: 0.85rem; color: #475569; }
+        .btn-main { width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.2s; }
+        .btn-main:active { transform: scale(0.98); }
+        
+        .file-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
         .counter { display: flex; align-items: center; gap: 10px; }
-        .count-btn { width: 30px; height: 30px; border-radius: 8px; border: 1px solid #e2e8f0; background: white; font-weight: bold; }
+        .btn-count { background: #eee; border: 1px solid #ddd; width: 30px; height: 30px; border-radius: 6px; font-weight: bold; }
 
-        #welcome-screen { position: fixed; inset: 0; background: rgba(15,23,42,0.95); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .modal { background: white; border-radius: 30px; padding: 30px; text-align: center; max-width: 350px; width: 100%; }
+        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; border-top: 1px solid #eee; z-index: 100; }
+        .nav-item { flex: 1; text-align: center; padding: 15px; color: #666; font-weight: bold; font-size: 0.9rem; cursor: pointer; }
+        .nav-item.active { color: var(--primary); border-top: 3px solid var(--primary); }
 
+        #welcome-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+        .modal-content { background: white; padding: 30px; border-radius: 20px; text-align: center; width: 85%; max-width: 400px; }
+
+        .error-msg { background: #fff1f2; color: var(--error); padding: 10px; border-radius: 10px; font-size: 0.85rem; margin-bottom: 15px; display: none; text-align: center; border: 1px solid #fecdd3; }
+        .progress-container { width: 100%; background: #ddd; height: 8px; border-radius: 4px; margin: 15px 0; display: none; overflow: hidden; }
+        .progress-bar { width: 0%; height: 100%; background: var(--success); }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <!-- Welcome -->
-    <div id="welcome-screen">
-        <div class="modal">
-            <div class="logo">🛒</div>
-            <h2>مكتبة الشاطر</h2>
-            <p style="color: #64748b; margin-bottom: 25px;">أهلاً بك! ارفع ملفاتك الآن وسنتولى طباعتها وتوصيلها لباب بيتك.</p>
-            <button class="btn-action" style="background: var(--primary); color:white;" onclick="closeWelcome()">ابدأ الآن</button>
+    <div id="welcome-modal">
+        <div class="modal-content">
+            <div class="logo-circle"></div>
+            <h2 style="color:var(--primary)">خدمات الشاطر الطلابية</h2>
+            <p>أهلاً بك! ارفع مستنداتك وسنتولى طباعتها وتوصيلها إليك بجودة عالية.</p>
+            <p id="first-order-gift" style="color:var(--success); font-weight:bold; display:none;">🎁 هدية الشاطر: توصيل مجاني لأول طلب!</p>
+            <button class="btn-main" style="background:var(--primary); color:white;" onclick="closeWelcome()">ابدأ طلبك الآن</button>
         </div>
     </div>
 
     <div class="header">
-        <div class="logo" id="logo-main">🎓</div>
-        <h1 style="margin:0; font-size: 1.2rem; color: var(--primary);">خدمات الشاطر الطلابية</h1>
+        <div class="logo-circle" id="logo-main"></div>
+        <h1 style="margin:0; font-size: 1.2rem; color:var(--primary);">مكتبة الشاطر</h1>
     </div>
 
     <div class="container">
-        
+        <!-- New Order View -->
         <div id="order-view">
-            <!-- Upload -->
             <div class="card">
-                <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
-                    <span style="font-size: 1.5rem; display:block;">📁</span>
-                    <b>اضغط لإضافة ملفات (PDF/صور)</b>
-                    <p style="font-size: 0.75rem; margin-top: 5px;">يمكنك إضافة أكثر من ملف في وقت واحد</p>
+                <div class="upload-area" onclick="document.getElementById('fileInp').click()">
+                    <b>📁 اضغط هنا لإضافة الملفات</b>
+                    <span style="font-size:0.75rem;">يدعم PDF, Word, Excel, PowerPoint والصور</span>
                 </div>
-                <input type="file" id="fileInput" multiple hidden>
+                <input type="file" id="fileInp" multiple hidden>
             </div>
 
-            <!-- List -->
-            <div id="files-card" class="card hidden">
-                <span class="label">الملفات المضافة:</span>
-                <div id="files-list"></div>
+            <div id="list-card" class="card hidden">
+                <p style="margin-top:0; font-weight:bold;">الملفات المختارة:</p>
+                <div id="list-items"></div>
             </div>
 
-            <!-- Settings -->
-            <div id="settings-area" class="hidden">
+            <div id="options-area" class="hidden">
                 <div class="card">
-                    <span class="label">نوع الطباعة:</span>
-                    <div class="option-grid">
-                        <button id="clr-c" class="opt-btn active" onclick="updatePref('color', 'c')">🌈 ملون</button>
-                        <button id="clr-n" class="opt-btn" onclick="updatePref('color', 'n')">⚪ أسود وأبيض</button>
+                    <p><b>نوع الطباعة:</b></p>
+                    <div class="btn-group">
+                        <button id="clr-c" class="opt-btn active" onclick="setConf('color','c')">🌈 ملون</button>
+                        <button id="clr-n" class="opt-btn" onclick="setConf('color','n')">⚪ أسود</button>
                     </div>
 
-                    <span class="label">طريقة الطباعة:</span>
-                    <div class="option-grid">
-                        <button id="side-1" class="opt-btn active" onclick="updatePref('side', '1')">📄 وجه واحد</button>
-                        <button id="side-2" class="opt-btn" onclick="updatePref('side', '2')">📖 وجهين</button>
+                    <div id="side-options">
+                        <p style="margin-top:15px;"><b>طريقة الطباعة:</b></p>
+                        <div class="btn-group">
+                            <button id="sid-1" class="opt-btn active" onclick="setConf('side','1')">📄 وجه واحد</button>
+                            <button id="sid-2" class="opt-btn" onclick="setConf('side','2')">📖 وجهين</button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Invoice -->
                 <div class="invoice">
-                    <div class="inv-row"><span>عدد الأوراق التقريبي:</span><span id="sheet-count">0</span></div>
-                    <div class="inv-row"><span>سعر الطباعة:</span><span id="print-price">0 د.ع</span></div>
-                    <div class="inv-row"><span>أجور التوصيل:</span><span id="deliv-price">2,000 د.ع</span></div>
-                    <div class="inv-total">
-                        <span>المجموع الكلي:</span>
-                        <span class="total-amount" id="grand-total">0 د.ع</span>
-                    </div>
+                    <div id="inv-details"></div>
+                    <div class="total-price" id="total-val">0 د.ع</div>
                 </div>
 
-                <!-- Info -->
-                <div class="card" style="margin-top: 20px;">
-                    <span class="label">معلومات الزبون:</span>
-                    <input type="text" id="uName" class="input-field" placeholder="الاسم الكامل">
-                    <input type="tel" id="uPhone" class="input-field" placeholder="رقم الهاتف (11 رقم)" maxlength="11">
-                    <input type="text" id="uRegion" class="input-field" placeholder="المنطقة / العنوان">
+                <div class="card" style="margin-top:15px;">
+                    <div id="err-box" class="error-msg"></div>
+                    <input type="text" id="uName" class="input-field" placeholder="✍️ الاسم الكامل">
+                    <input type="tel" id="uPhone" class="input-field" placeholder="📞 رقم الهاتف (07xxxxxxxxx)" maxlength="11">
+                    <input type="text" id="uRegion" class="input-field" placeholder="🏠 المنطقة السكنية">
                     
-                    <button id="locBtn" class="btn-action btn-location" onclick="getLocation()">📍 تحديد موقعي الحالي</button>
-                    <button id="sendBtn" class="btn-action btn-confirm" onclick="confirmOrder()">إرسال الطلب عبر البوت ✅</button>
+                    <button id="locBtn" class="btn-main" style="background:#64748b; color:white; font-size:0.9rem; margin-bottom:10px;" onclick="askLoc()">📍 تحديد موقعي</button>
+                    
+                    <div class="progress-container" id="prog-cont">
+                        <div class="progress-bar" id="prog-bar"></div>
+                    </div>
+                    
+                    <button id="sendBtn" class="btn-main" style="background:var(--success); color:white;" onclick="sendOrder()">تأكيد وإرسال الطلب ✅</button>
                 </div>
             </div>
         </div>
 
         <!-- Tracking View -->
         <div id="tracking-view" class="hidden">
-            <h3 style="margin-bottom: 15px;">🔍 تتبع طلباتك</h3>
-            <div id="my-orders"></div>
+            <h3 style="margin-right:10px;">📦 طلباتي السابقة</h3>
+            <div id="user-orders"></div>
         </div>
     </div>
 
-    <!-- Nav -->
+    <!-- Bottom Nav -->
     <div class="navbar">
-        <div class="nav-item active" id="nav-order" onclick="switchView('order')">➕ طلب جديد</div>
-        <div class="nav-item" id="nav-track" onclick="switchView('track')">📦 طلباتي</div>
+        <div class="nav-item active" id="nav-new" onclick="switchTab('order')">➕ طلب جديد</div>
+        <div class="nav-item" id="nav-track" onclick="switchTab('track')">🔍 تتبع طلباتي</div>
     </div>
 
     <script>
-        const botToken = '8446310296:AAE3S3faplYwmvM4jYQgeAYPenq2bDUYTrQ'; 
+        const botToken = '8507186698:AAEsoTIakrgnvR19Uc-hl3YsXYOVuhgSZWU';
         const myChatId = '7618746133';
-        
-        let files = [];
-        let prefs = { color: 'c', side: '1' };
-        let userLocation = null;
+        const tg = window.Telegram.WebApp; tg.ready();
 
-        function closeWelcome() { document.getElementById('welcome-screen').classList.add('hidden'); }
+        let files = []; 
+        let conf = { color: 'c', side: '1' };
+        let locUrl = "غير مححد";
 
-        function switchView(v) {
-            document.getElementById('order-view').classList.toggle('hidden', v !== 'order');
-            document.getElementById('tracking-view').classList.toggle('hidden', v !== 'track');
-            document.getElementById('nav-order').classList.toggle('active', v === 'order');
-            document.getElementById('nav-track').classList.toggle('active', v === 'track');
-            if(v === 'track') loadOrders();
-        }
+        const hasOrderedBefore = localStorage.getItem('shater_order_completed') === 'true';
+        if (!hasOrderedBefore) document.getElementById('first-order-gift').style.display = 'block';
 
-        document.getElementById('fileInput').onchange = async (e) => {
-            for (let f of e.target.files) {
-                let pCount = 1;
-                if(f.name.toLowerCase().endsWith('.pdf')) {
-                    try {
-                        const arrayBuffer = await f.arrayBuffer();
-                        const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
-                        pCount = pdf.numPages;
-                    } catch(e) { pCount = 1; }
-                }
-                files.push({ name: f.name, pages: pCount, copies: 1 });
-            }
-            renderFiles();
+        window.closeWelcome = () => document.getElementById('welcome-modal').classList.add('hidden');
+
+        window.switchTab = (tab) => {
+            document.getElementById('order-view').classList.toggle('hidden', tab !== 'order');
+            document.getElementById('tracking-view').classList.toggle('hidden', tab !== 'track');
+            document.getElementById('nav-new').classList.toggle('active', tab === 'order');
+            document.getElementById('nav-track').classList.toggle('active', tab === 'track');
+            if (tab === 'track') loadUserOrders();
         };
 
-        function renderFiles() {
-            const list = document.getElementById('files-list');
-            list.innerHTML = '';
-            let totalSheets = 0;
+        document.getElementById('fileInp').onchange = async (e) => {
+            for (let f of e.target.files) {
+                let pages = 1;
+                let type = 'ملف';
+                if (f.name.toLowerCase().endsWith('.pdf')) {
+                    try {
+                        const buffer = await f.arrayBuffer();
+                        const pdf = await pdfjsLib.getDocument({data: buffer}).promise;
+                        pages = pdf.numPages;
+                        type = 'PDF';
+                    } catch(e) { pages = 1; }
+                } else if (f.name.toLowerCase().endsWith('.pptx') || f.name.toLowerCase().endsWith('.ppt')) {
+                    type = 'PowerPoint';
+                }
+                files.push({ file: f, name: f.name, p: pages, c: 1, isImg: f.type.startsWith('image/'), type: type });
+            }
+            ui();
+        };
+
+        window.setConf = (k, v) => {
+            conf[k] = v;
+            document.getElementById('clr-c').className = conf.color === 'c' ? 'opt-btn active' : 'opt-btn';
+            document.getElementById('clr-n').className = conf.color === 'n' ? 'opt-btn active' : 'opt-btn';
+            document.getElementById('sid-1').className = conf.side === '1' ? 'opt-btn active' : 'opt-btn';
+            document.getElementById('sid-2').className = conf.side === '2' ? 'opt-btn active' : 'opt-btn';
+            ui();
+        };
+
+        window.askLoc = () => {
+            navigator.geolocation.getCurrentPosition(p => {
+                locUrl = `https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`;
+                const btn = document.getElementById('locBtn');
+                btn.innerText = "✅ تم حفظ الموقع";
+                btn.style.background = "#28a745";
+            }, () => alert("يرجى تفعيل الـ GPS"));
+        };
+
+        function ui() {
+            const list = document.getElementById('list-items'); list.innerHTML = '';
+            let sheetsCount = 0; let docsPages = 0; let imgs = 0; let hasDocs = false;
 
             files.forEach((f, i) => {
-                let sheetsForThisFile = prefs.side === '2' ? Math.ceil(f.pages / 2) : f.pages;
-                let subTotal = sheetsForThisFile * f.copies;
-                totalSheets += subTotal;
-
-                list.innerHTML += `
-                    <div class="file-row">
-                        <div>
-                            <div style="font-weight:bold; font-size:0.9rem;">${f.name.substring(0,20)}...</div>
-                            <div class="file-info">${f.pages} صفحة × ${f.copies} نسخة</div>
-                        </div>
-                        <div class="counter">
-                            <button class="count-btn" onclick="updateCopy(${i},-1)">-</button>
-                            <span>${f.copies}</span>
-                            <button class="count-btn" onclick="updateCopy(${i},1)">+</button>
-                        </div>
+                if (!f.isImg) hasDocs = true;
+                list.innerHTML += `<div class="file-item">
+                    <span style="font-size:0.85rem; font-weight:bold;">${f.name.substring(0,20)} (${f.p} ص)</span>
+                    <div class="counter">
+                        <button class="btn-count" onclick="cnt(${i},-1)">-</button>
+                        <span>${f.c}</span>
+                        <button class="btn-count" onclick="cnt(${i},1)">+</button>
+                        <span style="color:red; margin-right:10px; cursor:pointer;" onclick="del(${i})">🗑️</span>
                     </div>
-                `;
+                </div>`;
+                
+                let unit = f.p;
+                if (f.type === 'PowerPoint') unit = Math.ceil(f.p / 2);
+                
+                if (f.isImg) {
+                    imgs += f.c;
+                } else {
+                    docsPages += (f.p * f.c);
+                    sheetsCount += (conf.side === '2' ? Math.ceil(unit / 2) : unit) * f.c;
+                }
             });
 
-            const pPrice = totalSheets * (prefs.color === 'c' ? 150 : 75);
-            const dFee = (pPrice >= 15000 || pPrice === 0) ? 0 : 2000;
-            const final = pPrice + dFee;
+            document.getElementById('side-options').classList.toggle('hidden', !hasDocs);
 
-            document.getElementById('sheet-count').innerText = totalSheets;
-            document.getElementById('print-price').innerText = pPrice.toLocaleString() + " د.ع";
-            document.getElementById('deliv-price').innerText = dFee === 0 ? "مجاني 🎁" : dFee.toLocaleString() + " د.ع";
-            document.getElementById('grand-total').innerText = final.toLocaleString() + " د.ع";
-            window.finalAmount = final;
+            let rawPrintPrice = 0;
+            let totalUnits = sheetsCount + imgs;
 
-            document.getElementById('files-card').classList.toggle('hidden', files.length === 0);
-            document.getElementById('settings-area').classList.toggle('hidden', files.length === 0);
+            // حساب سعر الطباعة الخام
+            if (totalUnits > 0 && totalUnits <= 5) {
+                rawPrintPrice = 1000;
+            } else if (totalUnits > 5) {
+                if (conf.color === 'c') {
+                    if (totalUnits >= 6 && totalUnits <= 25) rawPrintPrice = totalUnits * 150;
+                    else if (totalUnits >= 26 && totalUnits <= 40) rawPrintPrice = totalUnits * 130;
+                    else if (totalUnits > 40 && totalUnits <= 70) rawPrintPrice = totalUnits * 120;
+                    else if (totalUnits > 70) rawPrintPrice = totalUnits * 100;
+                } else {
+                    let pricePerSheetBlack = (conf.side === '1' ? 90 : 75);
+                    rawPrintPrice = totalUnits * pricePerSheetBlack;
+                }
+            }
+            
+            // --- تقريب سعر الطباعة لأقرب 250 دينار قبل أي عملية أخرى ---
+            let roundedPrintPrice = Math.round(rawPrintPrice / 250) * 250;
+            
+            let deliveryFee = 1000;
+            if (roundedPrintPrice >= 10000 || totalUnits === 0) deliveryFee = 0;
+
+            let finalDeliveryFee = hasOrderedBefore ? deliveryFee : 0;
+            let deliveryText = "";
+            if (!hasOrderedBefore && totalUnits > 0) {
+                deliveryText = '<b style="color:#4eff4e;">مجاني (هدية أول طلب) 🎁</b>';
+            } else {
+                deliveryText = (deliveryFee === 0 && totalUnits > 0) ? '<b style="color:#4eff4e;">مجاني ✨</b>' : finalDeliveryFee.toLocaleString() + ' د.ع';
+            }
+
+            // المجموع هو سعر الطباعة المقرب + أجور التوصيل (التي هي أصلاً أرقام صحيحة)
+            let total = roundedPrintPrice + finalDeliveryFee;
+
+            document.getElementById('inv-details').innerHTML = `
+                <div class="inv-line"><span>عدد صفحات الملفات:</span><span>${docsPages}</span></div>
+                <div class="inv-line"><span>عدد الصور المرفوعة:</span><span>${imgs}</span></div>
+                <div class="inv-line" style="border-top:1px solid #5d6d7e; padding-top:5px;"><span>سعر الطباعة:</span><span>${roundedPrintPrice.toLocaleString()} د.ع</span></div>
+                <div class="inv-line"><span>أجور التوصيل:</span><span>${deliveryText}</span></div>`;
+            
+            document.getElementById('total-val').innerText = `المجموع النهائي: ${total.toLocaleString()} د.ع`;
+            window.finalTotal = total;
+            window.deliveryInfo = !hasOrderedBefore ? "مجاني (هدية أول طلب)" : finalDeliveryFee.toLocaleString();
+
+            document.getElementById('list-card').classList.toggle('hidden', files.length === 0);
+            document.getElementById('options-area').classList.toggle('hidden', files.length === 0);
         }
 
-        window.updateCopy = (i, d) => { files[i].copies = Math.max(1, files[i].copies + d); renderFiles(); };
+        window.cnt = (i, d) => { files[i].c = Math.max(1, files[i].c + d); ui(); };
+        window.del = (i) => { files.splice(i, 1); ui(); };
 
-        window.updatePref = (k, v) => {
-            prefs[k] = v;
-            document.getElementById('clr-c').className = prefs.color === 'c' ? 'opt-btn active' : 'opt-btn';
-            document.getElementById('clr-n').className = prefs.color === 'n' ? 'opt-btn active' : 'opt-btn';
-            document.getElementById('side-1').className = prefs.side === '1' ? 'opt-btn active' : 'opt-btn';
-            document.getElementById('side-2').className = prefs.side === '2' ? 'opt-btn active' : 'opt-btn';
-            renderFiles();
-        };
-
-        window.getLocation = () => {
-            const btn = document.getElementById('locBtn');
-            btn.innerText = "جاري البحث... ⏳";
-            navigator.geolocation.getCurrentPosition(
-                p => {
-                    userLocation = `https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`;
-                    btn.innerText = "✅ تم تحديد الموقع";
-                    btn.style.background = "#059669";
-                },
-                err => {
-                    alert("يرجى تفعيل الـ GPS لإرسال الموقع");
-                    btn.innerText = "❌ فشل تحديد الموقع";
-                }
-            );
-        };
-
-        window.confirmOrder = async () => {
+        async function sendOrder() {
+            if (!window.currentUser) { alert("جاري التحقق من الحساب..."); return; }
             const name = document.getElementById('uName').value.trim();
             const phone = document.getElementById('uPhone').value.trim();
             const region = document.getElementById('uRegion').value.trim();
-
-            if(!name || phone.length !== 11 || !region) {
-                alert("يرجى التأكد من كتابة الاسم ورقم الهاتف (11 رقم) والمنطقة");
-                return;
+            const err = document.getElementById('err-box');
+            const phoneRegex = /^07[0-9]{9}$/;
+            if (!name || !phoneRegex.test(phone) || !region || locUrl === "غير محدد") {
+                err.innerText = "❌ تأكد من كتابة الاسم ورقم الهاتف (11 رقم يبدأ بـ 07) وتحديد الموقع";
+                err.style.display = 'block'; return;
             }
-            if(!userLocation) {
-                alert("يرجى الضغط على زر تحديد الموقع أولاً");
-                return;
-            }
-
+            err.style.display = 'none';
             const btn = document.getElementById('sendBtn');
-            btn.disabled = true;
-            btn.innerText = "جاري الإرسال... 🚀";
-
-            const orderId = "SH-" + Math.floor(1000 + Math.random() * 9000);
-            const orderData = {
-                orderId,
-                userId: window.auth.currentUser?.uid || "anon",
-                name, phone, region,
-                location: userLocation,
-                total: window.finalAmount,
-                status: 'pending',
-                timestamp: Date.now(),
-                details: files.map(f => `${f.name} (${f.copies}x)`).join(", ")
-            };
-
+            btn.disabled = true; btn.innerText = "جاري الإرسال... 🚀";
+            document.getElementById('prog-cont').style.display = 'block';
             try {
-                // Firebase - Rule 1
-                const colRef = window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders');
-                await window.fs.addDoc(colRef, orderData);
-
-                // Telegram
-                const msg = `📦 *طلب جديد* #${orderId}\n👤 الزبون: ${name}\n📞 الهاتف: ${phone}\n🏠 المنطقة: ${region}\n💰 المبلغ: ${window.finalAmount} د.ع\n📍 الموقع: ${userLocation}\n📄 الملفات: ${orderData.details}`;
-                
-                await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ chat_id: myChatId, text: msg, parse_mode: 'Markdown' })
+                const zip = new JSZip();
+                files.forEach(f => zip.file(f.name, f.file));
+                const blob = await zip.generateAsync({type:"blob"}, p => {
+                    document.getElementById('prog-bar').style.width = p.percent + "%";
                 });
-
-                document.getElementById('order-view').innerHTML = `
-                    <div class="card" style="text-align:center; padding: 40px 10px;">
-                        <h2 style="color:var(--success)">تم استلام طلبك! ✅</h2>
-                        <p>رقم طلبك: <b>${orderId}</b></p>
-                        <p>سنقوم بالتواصل معك قريباً لتأكيد موعد التوصيل.</p>
-                        <button class="btn-action" style="background:var(--primary); color:white;" onclick="location.reload()">طلب جديد</button>
-                    </div>
-                `;
+                const orderId = "SH-" + Math.floor(1000 + Math.random() * 9000);
+                const colRef = window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders');
+                await window.fs.addDoc(colRef, {
+                    orderId, userId: window.currentUser.uid, name, phone, region,
+                    total: window.finalTotal, status: 'pending', timestamp: Date.now(),
+                    summary: files.map(f => `${f.name} (${f.c})`).join(", ")
+                });
+                const fd = new FormData();
+                fd.append('chat_id', myChatId);
+                fd.append('document', blob, `Order_${orderId}.zip`);
+                fd.append('caption', `🆕 طلب جديد #${orderId}\n👤 الزبون: ${name}\n📞 الهاتف: ${phone}\n🏠 المنطقة: ${region}\n🎨 النوع: ${conf.color=='c'?'ملون':'أسود'}\n📖 الطباعة: ${conf.side=='1'?'وجه واحد':'وجهين'}\n💰 المجموع: ${window.finalTotal.toLocaleString()} د.ع\n🚚 التوصيل: ${window.deliveryInfo}\n📍 الموقع: ${locUrl}`);
+                await fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, { method: 'POST', body: fd });
+                localStorage.setItem('shater_order_completed', 'true');
+                document.getElementById('order-view').innerHTML = `<div style="text-align:center; padding:50px 20px;"><h2 style="color:var(--success)">تم استلام طلبك! ✅</h2><p>رقم طلبك: #${orderId}</p><button class="btn-main" style="background:var(--primary); color:white; margin-top:20px;" onclick="location.reload()">طلب جديد</button></div>`;
             } catch (e) {
-                alert("حدث خطأ في النظام. يرجى المحاولة لاحقاً");
-                btn.disabled = false;
-                btn.innerText = "إرسال الطلب ✅";
+                alert("حدث خطأ في الإرسال، حاول مرة أخرى");
+                btn.disabled = false; btn.innerText = "تأكيد وإرسال الطلب ✅";
             }
-        };
+        }
 
-        function loadOrders() {
-            if(!window.currentUser) return;
-            const container = document.getElementById('my-orders');
+        function loadUserOrders() {
+            if (!window.currentUser) return;
+            const container = document.getElementById('user-orders');
             container.innerHTML = "جاري التحميل...";
-            
             const colRef = window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders');
             window.fs.onSnapshot(colRef, (snap) => {
-                const my = snap.docs
-                    .map(d => d.data())
-                    .filter(o => o.userId === window.currentUser.uid)
-                    .sort((a,b) => b.timestamp - a.timestamp);
-                
-                if(my.length === 0) { container.innerHTML = "لا توجد طلبات سابقة"; return; }
-                
                 container.innerHTML = '';
+                const my = snap.docs.map(d => d.data()).filter(o => o.userId === window.currentUser.uid).sort((a,b) => b.timestamp - a.timestamp);
+                if(my.length === 0) container.innerHTML = '<p style="text-align:center; padding:20px;">لا توجد طلبات سابقة</p>';
                 my.forEach(o => {
                     const st = {pending: 'قيد المراجعة', printing: 'جاري الطباعة', delivered: 'تم التوصيل'}[o.status] || o.status;
-                    container.innerHTML += `
-                        <div class="card">
-                            <div style="display:flex; justify-content:space-between;">
-                                <b>#${o.orderId}</b>
-                                <span style="color:var(--primary)">${st}</span>
-                            </div>
-                            <div style="font-size:0.8rem; color:#64748b; margin-top:5px;">${o.details}</div>
-                            <div style="margin-top:10px; font-weight:bold;">${o.total.toLocaleString()} د.ع</div>
-                        </div>
-                    `;
+                    container.innerHTML += `<div class="card">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><b>#${o.orderId}</b> <span style="color:var(--primary)">${st}</span></div>
+                        <div style="font-size:0.8rem; color:#666;">${o.summary}</div>
+                        <div style="margin-top:10px; font-weight:bold;">${o.total.toLocaleString()} د.ع</div>
+                    </div>`;
                 });
             });
         }
