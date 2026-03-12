@@ -30,95 +30,82 @@
             window.appId = appId;
             window.fs = { collection, doc, getDoc, setDoc, addDoc, onSnapshot, updateDoc, serverTimestamp, query, where };
 
-            const initAuth = async () => {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+            window.triggerAuth = async () => {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch(e) { console.error("Auth Fail", e); }
             };
-            initAuth();
+
+            window.triggerAuth();
 
             onAuthStateChanged(auth, async (user) => {
                 window.currentUser = user;
                 if (user) {
                     await syncUserProfile();
                     window.dispatchEvent(new CustomEvent('authReady'));
+                    console.log("Authenticated as:", user.uid);
                 }
             });
 
             async function syncUserProfile() {
                 const tg = window.Telegram.WebApp;
                 const tgUser = tg.initDataUnsafe?.user;
-                if (!tgUser) return;
-
-                const tgId = String(tgUser.id).trim();
-                const userRef = window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'users', tgId);
+                const tid = tgUser ? String(tgUser.id).trim() : localStorage.getItem('last_tg_id');
                 
+                if (!tid) return;
+                localStorage.setItem('last_tg_id', tid);
+
+                const userRef = window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'users', tid);
                 try {
                     const snap = await window.fs.getDoc(userRef);
                     const userData = {
-                        tgId: tgId,
-                        firstName: tgUser.first_name || "",
-                        lastName: tgUser.last_name || "",
-                        username: tgUser.username || "",
+                        tgId: tid,
+                        username: tgUser?.username || "لا يوجد",
                         lastLogin: window.fs.serverTimestamp()
                     };
-
                     if (!snap.exists()) {
                         await window.fs.setDoc(userRef, { ...userData, createdAt: window.fs.serverTimestamp() });
                     } else {
                         await window.fs.updateDoc(userRef, userData);
-                        const existing = snap.data();
-                        window.cachedUserData = existing; // حفظ البيانات محلياً للفلترة لاحقاً
-                        if (existing.phone && document.getElementById('uPhone')) document.getElementById('uPhone').value = existing.phone;
-                        if (existing.fullName && document.getElementById('uName')) document.getElementById('uName').value = existing.fullName;
+                        const data = snap.data();
+                        if (data.phone && document.getElementById('uPhone')) document.getElementById('uPhone').value = data.phone;
+                        if (data.fullName && document.getElementById('uName')) document.getElementById('uName').value = data.fullName;
                     }
-                } catch (e) { console.error("Sync Error", e); }
+                } catch (e) {}
             }
-        } catch (e) { console.error("Firebase Init Failed"); }
+        } catch (e) { console.error("Firebase Error"); }
     </script>
 
     <style>
         :root { --primary: #248bcf; --bg: #f4f7f9; --success: #28a745; --dark: #1e293b; --error: #dc3545; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 0 0 80px 0; direction: rtl; color: #333; overflow-x: hidden; }
-        
         .header { text-align: center; padding: 15px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .logo-circle { width: 70px; height: 70px; background: white url('logo.png') no-repeat center; background-size: contain; border-radius: 50%; margin: 0 auto 10px; border: 3px solid var(--primary); cursor: pointer; }
-        
         .container { padding: 12px; }
-        .card { background: white; border-radius: 15px; padding: 18px; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        
+        .card { background: white; border-radius: 15px; padding: 18px; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #edf2f7; }
         .upload-area { border: 2px dashed var(--primary); padding: 25px; text-align: center; color: var(--primary); cursor: pointer; border-radius: 15px; background: #f0f9ff; }
         .btn-group { display: flex; gap: 8px; margin: 10px 0; }
         .opt-btn { flex: 1; padding: 14px; border: 1px solid #ddd; border-radius: 12px; cursor: pointer; font-weight: bold; background: white; font-size: 0.95rem; }
         .opt-btn.active { background: var(--primary) !important; color: white !important; border-color: var(--primary); }
-
         .input-field { width: 100%; padding: 15px; border: 1px solid #ddd; border-radius: 12px; margin-bottom: 10px; background: #fafafa; font-size: 1rem; outline: none; }
-        .input-field:focus { border-color: var(--primary); background: white; }
-        
         .invoice { background: var(--dark); color: white; border-radius: 15px; padding: 20px; margin-top: 10px; }
         .inv-line { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; }
         .total-price { font-size: 1.4rem; color: #4eff4e; text-align: center; margin-top: 15px; border-top: 1px dashed #555; padding-top: 15px; font-weight: bold; }
-
-        .btn-main { width: 100%; padding: 16px; border: none; border-radius: 14px; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
+        .btn-main { width: 100%; padding: 16px; border: none; border-radius: 14px; font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.2s; }
         .btn-main:active { transform: scale(0.98); }
-        .btn-main:disabled { background: #cbd5e0 !important; color: #718096 !important; }
-
-        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; border-top: 1px solid #eee; z-index: 100; }
-        .nav-item { flex: 1; text-align: center; padding: 15px; color: #666; font-weight: bold; cursor: pointer; }
+        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; border-top: 1px solid #eee; z-index: 100; padding: 5px 0; }
+        .nav-item { flex: 1; text-align: center; padding: 10px; color: #666; font-weight: bold; cursor: pointer; font-size: 0.85rem; }
         .nav-item.active { color: var(--primary); border-top: 3px solid var(--primary); }
-
-        #welcome-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 2000; }
-        .modal-content { background: white; padding: 30px; border-radius: 20px; text-align: center; width: 85%; max-width: 400px; }
         .error-msg { background: #fff1f2; color: var(--error); padding: 12px; border-radius: 10px; font-size: 0.85rem; margin-bottom: 12px; display: none; text-align: center; border: 1px solid #fecdd3; }
-        
         .progress-container { width: 100%; background: #ddd; height: 10px; border-radius: 5px; margin: 15px 0; display: none; overflow: hidden; }
         .progress-bar { width: 0%; height: 100%; background: var(--success); transition: width 0.3s; }
-        
         .hidden { display: none !important; }
-        .diagnostic-box { font-size: 10px; color: #999; background: #eee; padding: 10px; border-radius: 8px; margin-top: 20px; direction: ltr; }
+        .diag-box { font-size: 9px; color: #bbb; text-align: center; padding: 10px; direction: ltr; }
     </style>
 </head>
 <body>
@@ -128,7 +115,7 @@
             <div class="logo-circle"></div>
             <h2 style="color:var(--primary)">خدمات الشاطر الطلابية</h2>
             <p>أهلاً بك! ارفع مستنداتك وسنتولى طباعتها وتوصيلها إليك بجودة عالية.</p>
-            <button class="btn-main" style="background:var(--primary); color:white;" onclick="closeWelcome()">ابدأ طلبك الآن</button>
+            <button class="btn-main" style="background:var(--primary); color:white; margin-top:15px;" onclick="closeWelcome()">ابدأ طلبك الآن</button>
         </div>
     </div>
 
@@ -138,7 +125,7 @@
     </div>
 
     <div class="container">
-        <!-- New Order -->
+        <!-- New Order View -->
         <div id="order-view">
             <div class="card">
                 <div class="upload-area" onclick="document.getElementById('fileInp').click()">
@@ -147,69 +134,39 @@
                 </div>
                 <input type="file" id="fileInp" multiple hidden>
             </div>
-
-            <div id="list-card" class="card hidden">
-                <p style="margin:0 0 10px; font-weight:bold;">الملفات المختارة:</p>
-                <div id="list-items"></div>
-            </div>
-
+            <div id="list-card" class="card hidden"><p style="margin:0 0 10px; font-weight:bold;">الملفات:</p><div id="list-items"></div></div>
             <div id="options-area" class="hidden">
                 <div class="card">
                     <p><b>نوع الطباعة:</b></p>
-                    <div class="btn-group">
-                        <button id="clr-c" class="opt-btn active" onclick="setConf('color','c')">🌈 ملون</button>
-                        <button id="clr-n" class="opt-btn" onclick="setConf('color','n')">⚪ أسود</button>
-                    </div>
-                    <div id="side-options">
-                        <p style="margin-top:15px;"><b>طريقة الطباعة:</b></p>
-                        <div class="btn-group">
-                            <button id="sid-1" class="opt-btn active" onclick="setConf('side','1')">📄 وجه واحد</button>
-                            <button id="sid-2" class="opt-btn" onclick="setConf('side','2')">📖 وجهين</button>
-                        </div>
-                    </div>
+                    <div class="btn-group"><button id="clr-c" class="opt-btn active" onclick="setConf('color','c')">🌈 ملون</button><button id="clr-n" class="opt-btn" onclick="setConf('color','n')">⚪ أسود</button></div>
+                    <div id="side-options"><p style="margin-top:15px;"><b>الوجه:</b></p><div class="btn-group"><button id="sid-1" class="opt-btn active" onclick="setConf('side','1')">📄 وجه واحد</button><button id="sid-2" class="opt-btn" onclick="setConf('side','2')">📖 وجهين</button></div></div>
                 </div>
-
-                <div class="invoice">
-                    <div id="inv-details"></div>
-                    <div class="total-price" id="total-val">0 د.ع</div>
-                </div>
-
+                <div class="invoice"><div id="inv-details"></div><div class="total-price" id="total-val">0 د.ع</div></div>
                 <div class="card" style="margin-top:15px;">
                     <div id="err-box" class="error-msg"></div>
-                    <input type="text" id="uName" class="input-field" placeholder="✍️ الاسم الكامل">
-                    <input type="tel" id="uPhone" class="input-field" placeholder="📞 رقم الهاتف (11 رقم)" maxlength="11">
-                    <input type="text" id="uRegion" class="input-field" placeholder="🏠 المنطقة السكنية">
-                    
+                    <input type="text" id="uName" class="input-field" placeholder="✍️ الاسم">
+                    <input type="tel" id="uPhone" class="input-field" placeholder="📞 رقم الهاتف" maxlength="11">
+                    <input type="text" id="uRegion" class="input-field" placeholder="🏠 المنطقة">
                     <button id="locBtn" class="btn-main" style="background:#64748b; color:white; font-size:0.9rem; margin-bottom:10px;" onclick="askLoc()">📍 تحديد موقعي</button>
-                    
-                    <div class="progress-container" id="prog-cont">
-                        <div class="progress-bar" id="prog-bar"></div>
-                    </div>
-                    <p id="status-text" style="text-align:center; font-size:0.8rem; color:#666;"></p>
-                    
+                    <div class="progress-container" id="prog-cont"><div class="progress-bar" id="prog-bar"></div></div>
+                    <p id="status-text" style="text-align:center; font-size:0.8rem; color:#666; margin-top:5px;"></p>
                     <button id="sendBtn" class="btn-main" style="background:var(--success); color:white;" onclick="sendOrder()">تأكيد وإرسال الطلب ✅</button>
                 </div>
             </div>
         </div>
 
-        <!-- Tracking -->
+        <!-- Tracking View -->
         <div id="tracking-view" class="hidden">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
                 <h3 style="margin:0;">📦 طلباتي</h3>
                 <button onclick="loadUserOrders(true)" style="background:none; border:none; color:var(--primary); font-weight:bold; cursor:pointer;">🔄 تحديث</button>
             </div>
-            <div id="user-orders-list">
-                <div style="text-align:center; padding:30px; color:#666;">جاري تحميل طلباتك... ⏳</div>
-            </div>
-            
-            <div id="diagnostic-info" class="diagnostic-box hidden"></div>
+            <div id="user-orders-list"><div style="text-align:center; padding:30px; color:#666;">جاري التحميل... ⏳</div></div>
+            <div id="diag-info" class="diag-box"></div>
         </div>
 
-        <!-- Admin -->
-        <div id="admin-view" class="hidden">
-            <h3 style="margin:0 0 15px;">⚙️ الإدارة</h3>
-            <div id="all-orders-list"></div>
-        </div>
+        <!-- Admin View -->
+        <div id="admin-view" class="hidden"><h3 style="margin:0 0 15px;">⚙️ الإدارة</h3><div id="all-orders-list"></div></div>
     </div>
 
     <div class="navbar">
@@ -220,13 +177,9 @@
     <script>
         const botToken = '8507186698:AAEsoTIakrgnvR19Uc-hl3YsXYOVuhgSZWU';
         const myChatId = '7618746133';
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
+        const tg = window.Telegram.WebApp; tg.ready(); tg.expand();
 
-        let files = []; 
-        let conf = { color: 'c', side: '1' };
-        let locUrl = "غير محدد";
+        let files = []; let conf = { color: 'c', side: '1' }; let locUrl = "غير محدد";
 
         window.closeWelcome = () => document.getElementById('welcome-modal').classList.add('hidden');
 
@@ -234,72 +187,50 @@
             document.getElementById('order-view').classList.toggle('hidden', tab !== 'order');
             document.getElementById('tracking-view').classList.toggle('hidden', tab !== 'track');
             document.getElementById('admin-view').classList.toggle('hidden', tab !== 'admin');
-            
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            if(tab !== 'admin') {
-                const navId = tab === 'order' ? 'nav-new' : 'nav-track';
-                document.getElementById(navId).classList.add('active');
-            }
+            if(tab !== 'admin') document.getElementById(tab === 'order' ? 'nav-new' : 'nav-track').classList.add('active');
             if (tab === 'track') loadUserOrders();
             if (tab === 'admin') loadAllOrders();
         };
 
-        // الدخول للإدارة
-        let lt;
-        document.getElementById('logo-main').onmousedown = document.getElementById('logo-main').ontouchstart = () => lt = setTimeout(() => window.switchTab('admin'), 2500);
-        document.getElementById('logo-main').onmouseup = document.getElementById('logo-main').ontouchend = () => clearTimeout(lt);
+        let lt; const logo = document.getElementById('logo-main');
+        logo.onmousedown = logo.ontouchstart = () => lt = setTimeout(() => window.switchTab('admin'), 2500);
+        logo.onmouseup = logo.ontouchend = () => clearTimeout(lt);
 
         document.getElementById('fileInp').onchange = async (e) => {
             for (let f of e.target.files) {
-                let pages = 1;
+                let p = 1;
                 if (f.name.toLowerCase().endsWith('.pdf')) {
-                    try {
-                        const buffer = await f.arrayBuffer();
-                        const pdf = await pdfjsLib.getDocument({data: buffer}).promise;
-                        pages = pdf.numPages;
-                    } catch(e) { pages = 1; }
+                    try { const buf = await f.arrayBuffer(); const pdf = await pdfjsLib.getDocument({data: buf}).promise; p = pdf.numPages; } catch(e) {}
                 }
-                files.push({ file: f, name: f.name, p: pages, c: 1, isImg: f.type.startsWith('image/') });
+                files.push({ file: f, name: f.name, p, c: 1, isImg: f.type.startsWith('image/') });
             }
             ui();
         };
 
         window.askLoc = () => {
-            const btn = document.getElementById('locBtn');
-            btn.innerText = "جاري التحديد... ⏳";
+            const btn = document.getElementById('locBtn'); btn.innerText = "جاري التحديد... ⏳";
             navigator.geolocation.getCurrentPosition(p => {
                 locUrl = `https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`;
-                btn.innerText = "✅ تم حفظ الموقع";
-                btn.style.background = "#28a745";
-            }, () => {
-                btn.innerText = "📍 موقع تقريبي";
-                locUrl = "موقع تقريبي";
-            }, { timeout: 6000 });
+                btn.innerText = "✅ تم حفظ الموقع"; btn.style.background = "#28a745";
+            }, () => { btn.innerText = "📍 موقع تقريبي"; locUrl = "موقع تقريبي"; }, { timeout: 6000 });
         };
 
         function ui() {
             const list = document.getElementById('list-items'); list.innerHTML = '';
-            let docsPages = 0; let imgs = 0; let totalSheets = 0;
+            let pTotal = 0; let totalUnits = 0;
             files.forEach((f, i) => {
-                list.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.9rem;">
-                    <span>${f.name.substring(0,15)}..</span>
-                    <div><button onclick="cnt(${i},-1)">-</button> <span>${f.c}</span> <button onclick="cnt(${i},1)">+</button> <span style="color:red; cursor:pointer;" onclick="del(${i})">🗑️</span></div>
-                </div>`;
-                if (f.isImg) imgs += f.c;
-                else {
-                    docsPages += (f.p * f.c);
-                    totalSheets += (conf.side === '2' ? Math.ceil(f.p / 2) : f.p) * f.c;
-                }
+                list.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span>${f.name.substring(0,15)}..</span>
+                <div><button onclick="cnt(${i},-1)">-</button> <span>${f.c}</span> <button onclick="cnt(${i},1)">+</button> <span style="color:red; cursor:pointer;" onclick="del(${i})">🗑️</span></div></div>`;
+                let unit = f.isImg ? 1 : (conf.side === '2' ? Math.ceil(f.p / 2) : f.p);
+                totalUnits += unit * f.c;
             });
-            let units = totalSheets + imgs;
-            let pPrice = units <= 5 ? 1000 : (units * (conf.color === 'c' ? 150 : 90));
+            let pPrice = totalUnits <= 5 ? 1000 : (totalUnits * (conf.color === 'c' ? 150 : 90));
             pPrice = Math.round(pPrice / 250) * 250;
-            let deliv = pPrice >= 10000 || units === 0 ? 0 : 1000;
-            let total = pPrice + deliv;
-
-            document.getElementById('inv-details').innerHTML = `<div class="inv-line"><span>الصفحات:</span><span>${docsPages}</span></div><div class="inv-line"><span>الطباعة:</span><span>${pPrice.toLocaleString()} د.ع</span></div><div class="inv-line"><span>التوصيل:</span><span>${deliv === 0 ? 'مجاني' : '1,000 د.ع'}</span></div>`;
-            document.getElementById('total-val').innerText = `المجموع: ${total.toLocaleString()} د.ع`;
-            window.finalTotal = total;
+            let deliv = pPrice >= 10000 || totalUnits === 0 ? 0 : 1000;
+            document.getElementById('inv-details').innerHTML = `<div class="inv-line"><span>الطباعة:</span><span>${pPrice.toLocaleString()} د.ع</span></div><div class="inv-line"><span>التوصيل:</span><span>${deliv === 0 ? 'مجاني' : '1,000 د.ع'}</span></div>`;
+            document.getElementById('total-val').innerText = `المجموع: ${(pPrice + deliv).toLocaleString()} د.ع`;
+            window.finalTotal = pPrice + deliv;
             document.getElementById('list-card').classList.toggle('hidden', files.length === 0);
             document.getElementById('options-area').classList.toggle('hidden', files.length === 0);
         }
@@ -313,90 +244,81 @@
             const status = document.getElementById('status-text');
             const err = document.getElementById('err-box');
 
-            if (!window.currentUser) { alert("جاري الاتصال.. حاول مجدداً"); return; }
+            // حل مشكلة "جاري الاتصال": الانتظار والاتصال التلقائي
+            if (!window.currentUser) {
+                btn.innerText = "جاري ربط الحساب... ⏳";
+                if (window.triggerAuth) window.triggerAuth();
+                let retry = 0;
+                while (!window.currentUser && retry < 15) {
+                    await new Promise(r => setTimeout(r, 1000));
+                    retry++;
+                }
+            }
+
             const name = document.getElementById('uName').value.trim();
             const phone = document.getElementById('uPhone').value.trim();
             const region = document.getElementById('uRegion').value.trim();
-
             if (!name || phone.length < 10 || !region) { err.innerText = "❌ أكمل البيانات"; err.style.display = 'block'; return; }
-
+            
             err.style.display = 'none'; btn.disabled = true;
             document.getElementById('prog-cont').style.display = 'block';
-            status.innerText = "جاري التجهيز... 📦";
+            status.innerText = "جاري الضغط... 📦";
 
-            const tid = tg.initDataUnsafe?.user?.id ? String(tg.initDataUnsafe.user.id).trim() : "anon";
+            const tid = tg.initDataUnsafe?.user?.id ? String(tg.initDataUnsafe.user.id).trim() : localStorage.getItem('last_tg_id') || "anon";
 
             try {
-                const zip = new JSZip();
-                for (let f of files) zip.file(f.name, f.file);
+                const zip = new JSZip(); for (let f of files) zip.file(f.name, f.file);
                 const blob = await zip.generateAsync({type:"blob"}, p => { document.getElementById('prog-bar').style.width = p.percent + "%"; });
 
-                status.innerText = "جاري الإرسال... 🚀";
+                status.innerText = "جاري الإرسال للبوت... 🚀";
                 const oid = "SH-" + Math.floor(1000 + Math.random() * 9000);
-                
                 const fd = new FormData();
                 fd.append('chat_id', myChatId);
                 fd.append('document', blob, `Order_${oid}.zip`);
                 fd.append('caption', `🆕 طلب #${oid}\n👤 ${name}\n📞 ${phone}\n💰 ${window.finalTotal} د.ع\n🆔 ${tid}\n📍 ${locUrl}`);
 
                 const res = await fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, { method: 'POST', body: fd });
-                if (!res.ok) throw new Error("Telegram Fail");
+                if (!res.ok) throw new Error("Telegram Error");
 
-                // تسجيل الطلب في Firebase
-                await window.fs.addDoc(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), {
-                    orderId: oid, tgUserId: tid, userId: window.currentUser.uid,
-                    name, phone, region, total: window.finalTotal,
-                    status: 'pending', timestamp: Date.now(), summary: files.map(f => f.name).join(", ")
-                });
+                if (window.fs && window.currentUser) {
+                    await window.fs.addDoc(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), {
+                        orderId: oid, tgUserId: tid, userId: window.currentUser.uid, name, phone, region, total: window.finalTotal,
+                        status: 'pending', timestamp: Date.now(), summary: files.map(f => f.name).join(", ")
+                    });
+                }
 
-                document.getElementById('order-view').innerHTML = `<div style="text-align:center; padding:50px 10px;"><h2 style="color:var(--success)">تم الإرسال! ✅</h2><p>رقم طلبك: #${oid}</p><button class="btn-main" style="background:var(--primary); color:white; margin-top:20px;" onclick="location.reload()">طلب جديد</button></div>`;
+                document.getElementById('order-view').innerHTML = `<div style="text-align:center; padding:50px 10px;"><h2 style="color:var(--success)">تم الإرسال بنجاح! ✅</h2><p>رقم طلبك: #${oid}</p><button class="btn-main" style="background:var(--primary); color:white; margin-top:20px;" onclick="location.reload()">طلب جديد</button></div>`;
             } catch (e) {
                 btn.disabled = false; status.innerText = "";
-                err.innerText = "❌ خطأ في الإرسال، تأكد من الإنترنت"; err.style.display = 'block';
+                err.innerText = "❌ فشل الإرسال، تأكد من الإنترنت وحاول مجدداً"; err.style.display = 'block';
             }
         }
 
-        window.loadUserOrders = (isManual = false) => {
+        window.loadUserOrders = (manual = false) => {
             const list = document.getElementById('user-orders-list');
-            const diagnostic = document.getElementById('diagnostic-info');
-            
-            // جلب البيانات اللازمة للفلترة
-            const tid = tg.initDataUnsafe?.user?.id ? String(tg.initDataUnsafe.user.id).trim() : "";
-            const phone = document.getElementById('uPhone')?.value?.trim() || (window.cachedUserData?.phone || "");
+            const tid = tg.initDataUnsafe?.user?.id ? String(tg.initDataUnsafe.user.id).trim() : localStorage.getItem('last_tg_id');
+            const phone = document.getElementById('uPhone')?.value?.trim();
             const uid = window.currentUser ? window.currentUser.uid : "";
 
-            if (isManual) list.innerHTML = '<div style="text-align:center; padding:20px;">جاري التحديث... ⏳</div>';
+            document.getElementById('diag-info').innerText = `TID: ${tid || 'N/A'} | UID: ${uid.substring(0,5)} | PH: ${phone || 'N/A'}`;
 
-            // معلومات تشخيصية لمساعدتنا في حل المشكلة
-            diagnostic.innerHTML = `DEBUG: TG_ID: ${tid || 'None'} | PHONE: ${phone || 'None'} | UID: ${uid.substring(0,5)}..`;
-            diagnostic.classList.remove('hidden');
-
-            if (!window.fs || !window.currentUser) return;
+            if (!window.fs || !window.currentUser) {
+                if (manual) list.innerHTML = '<div style="text-align:center; padding:20px;">جاري الاتصال... ⏳</div>';
+                return;
+            }
 
             window.fs.onSnapshot(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), (snap) => {
                 list.innerHTML = '';
-                const orders = snap.docs.map(d => d.data());
-                
-                // فلترة ذكية جداً (بناءً على الآيدي أو رقم الهاتف أو آيدي فايربيس)
-                const my = orders.filter(o => {
-                    const matchId = tid && o.tgUserId && String(o.tgUserId).trim() === tid;
-                    const matchPhone = phone && o.phone && String(o.phone).trim() === phone;
-                    const matchUid = uid && o.userId === uid;
-                    return matchId || matchPhone || matchUid;
+                const my = snap.docs.map(d => d.data()).filter(o => {
+                    return (tid && String(o.tgUserId).trim() === tid) || (uid && o.userId === uid) || (phone && o.phone === phone);
                 }).sort((a,b) => b.timestamp - a.timestamp);
 
                 if (my.length === 0) {
-                    list.innerHTML = '<p style="text-align:center; color:#999; padding:20px;">لا توجد طلبات سابقة.<br><small>تأكد من استخدام نفس رقم الهاتف دائماً.</small></p>';
+                    list.innerHTML = '<p style="text-align:center; color:#999; padding:20px;">لا توجد طلبات سابقة.<br><small>تأكد من استخدام نفس الهاتف دائماً.</small></p>';
                 } else {
                     my.forEach(o => {
                         const sMap = { pending: '⏳ قيد المراجعة', printing: '🖨️ جاري الطباعة', completed: '✅ تم التسليم' };
-                        list.innerHTML += `<div class="card">
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <b>#${o.orderId}</b> <span style="color:var(--primary); font-weight:bold;">${sMap[o.status] || o.status}</span>
-                            </div>
-                            <small style="color:#666; display:block; margin:5px 0;">${o.summary}</small>
-                            <div style="font-weight:bold; color:var(--primary)">${o.total.toLocaleString()} د.ع</div>
-                        </div>`;
+                        list.innerHTML += `<div class="card"><div style="display:flex; justify-content:space-between;"><b>#${o.orderId}</b> <span style="color:var(--primary); font-weight:bold;">${sMap[o.status] || o.status}</span></div><div style="font-weight:bold; margin-top:5px;">${o.total.toLocaleString()} د.ع</div></div>`;
                     });
                 }
             });
@@ -408,20 +330,11 @@
             window.fs.onSnapshot(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), (snap) => {
                 list.innerHTML = '';
                 snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => b.timestamp - a.timestamp).forEach(o => {
-                    list.innerHTML += `<div class="card" style="border-right: 5px solid var(--primary)">
-                        <b>#${o.orderId} - ${o.name}</b><br>${o.phone}
-                        <div class="btn-group">
-                            <button class="opt-btn" onclick="window.upd('${o.id}','printing')">🖨️ طباعة</button>
-                            <button class="opt-btn" onclick="window.upd('${o.id}','completed')">✅ تم</button>
-                        </div>
-                    </div>`;
+                    list.innerHTML += `<div class="card" style="border-right: 5px solid var(--primary)"><b>#${o.orderId} - ${o.name}</b><br>${o.phone}<div class="btn-group"><button class="opt-btn" onclick="window.upd('${o.id}','printing')">🖨️ طباعة</button><button class="opt-btn" onclick="window.upd('${o.id}','completed')">✅ تم</button></div></div>`;
                 });
             });
         }
-
-        window.upd = async (id, s) => {
-            await window.fs.updateDoc(window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'orders', id), { status: s });
-        };
+        window.upd = async (id, s) => { await window.fs.updateDoc(window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'orders', id), { status: s }); };
     </script>
 </body>
 </html>
