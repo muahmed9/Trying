@@ -43,9 +43,9 @@
                 window.currentUser = user;
                 if (user) {
                     await syncUserProfile();
-                    // إشعار التطبيق بجاهزية النظام
                     window.dispatchEvent(new CustomEvent('systemReady'));
-                    if (window.loadUserOrders) window.loadUserOrders();
+                    // محاولة تحميل الطلبات فور تسجيل الدخول
+                    setTimeout(() => { if(window.loadUserOrders) window.loadUserOrders(); }, 1000);
                 }
             });
 
@@ -54,7 +54,7 @@
                 const tgUser = tg.initDataUnsafe?.user;
                 if (!tgUser || !window.fs) return;
 
-                const tgId = String(tgUser.id);
+                const tgId = String(tgUser.id).trim();
                 const userRef = window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'users', tgId);
                 
                 try {
@@ -72,12 +72,9 @@
                     } else {
                         await window.fs.updateDoc(userRef, userData);
                         const existing = snap.data();
-                        if (existing.phone && document.getElementById('uPhone')) {
-                            document.getElementById('uPhone').value = existing.phone;
-                        }
-                        if (existing.fullName && document.getElementById('uName')) {
-                            document.getElementById('uName').value = existing.fullName;
-                        }
+                        if (existing.phone && document.getElementById('uPhone')) document.getElementById('uPhone').value = existing.phone;
+                        if (existing.fullName && document.getElementById('uName')) document.getElementById('uName').value = existing.fullName;
+                        if (existing.region && document.getElementById('uRegion')) document.getElementById('uRegion').value = existing.region;
                     }
                 } catch (e) { console.error("Sync Error", e); }
             }
@@ -93,7 +90,7 @@
         .logo-circle { width: 75px; height: 75px; background: white url('logo.png') no-repeat center; background-size: contain; border-radius: 50%; margin: 0 auto 10px; border: 3px solid var(--primary); cursor: pointer; }
         
         .container { padding: 12px; }
-        .card { background: white; border-radius: 15px; padding: 18px; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .card { background: white; border-radius: 15px; padding: 18px; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #edf2f7; }
         
         .upload-area { border: 2px dashed var(--primary); padding: 25px; text-align: center; color: var(--primary); cursor: pointer; border-radius: 15px; background: #f0f9ff; }
         .btn-group { display: flex; gap: 8px; margin: 10px 0; }
@@ -109,6 +106,7 @@
 
         .btn-main { width: 100%; padding: 16px; border: none; border-radius: 14px; font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.2s; }
         .btn-main:active { transform: scale(0.98); }
+        .btn-main:disabled { background: #cbd5e0 !important; color: #718096 !important; }
 
         .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; border-top: 1px solid #eee; z-index: 100; padding: 5px 0; }
         .nav-item { flex: 1; text-align: center; padding: 12px; color: #666; font-weight: bold; cursor: pointer; }
@@ -144,7 +142,7 @@
     </div>
 
     <div class="container">
-        <!-- New Order -->
+        <!-- New Order View -->
         <div id="order-view">
             <div class="card">
                 <div class="upload-area" onclick="document.getElementById('fileInp').click()">
@@ -198,7 +196,7 @@
             </div>
         </div>
 
-        <!-- Tracking -->
+        <!-- Tracking View -->
         <div id="tracking-view" class="hidden">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
                 <h3 style="margin:0;">📦 طلباتي</h3>
@@ -207,7 +205,7 @@
             <div id="user-orders-list-container"></div>
         </div>
 
-        <!-- Admin -->
+        <!-- Admin View -->
         <div id="admin-view" class="hidden">
             <h3 style="margin: 0 10px 15px 0;">⚙️ الإدارة</h3>
             <div id="all-orders-list"></div>
@@ -229,8 +227,8 @@
         let conf = { color: 'c', side: '1' };
         let locUrl = "غير محدد";
 
-        // استخراج معرف تليجرام فوراً
-        const getTgId = () => tg.initDataUnsafe?.user?.id ? String(tg.initDataUnsafe.user.id).trim() : "";
+        // استخراج معرف تليجرام فوراً وبشكل ثابت
+        const currentTgId = tg.initDataUnsafe?.user?.id ? String(tg.initDataUnsafe.user.id).trim() : "";
 
         window.closeWelcome = () => document.getElementById('welcome-modal').classList.add('hidden');
 
@@ -245,9 +243,8 @@
         };
 
         let lt;
-        const logo = document.getElementById('logo-main');
-        logo.onmousedown = logo.ontouchstart = () => lt = setTimeout(() => window.switchTab('admin'), 2000);
-        logo.onmouseup = logo.ontouchend = () => clearTimeout(lt);
+        document.getElementById('logo-main').onmousedown = document.getElementById('logo-main').ontouchstart = () => lt = setTimeout(() => window.switchTab('admin'), 2000);
+        document.getElementById('logo-main').onmouseup = document.getElementById('logo-main').ontouchend = () => clearTimeout(lt);
 
         document.getElementById('fileInp').onchange = async (e) => {
             for (let f of e.target.files) {
@@ -321,17 +318,10 @@
                 err.style.display = 'block'; return;
             }
 
-            if (files.length === 0) {
-                err.innerText = "❌ أضف ملفات أولاً.";
-                err.style.display = 'block'; return;
-            }
-
             err.style.display = 'none';
             btn.disabled = true;
             progCont.style.display = 'block';
             statusText.innerText = "جاري تحضير الملفات... 📦";
-
-            const currentTgId = getTgId() || "unknown";
 
             try {
                 const zip = new JSZip();
@@ -354,15 +344,15 @@
                 if (!resData.ok) throw new Error("فشل إرسال الملف.");
 
                 if (window.fs && window.db) {
-                    // تحديث هاتف المستخدم في حسابه الرئيسي
+                    // تحديث بيانات المستخدم
                     await window.fs.updateDoc(window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'users', currentTgId), {
-                        phone: phone, fullName: name
+                        phone, fullName: name, region
                     }).catch(() => {});
 
-                    // حفظ الطلب مع ربطه بكل من آيدي تليجرام وآيدي فايربيس لضمان الظهور
+                    // تسجيل الطلب
                     await window.fs.addDoc(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), {
                         orderId, 
-                        tgUserId: currentTgId, 
+                        tgUserId: String(currentTgId).trim(), 
                         userId: window.currentUser.uid,
                         name, phone, region,
                         total: window.finalTotal, 
@@ -373,6 +363,8 @@
                 }
 
                 document.getElementById('order-view').innerHTML = `<div style="text-align:center; padding:50px 10px;"><h2 style="color:var(--success)">تم الإرسال بنجاح! ✅</h2><p>رقم طلبك: #${orderId}</p><button class="btn-main" style="background:var(--primary); color:white; margin-top:20px;" onclick="location.reload()">طلب جديد</button></div>`;
+                // تحديث قائمة التتبع بعد الطلب الجديد
+                setTimeout(window.loadUserOrders, 1500);
             } catch (e) {
                 btn.disabled = false; btn.innerText = "حاول مرة أخرى ✅";
                 err.innerText = "❌ تعذر الإرسال: " + e.message;
@@ -382,9 +374,8 @@
 
         window.loadUserOrders = () => {
             const container = document.getElementById('user-orders-list-container');
-            const currentTgId = getTgId();
-            
             if (!container) return;
+            
             if (!currentTgId) { 
                 container.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">⚠️ افتح التطبيق من تليجرام للتتبع.</p>'; 
                 return; 
@@ -399,10 +390,10 @@
             
             window.fs.onSnapshot(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), (snap) => {
                 container.innerHTML = '';
-                // المقارنة المرنة لضمان ظهور الطلبات القديمة والجديدة
+                // المقارنة المرنة لضمان ظهور الطلبات
                 const my = snap.docs.map(d => d.data())
                                    .filter(o => 
-                                       (o.tgUserId && String(o.tgUserId).trim() === currentTgId) || 
+                                       (o.tgUserId && String(o.tgUserId).trim() === String(currentTgId).trim()) || 
                                        (o.userId === window.currentUser.uid)
                                    )
                                    .sort((a,b) => b.timestamp - a.timestamp);
@@ -411,7 +402,12 @@
                     container.innerHTML = '<p style="text-align:center; color:#999; padding:20px;">لا توجد طلبات سابقة.</p>';
                 } else {
                     my.forEach(o => {
-                        const st = { pending: '⏳ قيد المراجعة', printing: '🖨️ جاري الطباعة', completed: '✅ تم التسليم' }[o.status] || o.status;
+                        const st = { 
+                            pending: '⏳ قيد المراجعة', 
+                            printing: '🖨️ جاري الطباعة', 
+                            completed: '✅ تم التسليم' 
+                        }[o.status] || o.status;
+                        
                         container.innerHTML += `
                             <div class="card">
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
@@ -423,7 +419,10 @@
                             </div>`;
                     });
                 }
-            }, (err) => { container.innerHTML = '<p style="text-align:center; color:red;">خطأ في الاتصال.</p>'; });
+            }, (err) => { 
+                console.error("Snapshot error:", err);
+                container.innerHTML = '<p style="text-align:center; color:red;">خطأ في الاتصال بالبيانات.</p>'; 
+            });
         }
 
         function loadAllOrders() {
