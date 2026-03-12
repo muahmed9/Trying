@@ -30,60 +30,65 @@
             window.appId = appId;
             window.fs = { collection, doc, addDoc, onSnapshot, updateDoc, serverTimestamp, query, where };
 
-            // صيانة الدخول الصامت (Anonymous Auth)
             const initAuth = async () => {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch(e) { console.error("Auth Background Error", e); }
             };
             initAuth();
 
             onAuthStateChanged(auth, (user) => {
                 window.currentUser = user;
-                // إرسال إشارة بأن النظام جاهز للعمليات
-                window.dispatchEvent(new CustomEvent('authReady'));
+                window.dispatchEvent(new CustomEvent('authComplete'));
             });
-        } catch (e) { console.error("Firebase Error", e); }
+        } catch (e) { console.error("Firebase Configuration is missing"); }
     </script>
 
     <style>
         :root { --primary: #248bcf; --bg: #f4f7f9; --success: #28a745; --dark: #1e293b; --error: #dc3545; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0 0 80px 0; direction: rtl; color: #333; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0 0 80px 0; direction: rtl; color: #333; overflow-x: hidden; }
         
         .header { text-align: center; padding: 15px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .logo-circle { width: 75px; height: 75px; background: white url('logo.png') no-repeat center; background-size: contain; border-radius: 50%; margin: 0 auto 10px; border: 3px solid var(--primary); cursor: pointer; }
         
-        .container { padding: 15px; }
-        .card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .container { padding: 12px; }
+        .card { background: white; border-radius: 15px; padding: 18px; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         
         .upload-area { border: 2px dashed var(--primary); padding: 25px; text-align: center; color: var(--primary); cursor: pointer; border-radius: 15px; background: #f0f9ff; }
         .btn-group { display: flex; gap: 8px; margin: 10px 0; }
-        .opt-btn { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 10px; cursor: pointer; font-weight: bold; background: white; font-size: 0.9rem; }
+        .opt-btn { flex: 1; padding: 14px; border: 1px solid #ddd; border-radius: 12px; cursor: pointer; font-weight: bold; background: white; font-size: 0.95rem; }
         .opt-btn.active { background: var(--primary) !important; color: white !important; border-color: var(--primary); }
 
-        .input-field { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 12px; margin-bottom: 10px; background: #fafafa; font-size: 1rem; outline: none; }
-        .invoice { background: var(--dark); color: white; border-radius: 15px; padding: 20px; margin-top: 15px; }
+        .input-field { width: 100%; padding: 15px; border: 1px solid #ddd; border-radius: 12px; margin-bottom: 10px; background: #fafafa; font-size: 1rem; outline: none; transition: 0.3s; }
+        .input-field:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 3px rgba(36, 139, 207, 0.1); }
+        
+        .invoice { background: var(--dark); color: white; border-radius: 15px; padding: 20px; margin-top: 10px; }
         .inv-line { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; }
         .total-price { font-size: 1.4rem; color: #4eff4e; text-align: center; margin-top: 15px; border-top: 1px dashed #555; padding-top: 15px; font-weight: bold; }
 
-        .btn-main { width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.2s; }
-        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; border-top: 1px solid #eee; z-index: 100; }
-        .nav-item { flex: 1; text-align: center; padding: 15px; color: #666; font-weight: bold; cursor: pointer; }
-        .nav-item.active { color: var(--primary); border-top: 3px solid var(--primary); }
+        .btn-main { width: 100%; padding: 16px; border: none; border-radius: 14px; font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.2s; }
+        .btn-main:active { transform: scale(0.98); }
+        .btn-main:disabled { background: #ccc !important; color: #666 !important; }
+
+        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; border-top: 1px solid #eee; z-index: 100; padding: 5px 0; }
+        .nav-item { flex: 1; text-align: center; padding: 12px; color: #666; font-weight: bold; cursor: pointer; }
+        .nav-item.active { color: var(--primary); }
 
         #welcome-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 2000; }
         .modal-content { background: white; padding: 30px; border-radius: 20px; text-align: center; width: 85%; max-width: 400px; }
-        .error-msg { background: #fff1f2; color: var(--error); padding: 10px; border-radius: 10px; font-size: 0.85rem; margin-bottom: 15px; display: none; border: 1px solid #fecdd3; }
+        .error-msg { background: #fff1f2; color: var(--error); padding: 12px; border-radius: 10px; font-size: 0.85rem; margin-bottom: 12px; display: none; text-align: center; border: 1px solid #fecdd3; font-weight: bold; }
         
-        .progress-container { width: 100%; background: #ddd; height: 10px; border-radius: 5px; margin: 15px 0; display: none; overflow: hidden; }
+        .progress-container { width: 100%; background: #ddd; height: 10px; border-radius: 5px; margin: 15px 0; display: none; overflow: hidden; position: relative; }
         .progress-bar { width: 0%; height: 100%; background: var(--success); transition: width 0.3s; }
         
         .file-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
-        .counter { display: flex; align-items: center; gap: 10px; }
-        .btn-count { background: #eee; border: 1px solid #ddd; width: 30px; height: 30px; border-radius: 6px; font-weight: bold; }
+        .counter { display: flex; align-items: center; gap: 8px; }
+        .btn-count { background: #f1f5f9; border: 1px solid #e2e8f0; width: 32px; height: 32px; border-radius: 8px; font-weight: bold; font-size: 1.2rem; }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -94,7 +99,7 @@
             <div class="logo-circle"></div>
             <h2 style="color:var(--primary)">خدمات الشاطر الطلابية</h2>
             <p>أهلاً بك! ارفع مستنداتك وسنتولى طباعتها وتوصيلها إليك بجودة عالية.</p>
-            <button class="btn-main" style="background:var(--primary); color:white;" onclick="closeWelcome()">ابدأ طلبك الآن</button>
+            <button class="btn-main" style="background:var(--primary); color:white; margin-top:15px;" onclick="closeWelcome()">ابدأ طلبك الآن</button>
         </div>
     </div>
 
@@ -142,15 +147,15 @@
                 <div class="card" style="margin-top:15px;">
                     <div id="err-box" class="error-msg"></div>
                     <input type="text" id="uName" class="input-field" placeholder="✍️ الاسم الكامل">
-                    <input type="tel" id="uPhone" class="input-field" placeholder="📞 رقم الهاتف (11 رقم)" maxlength="11">
+                    <input type="tel" id="uPhone" class="input-field" placeholder="📞 رقم الهاتف (07xxxxxxxxx)" maxlength="11">
                     <input type="text" id="uRegion" class="input-field" placeholder="🏠 المنطقة السكنية">
                     
                     <button id="locBtn" class="btn-main" style="background:#64748b; color:white; font-size:0.9rem; margin-bottom:10px;" onclick="askLoc()">📍 تحديد موقعي</button>
                     
                     <div class="progress-container" id="prog-cont">
                         <div class="progress-bar" id="prog-bar"></div>
-                        <p id="status-text" style="text-align:center; font-size:0.8rem; margin-top:5px; color:#666;"></p>
                     </div>
+                    <p id="status-text" style="text-align:center; font-size:0.8rem; color:#666; margin-top:5px;"></p>
                     
                     <button id="sendBtn" class="btn-main" style="background:var(--success); color:white;" onclick="sendOrder()">تأكيد وإرسال الطلب ✅</button>
                 </div>
@@ -158,12 +163,12 @@
         </div>
 
         <div id="tracking-view" class="hidden">
-            <h3 style="margin-right:10px;">📦 طلباتي</h3>
+            <h3 style="margin: 0 10px 15px 0;">📦 طلباتي</h3>
             <div id="user-orders"></div>
         </div>
 
         <div id="admin-view" class="hidden">
-            <h3 style="margin-right:10px;">⚙️ الإدارة</h3>
+            <h3 style="margin: 0 10px 15px 0;">⚙️ الإدارة</h3>
             <div id="all-orders-list"></div>
         </div>
     </div>
@@ -177,6 +182,7 @@
         const botToken = '8507186698:AAEsoTIakrgnvR19Uc-hl3YsXYOVuhgSZWU';
         const myChatId = '7618746133';
         const tg = window.Telegram.WebApp; tg.ready();
+        tg.expand();
 
         let files = []; 
         let conf = { color: 'c', side: '1' };
@@ -194,7 +200,7 @@
             if (tab === 'admin') loadAllOrders();
         };
 
-        // الدخول للإدارة
+        // الدخول السري للإدارة
         let lt;
         document.getElementById('logo-main').onmousedown = document.getElementById('logo-main').ontouchstart = () => lt = setTimeout(() => window.switchTab('admin'), 2000);
         document.getElementById('logo-main').onmouseup = document.getElementById('logo-main').ontouchend = () => clearTimeout(lt);
@@ -222,17 +228,17 @@
                 btn.innerText = "✅ تم حفظ الموقع";
                 btn.style.background = "#28a745";
             }, () => {
-                btn.innerText = "📍 موقع تقريبي";
-                locUrl = "موقع تقريبي (يرجى إرسال اللوكيشن في تليجرام)";
-            }, { timeout: 8000 });
+                btn.innerText = "📍 موقع تقريبي (GPS معطل)";
+                locUrl = "موقع تقريبي (يرجى تزويدنا بالعنوان دقيقاً عند الاتصال)";
+            }, { timeout: 6000, enableHighAccuracy: false });
         };
 
         function ui() {
             const list = document.getElementById('list-items'); list.innerHTML = '';
             let sheetsCount = 0; let docsPages = 0; let imgs = 0;
             files.forEach((f, i) => {
-                list.innerHTML += `<div class="file-item"><span>${f.name.substring(0,20)}</span>
-                    <div class="counter"><button class="btn-count" onclick="cnt(${i},-1)">-</button><span>${f.c}</span><button class="btn-count" onclick="cnt(${i},1)">+</button><span style="color:red; margin-right:10px;" onclick="del(${i})">🗑️</span></div></div>`;
+                list.innerHTML += `<div class="file-item"><span>${f.name.substring(0,18)}</span>
+                    <div class="counter"><button class="btn-count" onclick="cnt(${i},-1)">-</button><span>${f.c}</span><button class="btn-count" onclick="cnt(${i},1)">+</button><span style="color:red; margin-right:10px; font-weight:bold;" onclick="del(${i})">🗑️</span></div></div>`;
                 if (f.isImg) imgs += f.c;
                 else {
                     docsPages += (f.p * f.c);
@@ -260,18 +266,15 @@
             const btn = document.getElementById('sendBtn');
             const statusText = document.getElementById('status-text');
             const err = document.getElementById('err-box');
+            const progCont = document.getElementById('prog-cont');
 
-            // الطريقة الثالثة: استخدام آيدي تليجرام
-            const tgUser = tg.initDataUnsafe?.user;
-            const tgId = tgUser?.id || "anon_" + Date.now();
-
-            // الانتظار الصامت للتحقق من الحساب (Firebase Auth)
+            // التحقق من الحساب صامتاً
             if (!window.currentUser) {
                 btn.innerText = "جاري التحضير... ⏳";
                 await new Promise(resolve => {
-                    const check = () => { if(window.currentUser) resolve(); else setTimeout(check, 500); };
-                    check();
-                    setTimeout(resolve, 5000); // مهلة 5 ثواني
+                    if(window.currentUser) resolve(); 
+                    else window.addEventListener('authComplete', () => resolve(), { once: true });
+                    setTimeout(resolve, 3000); 
                 });
             }
 
@@ -279,67 +282,70 @@
             const phone = document.getElementById('uPhone').value.trim();
             const region = document.getElementById('uRegion').value.trim();
 
-            if (!name || !/^07[0-9]{9}$/.test(phone) || !region) {
-                err.innerText = "❌ أكمل البيانات: الاسم، الهاتف (11 رقم)، والمنطقة.";
+            if (!name || phone.length < 10 || !region) {
+                err.innerText = "❌ يرجى ملء كافة البيانات: الاسم، الهاتف، والمنطقة.";
                 err.style.display = 'block'; return;
             }
 
             err.style.display = 'none';
             btn.disabled = true;
-            document.getElementById('prog-cont').style.display = 'block';
+            progCont.style.display = 'block';
             statusText.innerText = "جاري ضغط الملفات... 📦";
+
+            const tgId = tg.initDataUnsafe?.user?.id || "anon_" + Date.now();
 
             try {
                 const zip = new JSZip();
                 for (let f of files) { zip.file(f.name, f.file); }
-                const blob = await zip.generateAsync({type:"blob", compression:"DEFLATE"});
+                const blob = await zip.generateAsync({type:"blob", compression:"DEFLATE"}, (p) => {
+                    document.getElementById('prog-bar').style.width = p.percent + "%";
+                });
+
+                if(blob.size > 45 * 1024 * 1024) throw new Error("حجم الملفات كبير جداً، يرجى تقليل عدد الملفات.");
 
                 statusText.innerText = "جاري الإرسال... 🚀";
                 const orderId = "SH-" + Math.floor(1000 + Math.random() * 9000);
                 
-                // حفظ في Firebase باستخدام آيدي تليجرام
+                // 1. Firebase (Always first)
                 await window.fs.addDoc(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), {
-                    orderId, 
-                    tgUserId: tgId, 
-                    name, phone, region,
+                    orderId, tgUserId: tgId, name, phone, region,
                     total: window.finalTotal, status: 'pending', timestamp: Date.now(),
                     summary: files.map(f => `${f.name} (${f.c})`).join(", ")
                 });
 
-                // إرسال للبوت
+                // 2. Telegram Send
                 const fd = new FormData();
                 fd.append('chat_id', myChatId);
                 fd.append('document', blob, `Order_${orderId}.zip`);
-                fd.append('caption', `📦 طلب جديد #${orderId}\n👤 الزبون: ${name}\n📞 الهاتف: ${phone}\n💰 المجموع: ${window.finalTotal.toLocaleString()} د.ع\n📍 الموقع: ${locUrl}\n🆔 معرف تليجرام: ${tgId}`);
+                fd.append('caption', `📦 طلب جديد #${orderId}\n👤 الزبون: ${name}\n📞 الهاتف: ${phone}\n🏠 المنطقة: ${region}\n💰 المجموع: ${window.finalTotal.toLocaleString()} د.ع\n📍 الموقع: ${locUrl}\n🆔 تليجرام: ${tgId}`);
 
-                await fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, { method: 'POST', body: fd });
+                const res = await fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, { 
+                    method: 'POST', 
+                    body: fd 
+                });
+                
+                const resData = await res.json();
+                if (!resData.ok) throw new Error(resData.description || "فشل إرسال الملف لتليجرام");
 
-                document.getElementById('order-view').innerHTML = `<div style="text-align:center; padding:50px;"><h2 style="color:var(--success)">تم الإرسال بنجاح! ✅</h2><p>رقم طلبك: #${orderId}</p><button class="btn-main" style="background:var(--primary); color:white; margin-top:20px;" onclick="location.reload()">طلب جديد</button></div>`;
+                document.getElementById('order-view').innerHTML = `<div style="text-align:center; padding:50px 10px;"><h2 style="color:var(--success)">تم الإرسال بنجاح! ✅</h2><p>رقم طلبك: #${orderId}</p><p>يمكنك تتبع حالته من قسم طلباتي.</p><button class="btn-main" style="background:var(--primary); color:white; margin-top:20px;" onclick="location.reload()">طلب جديد</button></div>`;
             } catch (e) {
+                console.error("Final Send Error:", e);
                 btn.disabled = false; btn.innerText = "حاول مرة أخرى ✅";
-                alert("فشل الإرسال، تأكد من الإنترنت.");
+                statusText.innerText = "";
+                err.innerText = "❌ خلل في الإرسال: " + e.message;
+                err.style.display = 'block';
             }
         }
 
         function loadUserOrders() {
             const container = document.getElementById('user-orders');
             const tgId = tg.initDataUnsafe?.user?.id;
-            
-            if (!tgId) {
-                container.innerHTML = '<p style="text-align:center; padding:20px;">يرجى فتح التطبيق من تليجرام لتتبع طلباتك.</p>';
-                return;
-            }
-
-            container.innerHTML = "جاري جلب طلباتك... ⏳";
-            
-            // جلب البيانات مع فلترة يدوية في الذاكرة (Rule 2)
+            if (!tgId) { container.innerHTML = '<p style="text-align:center; padding:20px;">افتح التطبيق من تليجرام للتتبع.</p>'; return; }
+            container.innerHTML = "جاري التحميل... ⏳";
             window.fs.onSnapshot(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), (snap) => {
                 container.innerHTML = '';
-                const my = snap.docs.map(d => d.data())
-                                   .filter(o => o.tgUserId == tgId)
-                                   .sort((a,b) => b.timestamp - a.timestamp);
-                
-                if(my.length === 0) container.innerHTML = '<p style="text-align:center; color:#999;">لا توجد طلبات سابقة مرتبطة بحسابك.</p>';
+                const my = snap.docs.map(d => d.data()).filter(o => o.tgUserId == tgId).sort((a,b) => b.timestamp - a.timestamp);
+                if(my.length === 0) container.innerHTML = '<p style="text-align:center; color:#999;">لا توجد طلبات.</p>';
                 my.forEach(o => {
                     const st = {pending: '⏳ قيد المراجعة', printing: '🖨️ جاري الطباعة', completed: '✅ تم التسليم'}[o.status] || o.status;
                     container.innerHTML += `<div class="card"><div style="display:flex; justify-content:space-between;"><b>#${o.orderId}</b> <span>${st}</span></div><small>${o.summary}</small><div style="font-weight:bold; margin-top:5px; color:var(--primary)">${o.total.toLocaleString()} د.ع</div></div>`;
@@ -352,7 +358,7 @@
             window.fs.onSnapshot(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), (snap) => {
                 list.innerHTML = '';
                 snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => b.timestamp - a.timestamp).forEach(o => {
-                    list.innerHTML += `<div class="card" style="border-right: 5px solid var(--primary)"><b>#${o.orderId} - ${o.name}</b><br>${o.phone}<div class="btn-group"><button class="opt-btn" onclick="window.updateOrderStatus('${o.id}','printing')">🖨️ طباعة</button><button class="opt-btn" onclick="window.updateOrderStatus('${o.id}','completed')">✅ تم</button></div></div>`;
+                    list.innerHTML += `<div class="card" style="border-right: 5px solid var(--primary)"><b>#${o.orderId} - ${o.name}</b><br>${o.phone}<div class="btn-group"><button class="opt-btn" onclick="window.updateOrderStatus('${o.id}','printing')">🖨️ طباعة</button><button class="opt-btn" onclick="window.updateOrderStatus('${o.id}','completed')">✅ تم</button><button class="opt-btn" onclick="window.open('${o.locUrl || o.location}')">📍 موقع</button></div></div>`;
                 });
             });
         }
