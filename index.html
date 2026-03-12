@@ -18,32 +18,56 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, addDoc, onSnapshot, updateDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        // Firebase Configuration
+        try {
+            const firebaseConfig = JSON.parse(__firebase_config);
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-        window.db = db;
-        window.auth = auth;
-        window.appId = appId;
-        window.fs = { collection, doc, addDoc, onSnapshot, updateDoc, serverTimestamp, query, where };
+            window.db = db;
+            window.auth = auth;
+            window.appId = appId;
+            window.fs = { collection, doc, addDoc, onSnapshot, updateDoc, serverTimestamp, query, where };
 
-        // ضمان تسجيل الدخول
-        const initAuth = async () => {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
-            }
-        };
-        initAuth();
+            // Robust Auth with Retries (Rule 3)
+            const initAuth = async (retries = 5) => {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    if (retries > 0) {
+                        console.log(`Auth failed, retrying... (${retries} left)`);
+                        setTimeout(() => initAuth(retries - 1), 2000);
+                    } else {
+                        console.error("Auth persistent failure:", error);
+                        // Optional: Show UI message that connection is weak
+                        const errBox = document.getElementById('err-box');
+                        if (errBox) {
+                            errBox.innerText = "⚠️ فشل الاتصال بالخادم، يرجى التحقق من الإنترنت.";
+                            errBox.style.display = 'block';
+                        }
+                    }
+                }
+            };
+            
+            initAuth();
 
-        onAuthStateChanged(auth, (user) => {
-            window.currentUser = user;
-            const event = new CustomEvent('authReady', { detail: user });
-            window.dispatchEvent(event);
-        });
+            onAuthStateChanged(auth, (user) => {
+                window.currentUser = user;
+                if (user) {
+                    const event = new CustomEvent('authReady', { detail: user });
+                    window.dispatchEvent(event);
+                    console.log("User authorized:", user.uid);
+                }
+            });
+        } catch (e) {
+            console.error("Firebase Init Error:", e);
+        }
     </script>
 
     <style>
@@ -55,7 +79,7 @@
         .logo-circle { width: 75px; height: 75px; background: white url('logo.png') no-repeat center; background-size: contain; border-radius: 50%; margin: 0 auto 10px; border: 3px solid var(--primary); cursor: pointer; }
         
         .container { padding: 15px; }
-        .card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #edf2f7; }
         
         .upload-area { border: 2px dashed var(--primary); padding: 25px; text-align: center; color: var(--primary); cursor: pointer; border-radius: 15px; background: #f0f9ff; }
         .btn-group { display: flex; gap: 8px; margin: 10px 0; }
@@ -68,7 +92,7 @@
         .total-price { font-size: 1.4rem; color: #4eff4e; text-align: center; margin-top: 15px; border-top: 1px dashed #555; padding-top: 15px; font-weight: bold; }
 
         .btn-main { width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.2s; }
-        .btn-main:disabled { background: #ccc !important; cursor: not-allowed; }
+        .btn-main:disabled { background: #cbd5e0 !important; cursor: not-allowed; }
         
         .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; border-top: 1px solid #eee; z-index: 100; }
         .nav-item { flex: 1; text-align: center; padding: 15px; color: #666; font-weight: bold; cursor: pointer; }
@@ -194,10 +218,10 @@
             if (tab === 'admin') loadAllOrders();
         };
 
-        // الدخول للإدارة
         let lt;
-        document.getElementById('logo-main').onmousedown = document.getElementById('logo-main').ontouchstart = () => lt = setTimeout(() => window.switchTab('admin'), 2000);
-        document.getElementById('logo-main').onmouseup = document.getElementById('logo-main').ontouchend = () => clearTimeout(lt);
+        const logo = document.getElementById('logo-main');
+        logo.onmousedown = logo.ontouchstart = () => lt = setTimeout(() => window.switchTab('admin'), 2000);
+        logo.onmouseup = logo.ontouchend = () => clearTimeout(lt);
 
         document.getElementById('fileInp').onchange = async (e) => {
             for (let f of e.target.files) {
@@ -262,17 +286,21 @@
             const status = document.getElementById('status-text');
             const err = document.getElementById('err-box');
 
-            // انتظار الحساب بشكل احترافي
+            // Wait for user auth (Rule 3)
             if (!window.currentUser) {
-                btn.innerText = "جاري التحقق من هويتك... ⏳";
-                await new Promise(resolve => {
+                btn.innerText = "جاري التأكد من اتصالك بالخادم... ⏳";
+                const waitAuth = () => new Promise(resolve => {
+                    if (window.currentUser) return resolve();
                     window.addEventListener('authReady', () => resolve(), { once: true });
-                    setTimeout(() => resolve(), 5000); // مهلة 5 ثواني
+                    setTimeout(() => resolve(), 8000); // Wait up to 8s
                 });
+                await waitAuth();
             }
 
             if (!window.currentUser) {
-                alert("تعذر تسجيل الدخول المجهول. يرجى التأكد من اتصال الإنترنت.");
+                err.innerText = "❌ تعذر الاتصال بالخادم. يرجى التأكد من الإنترنت أو المحاولة لاحقاً.";
+                err.style.display = 'block';
+                btn.innerText = "تأكيد وإرسال الطلب ✅";
                 return;
             }
 
@@ -281,7 +309,7 @@
             const region = document.getElementById('uRegion').value.trim();
 
             if (!name || !/^07[0-9]{9}$/.test(phone) || !region) {
-                err.innerText = "❌ يرجى ملء الاسم، رقم الهاتف (11 رقم)، والمنطقة.";
+                err.innerText = "❌ يرجى ملء كافة البيانات بشكل صحيح (الهاتف 11 رقم).";
                 err.style.display = 'block'; return;
             }
 
@@ -293,50 +321,33 @@
             try {
                 const zip = new JSZip();
                 for (let f of files) { zip.file(f.name, f.file); }
-                
-                const blob = await zip.generateAsync({
-                    type: "blob",
-                    compression: "DEFLATE",
-                    compressionOptions: { level: 6 }
-                }, p => {
+                const blob = await zip.generateAsync({type: "blob"}, p => {
                     document.getElementById('prog-bar').style.width = p.percent + "%";
                 });
 
-                if (blob.size > 48 * 1024 * 1024) {
-                    throw new Error("حجم الملفات كبير جداً (أكثر من 50MB). يرجى تقليل عدد الملفات.");
-                }
-
-                status.innerText = "جاري الإرسال للبوت... 🚀";
+                status.innerText = "جاري الإرسال... 🚀";
                 const orderId = "SH-" + Math.floor(1000 + Math.random() * 9000);
                 
-                // 1. Firebase Save
                 await window.fs.addDoc(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), {
                     orderId, userId: window.currentUser.uid, name, phone, region,
                     total: window.finalTotal, status: 'pending', timestamp: Date.now(),
                     summary: files.map(f => `${f.name} (${f.c})`).join(", ")
                 });
 
-                // 2. Telegram Send
                 const fd = new FormData();
                 fd.append('chat_id', myChatId);
                 fd.append('document', blob, `Order_${orderId}.zip`);
-                fd.append('caption', `🆕 طلب جديد #${orderId}\n👤 الزبون: ${name}\n📞 الهاتف: ${phone}\n💰 المجموع: ${window.finalTotal} د.ع\n📍 الموقع: ${locUrl}`);
+                fd.append('caption', `🆕 طلب جديد #${orderId}\n👤 الزبون: ${name}\n📞 الهاتف: ${phone}\n💰 المجموع: ${window.finalTotal.toLocaleString()} د.ع\n📍 الموقع: ${locUrl}`);
 
                 const res = await fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, { method: 'POST', body: fd });
-                const resData = await res.json();
+                if (!res.ok) throw new Error("Telegram error");
 
-                if (!resData.ok) {
-                    throw new Error(resData.description || "فشل الإرسال لتليجرام");
-                }
-
-                localStorage.setItem('shater_order_completed', 'true');
-                document.getElementById('order-view').innerHTML = `<div style="text-align:center; padding:50px;"><h2 style="color:var(--success)">تم الإرسال بنجاح! ✅</h2><p>رقم طلبك: #${orderId}</p><button class="btn-main" style="background:var(--primary); color:white;" onclick="location.reload()">طلب جديد</button></div>`;
+                document.getElementById('order-view').innerHTML = `<div style="text-align:center; padding:50px;"><h2 style="color:var(--success)">تم الإرسال! ✅</h2><p>رقم طلبك: #${orderId}</p><button class="btn-main" style="background:var(--primary); color:white; margin-top:20px;" onclick="location.reload()">طلب جديد</button></div>`;
             } catch (e) {
-                console.error(e);
-                alert("فشل الإرسال: " + e.message);
                 btn.disabled = false;
-                btn.innerText = "حاول مرة أخرى ✅";
-                status.innerText = "";
+                btn.innerText = "تأكيد وإرسال الطلب ✅";
+                err.innerText = "❌ حدث خطأ في الإرسال، يرجى المحاولة مرة أخرى.";
+                err.style.display = 'block';
             }
         }
 
@@ -347,12 +358,12 @@
             window.fs.onSnapshot(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), (snap) => {
                 container.innerHTML = '';
                 const my = snap.docs.map(d => d.data()).filter(o => o.userId === window.currentUser.uid).sort((a,b) => b.timestamp - a.timestamp);
-                if(my.length === 0) container.innerHTML = '<p style="text-align:center;">لا توجد طلبات سابقة</p>';
+                if(my.length === 0) container.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">لا توجد طلبات سابقة</p>';
                 my.forEach(o => {
                     const st = {pending: '⏳ قيد المراجعة', printing: '🖨️ قيد الطباعة', completed: '✅ تم التسليم'}[o.status] || o.status;
                     container.innerHTML += `<div class="card"><div style="display:flex; justify-content:space-between;"><b>#${o.orderId}</b> <span>${st}</span></div><small>${o.summary}</small><div style="font-weight:bold; margin-top:5px;">${o.total.toLocaleString()} د.ع</div></div>`;
                 });
-            });
+            }, (error) => { console.error("Snapshot error:", error); });
         }
 
         function loadAllOrders() {
