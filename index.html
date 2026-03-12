@@ -18,32 +18,32 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, addDoc, onSnapshot, updateDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        try {
-            const firebaseConfig = JSON.parse(__firebase_config);
-            const app = initializeApp(firebaseConfig);
-            const auth = getAuth(app);
-            const db = getFirestore(app);
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-            window.db = db;
-            window.auth = auth;
-            window.appId = appId;
-            window.fs = { collection, doc, addDoc, onSnapshot, updateDoc, serverTimestamp, query, where };
+        window.db = db;
+        window.auth = auth;
+        window.appId = appId;
+        window.fs = { collection, doc, addDoc, onSnapshot, updateDoc, serverTimestamp, query, where };
 
-            const initAuth = async () => {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            };
-            initAuth();
+        // ضمان تسجيل الدخول
+        const initAuth = async () => {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
+            }
+        };
+        initAuth();
 
-            onAuthStateChanged(auth, (user) => {
-                window.currentUser = user || null;
-                console.log("Auth State Changed:", user ? user.uid : "No User");
-            });
-        } catch (e) { console.error("Firebase Configuration Error", e); }
+        onAuthStateChanged(auth, (user) => {
+            window.currentUser = user;
+            const event = new CustomEvent('authReady', { detail: user });
+            window.dispatchEvent(event);
+        });
     </script>
 
     <style>
@@ -67,9 +67,11 @@
         .inv-line { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; }
         .total-price { font-size: 1.4rem; color: #4eff4e; text-align: center; margin-top: 15px; border-top: 1px dashed #555; padding-top: 15px; font-weight: bold; }
 
-        .btn-main { width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
+        .btn-main { width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.2s; }
+        .btn-main:disabled { background: #ccc !important; cursor: not-allowed; }
+        
         .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; border-top: 1px solid #eee; z-index: 100; }
-        .nav-item { flex: 1; text-align: center; padding: 15px; color: #666; font-weight: bold; font-size: 0.9rem; cursor: pointer; }
+        .nav-item { flex: 1; text-align: center; padding: 15px; color: #666; font-weight: bold; cursor: pointer; }
         .nav-item.active { color: var(--primary); border-top: 3px solid var(--primary); }
 
         #welcome-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 2000; }
@@ -147,6 +149,7 @@
                     
                     <div class="progress-container" id="prog-cont">
                         <div class="progress-bar" id="prog-bar"></div>
+                        <p id="status-text" style="text-align:center; font-size:0.8rem; margin-top:5px; color:#666;"></p>
                     </div>
                     
                     <button id="sendBtn" class="btn-main" style="background:var(--success); color:white;" onclick="sendOrder()">تأكيد وإرسال الطلب ✅</button>
@@ -220,9 +223,9 @@
                 btn.innerText = "✅ تم حفظ الموقع";
                 btn.style.background = "#28a745";
             }, () => {
-                btn.innerText = "📍 فشل تحديد الموقع، حاول مجدداً";
-                alert("يرجى تفعيل الـ GPS والسماح للمتصفح بالوصول للموقع.");
-            }, { enableHighAccuracy: true, timeout: 5000 });
+                btn.innerText = "📍 الموقع التقريبي (فشل GPS)";
+                locUrl = "موقع تقريبي (يرجى التواصل لتأكيده)";
+            }, { enableHighAccuracy: false, timeout: 10000 });
         };
 
         function ui() {
@@ -255,63 +258,85 @@
         window.setConf = (k, v) => { conf[k] = v; ui(); };
 
         async function sendOrder() {
-            // حل مشكلة "جاري التحقق من الحساب" - الانتظار إذا لم يكتمل الـ Auth
+            const btn = document.getElementById('sendBtn');
+            const status = document.getElementById('status-text');
+            const err = document.getElementById('err-box');
+
+            // انتظار الحساب بشكل احترافي
             if (!window.currentUser) {
-                const btn = document.getElementById('sendBtn');
-                btn.innerText = "جاري تجهيز الحساب... ⏳";
-                let retry = 0;
-                while (!window.currentUser && retry < 5) {
-                    await new Promise(r => setTimeout(r, 1000));
-                    retry++;
-                }
-                if (!window.currentUser) { alert("حدث خطأ في الاتصال، يرجى إعادة تحميل الصفحة."); return; }
+                btn.innerText = "جاري التحقق من هويتك... ⏳";
+                await new Promise(resolve => {
+                    window.addEventListener('authReady', () => resolve(), { once: true });
+                    setTimeout(() => resolve(), 5000); // مهلة 5 ثواني
+                });
+            }
+
+            if (!window.currentUser) {
+                alert("تعذر تسجيل الدخول المجهول. يرجى التأكد من اتصال الإنترنت.");
+                return;
             }
 
             const name = document.getElementById('uName').value.trim();
             const phone = document.getElementById('uPhone').value.trim();
             const region = document.getElementById('uRegion').value.trim();
-            const err = document.getElementById('err-box');
 
-            if (!name || !/^07[0-9]{9}$/.test(phone) || !region || locUrl === "غير محدد") {
-                err.innerText = "❌ أكمل البيانات: الاسم، الهاتف (11 رقم)، والمنطقة، وحدد الموقع.";
+            if (!name || !/^07[0-9]{9}$/.test(phone) || !region) {
+                err.innerText = "❌ يرجى ملء الاسم، رقم الهاتف (11 رقم)، والمنطقة.";
                 err.style.display = 'block'; return;
             }
 
             err.style.display = 'none';
-            const btn = document.getElementById('sendBtn');
-            btn.disabled = true; btn.innerText = "جاري ضغط الملفات... 📦";
+            btn.disabled = true;
             document.getElementById('prog-cont').style.display = 'block';
+            status.innerText = "جاري ضغط الملفات... 📦";
 
             try {
                 const zip = new JSZip();
                 for (let f of files) { zip.file(f.name, f.file); }
-                const blob = await zip.generateAsync({type:"blob"}, p => {
+                
+                const blob = await zip.generateAsync({
+                    type: "blob",
+                    compression: "DEFLATE",
+                    compressionOptions: { level: 6 }
+                }, p => {
                     document.getElementById('prog-bar').style.width = p.percent + "%";
                 });
 
-                btn.innerText = "جاري الإرسال للبوت... 🚀";
+                if (blob.size > 48 * 1024 * 1024) {
+                    throw new Error("حجم الملفات كبير جداً (أكثر من 50MB). يرجى تقليل عدد الملفات.");
+                }
+
+                status.innerText = "جاري الإرسال للبوت... 🚀";
                 const orderId = "SH-" + Math.floor(1000 + Math.random() * 9000);
                 
-                // حفظ في Firebase أولاً
+                // 1. Firebase Save
                 await window.fs.addDoc(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), {
                     orderId, userId: window.currentUser.uid, name, phone, region,
                     total: window.finalTotal, status: 'pending', timestamp: Date.now(),
                     summary: files.map(f => `${f.name} (${f.c})`).join(", ")
                 });
 
-                // إرسال الملف للبوت
+                // 2. Telegram Send
                 const fd = new FormData();
                 fd.append('chat_id', myChatId);
                 fd.append('document', blob, `Order_${orderId}.zip`);
                 fd.append('caption', `🆕 طلب جديد #${orderId}\n👤 الزبون: ${name}\n📞 الهاتف: ${phone}\n💰 المجموع: ${window.finalTotal} د.ع\n📍 الموقع: ${locUrl}`);
 
                 const res = await fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, { method: 'POST', body: fd });
-                if (!res.ok) throw new Error("Telegram Error");
+                const resData = await res.json();
 
-                document.getElementById('order-view').innerHTML = `<div style="text-align:center; padding:50px;"><h2 style="color:var(--success)">تم الإرسال! ✅</h2><p>رقم طلبك: #${orderId}</p><button class="btn-main" style="background:var(--primary); color:white;" onclick="location.reload()">طلب جديد</button></div>`;
+                if (!resData.ok) {
+                    throw new Error(resData.description || "فشل الإرسال لتليجرام");
+                }
+
+                localStorage.setItem('shater_order_completed', 'true');
+                document.getElementById('order-view').innerHTML = `<div style="text-align:center; padding:50px;"><h2 style="color:var(--success)">تم الإرسال بنجاح! ✅</h2><p>رقم طلبك: #${orderId}</p><button class="btn-main" style="background:var(--primary); color:white;" onclick="location.reload()">طلب جديد</button></div>`;
             } catch (e) {
-                alert("حدث خطأ أثناء الإرسال. تأكد من جودة الإنترنت وحجم الملفات.");
-                btn.disabled = false; btn.innerText = "حاول مرة أخرى ✅";
+                console.error(e);
+                alert("فشل الإرسال: " + e.message);
+                btn.disabled = false;
+                btn.innerText = "حاول مرة أخرى ✅";
+                status.innerText = "";
             }
         }
 
@@ -322,10 +347,10 @@
             window.fs.onSnapshot(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), (snap) => {
                 container.innerHTML = '';
                 const my = snap.docs.map(d => d.data()).filter(o => o.userId === window.currentUser.uid).sort((a,b) => b.timestamp - a.timestamp);
-                if(my.length === 0) container.innerHTML = '<p style="text-align:center;">لا توجد طلبات</p>';
+                if(my.length === 0) container.innerHTML = '<p style="text-align:center;">لا توجد طلبات سابقة</p>';
                 my.forEach(o => {
                     const st = {pending: '⏳ قيد المراجعة', printing: '🖨️ قيد الطباعة', completed: '✅ تم التسليم'}[o.status] || o.status;
-                    container.innerHTML += `<div class="card"><div style="display:flex; justify-content:space-between;"><b>#${o.orderId}</b> <span>${st}</span></div><small>${o.summary}</small><div style="font-weight:bold; margin-top:5px;">${o.total} د.ع</div></div>`;
+                    container.innerHTML += `<div class="card"><div style="display:flex; justify-content:space-between;"><b>#${o.orderId}</b> <span>${st}</span></div><small>${o.summary}</small><div style="font-weight:bold; margin-top:5px;">${o.total.toLocaleString()} د.ع</div></div>`;
                 });
             });
         }
