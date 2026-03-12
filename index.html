@@ -40,11 +40,10 @@
             initAuth();
 
             onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    window.currentUser = user;
-                }
+                window.currentUser = user || null;
+                console.log("Auth State Changed:", user ? user.uid : "No User");
             });
-        } catch (e) { console.error("Firebase Configuration is missing"); }
+        } catch (e) { console.error("Firebase Configuration Error", e); }
     </script>
 
     <style>
@@ -53,42 +52,36 @@
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0 0 80px 0; direction: rtl; color: #333; }
         
         .header { text-align: center; padding: 15px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .logo-circle { width: 75px; height: 75px; background: white url('logo.png') no-repeat center; background-size: contain; border-radius: 50%; margin: 0 auto 10px; border: 3px solid var(--primary); }
+        .logo-circle { width: 75px; height: 75px; background: white url('logo.png') no-repeat center; background-size: contain; border-radius: 50%; margin: 0 auto 10px; border: 3px solid var(--primary); cursor: pointer; }
         
         .container { padding: 15px; }
         .card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         
         .upload-area { border: 2px dashed var(--primary); padding: 25px; text-align: center; color: var(--primary); cursor: pointer; border-radius: 15px; background: #f0f9ff; }
-        .upload-area b { display: block; font-size: 1.1rem; margin-bottom: 5px; }
-
         .btn-group { display: flex; gap: 8px; margin: 10px 0; }
         .opt-btn { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 10px; cursor: pointer; font-weight: bold; background: white; font-size: 0.9rem; }
         .opt-btn.active { background: var(--primary) !important; color: white !important; border-color: var(--primary); }
 
         .input-field { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 12px; margin-bottom: 10px; background: #fafafa; font-size: 1rem; outline: none; }
-        .input-field:focus { border-color: var(--primary); background: white; }
-
         .invoice { background: var(--dark); color: white; border-radius: 15px; padding: 20px; margin-top: 15px; }
         .inv-line { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; }
         .total-price { font-size: 1.4rem; color: #4eff4e; text-align: center; margin-top: 15px; border-top: 1px dashed #555; padding-top: 15px; font-weight: bold; }
 
-        .btn-main { width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.2s; }
-        .btn-main:active { transform: scale(0.98); }
-        
-        .file-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
-        .counter { display: flex; align-items: center; gap: 10px; }
-        .btn-count { background: #eee; border: 1px solid #ddd; width: 30px; height: 30px; border-radius: 6px; font-weight: bold; }
-
+        .btn-main { width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
         .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; border-top: 1px solid #eee; z-index: 100; }
         .nav-item { flex: 1; text-align: center; padding: 15px; color: #666; font-weight: bold; font-size: 0.9rem; cursor: pointer; }
         .nav-item.active { color: var(--primary); border-top: 3px solid var(--primary); }
 
         #welcome-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 2000; }
         .modal-content { background: white; padding: 30px; border-radius: 20px; text-align: center; width: 85%; max-width: 400px; }
-
-        .error-msg { background: #fff1f2; color: var(--error); padding: 10px; border-radius: 10px; font-size: 0.85rem; margin-bottom: 15px; display: none; text-align: center; border: 1px solid #fecdd3; }
-        .progress-container { width: 100%; background: #ddd; height: 8px; border-radius: 4px; margin: 15px 0; display: none; overflow: hidden; }
-        .progress-bar { width: 0%; height: 100%; background: var(--success); }
+        .error-msg { background: #fff1f2; color: var(--error); padding: 10px; border-radius: 10px; font-size: 0.85rem; margin-bottom: 15px; display: none; border: 1px solid #fecdd3; }
+        
+        .progress-container { width: 100%; background: #ddd; height: 10px; border-radius: 5px; margin: 15px 0; display: none; overflow: hidden; }
+        .progress-bar { width: 0%; height: 100%; background: var(--success); transition: width 0.3s; }
+        
+        .file-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .counter { display: flex; align-items: center; gap: 10px; }
+        .btn-count { background: #eee; border: 1px solid #ddd; width: 30px; height: 30px; border-radius: 6px; font-weight: bold; }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -99,7 +92,6 @@
             <div class="logo-circle"></div>
             <h2 style="color:var(--primary)">خدمات الشاطر الطلابية</h2>
             <p>أهلاً بك! ارفع مستنداتك وسنتولى طباعتها وتوصيلها إليك بجودة عالية.</p>
-            <p id="first-order-gift" style="color:var(--success); font-weight:bold; display:none;">🎁 هدية الشاطر: توصيل مجاني لأول طلب!</p>
             <button class="btn-main" style="background:var(--primary); color:white;" onclick="closeWelcome()">ابدأ طلبك الآن</button>
         </div>
     </div>
@@ -110,12 +102,11 @@
     </div>
 
     <div class="container">
-        <!-- New Order View -->
         <div id="order-view">
             <div class="card">
                 <div class="upload-area" onclick="document.getElementById('fileInp').click()">
                     <b>📁 اضغط هنا لإضافة الملفات</b>
-                    <span style="font-size:0.75rem;">يدعم PDF, Word, Excel, PowerPoint والصور</span>
+                    <span style="font-size:0.75rem;">يدعم PDF, Word, PowerPoint والصور</span>
                 </div>
                 <input type="file" id="fileInp" multiple hidden>
             </div>
@@ -132,7 +123,6 @@
                         <button id="clr-c" class="opt-btn active" onclick="setConf('color','c')">🌈 ملون</button>
                         <button id="clr-n" class="opt-btn" onclick="setConf('color','n')">⚪ أسود</button>
                     </div>
-
                     <div id="side-options">
                         <p style="margin-top:15px;"><b>طريقة الطباعة:</b></p>
                         <div class="btn-group">
@@ -164,17 +154,20 @@
             </div>
         </div>
 
-        <!-- Tracking View -->
         <div id="tracking-view" class="hidden">
-            <h3 style="margin-right:10px;">📦 طلباتي السابقة</h3>
+            <h3 style="margin-right:10px;">📦 طلباتي</h3>
             <div id="user-orders"></div>
+        </div>
+
+        <div id="admin-view" class="hidden">
+            <h3 style="margin-right:10px;">⚙️ الإدارة</h3>
+            <div id="all-orders-list"></div>
         </div>
     </div>
 
-    <!-- Bottom Nav -->
     <div class="navbar">
         <div class="nav-item active" id="nav-new" onclick="switchTab('order')">➕ طلب جديد</div>
-        <div class="nav-item" id="nav-track" onclick="switchTab('track')">🔍 تتبع طلباتي</div>
+        <div class="nav-item" id="nav-track" onclick="switchTab('track')">🔍 طلباتي</div>
     </div>
 
     <script>
@@ -184,177 +177,141 @@
 
         let files = []; 
         let conf = { color: 'c', side: '1' };
-        let locUrl = "غير مححد";
-
-        const hasOrderedBefore = localStorage.getItem('shater_order_completed') === 'true';
-        if (!hasOrderedBefore) document.getElementById('first-order-gift').style.display = 'block';
+        let locUrl = "غير محدد";
 
         window.closeWelcome = () => document.getElementById('welcome-modal').classList.add('hidden');
 
         window.switchTab = (tab) => {
             document.getElementById('order-view').classList.toggle('hidden', tab !== 'order');
             document.getElementById('tracking-view').classList.toggle('hidden', tab !== 'track');
-            document.getElementById('nav-new').classList.toggle('active', tab === 'order');
-            document.getElementById('nav-track').classList.toggle('active', tab === 'track');
+            document.getElementById('admin-view').classList.toggle('hidden', tab !== 'admin');
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            if(tab !== 'admin') document.getElementById(tab === 'order' ? 'nav-new' : 'nav-track').classList.add('active');
             if (tab === 'track') loadUserOrders();
+            if (tab === 'admin') loadAllOrders();
         };
+
+        // الدخول للإدارة
+        let lt;
+        document.getElementById('logo-main').onmousedown = document.getElementById('logo-main').ontouchstart = () => lt = setTimeout(() => window.switchTab('admin'), 2000);
+        document.getElementById('logo-main').onmouseup = document.getElementById('logo-main').ontouchend = () => clearTimeout(lt);
 
         document.getElementById('fileInp').onchange = async (e) => {
             for (let f of e.target.files) {
                 let pages = 1;
-                let type = 'ملف';
                 if (f.name.toLowerCase().endsWith('.pdf')) {
                     try {
                         const buffer = await f.arrayBuffer();
                         const pdf = await pdfjsLib.getDocument({data: buffer}).promise;
                         pages = pdf.numPages;
-                        type = 'PDF';
                     } catch(e) { pages = 1; }
-                } else if (f.name.toLowerCase().endsWith('.pptx') || f.name.toLowerCase().endsWith('.ppt')) {
-                    type = 'PowerPoint';
                 }
-                files.push({ file: f, name: f.name, p: pages, c: 1, isImg: f.type.startsWith('image/'), type: type });
+                files.push({ file: f, name: f.name, p: pages, c: 1, isImg: f.type.startsWith('image/') });
             }
-            ui();
-        };
-
-        window.setConf = (k, v) => {
-            conf[k] = v;
-            document.getElementById('clr-c').className = conf.color === 'c' ? 'opt-btn active' : 'opt-btn';
-            document.getElementById('clr-n').className = conf.color === 'n' ? 'opt-btn active' : 'opt-btn';
-            document.getElementById('sid-1').className = conf.side === '1' ? 'opt-btn active' : 'opt-btn';
-            document.getElementById('sid-2').className = conf.side === '2' ? 'opt-btn active' : 'opt-btn';
             ui();
         };
 
         window.askLoc = () => {
+            const btn = document.getElementById('locBtn');
+            btn.innerText = "جاري تحديد الموقع... ⏳";
+            
             navigator.geolocation.getCurrentPosition(p => {
                 locUrl = `https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`;
-                const btn = document.getElementById('locBtn');
                 btn.innerText = "✅ تم حفظ الموقع";
                 btn.style.background = "#28a745";
-            }, () => alert("يرجى تفعيل الـ GPS"));
+            }, () => {
+                btn.innerText = "📍 فشل تحديد الموقع، حاول مجدداً";
+                alert("يرجى تفعيل الـ GPS والسماح للمتصفح بالوصول للموقع.");
+            }, { enableHighAccuracy: true, timeout: 5000 });
         };
 
         function ui() {
             const list = document.getElementById('list-items'); list.innerHTML = '';
-            let sheetsCount = 0; let docsPages = 0; let imgs = 0; let hasDocs = false;
-
+            let sheetsCount = 0; let docsPages = 0; let imgs = 0;
             files.forEach((f, i) => {
-                if (!f.isImg) hasDocs = true;
-                list.innerHTML += `<div class="file-item">
-                    <span style="font-size:0.85rem; font-weight:bold;">${f.name.substring(0,20)} (${f.p} ص)</span>
-                    <div class="counter">
-                        <button class="btn-count" onclick="cnt(${i},-1)">-</button>
-                        <span>${f.c}</span>
-                        <button class="btn-count" onclick="cnt(${i},1)">+</button>
-                        <span style="color:red; margin-right:10px; cursor:pointer;" onclick="del(${i})">🗑️</span>
-                    </div>
-                </div>`;
-                
-                let unit = f.p;
-                if (f.type === 'PowerPoint') unit = Math.ceil(f.p / 2);
-                
-                if (f.isImg) {
-                    imgs += f.c;
-                } else {
+                list.innerHTML += `<div class="file-item"><span>${f.name.substring(0,20)}</span>
+                    <div class="counter"><button class="btn-count" onclick="cnt(${i},-1)">-</button><span>${f.c}</span><button class="btn-count" onclick="cnt(${i},1)">+</button><span style="color:red; margin-right:10px;" onclick="del(${i})">🗑️</span></div></div>`;
+                if (f.isImg) imgs += f.c;
+                else {
                     docsPages += (f.p * f.c);
-                    sheetsCount += (conf.side === '2' ? Math.ceil(unit / 2) : unit) * f.c;
+                    sheetsCount += (conf.side === '2' ? Math.ceil(f.p / 2) : f.p) * f.c;
                 }
             });
-
-            document.getElementById('side-options').classList.toggle('hidden', !hasDocs);
-
-            let rawPrintPrice = 0;
             let totalUnits = sheetsCount + imgs;
+            let printPrice = totalUnits <= 5 ? 1000 : (totalUnits * (conf.color === 'c' ? 150 : 90));
+            printPrice = Math.round(printPrice / 250) * 250;
+            let deliv = printPrice >= 10000 || totalUnits === 0 ? 0 : 1000;
+            let total = printPrice + deliv;
 
-            // حساب سعر الطباعة الخام
-            if (totalUnits > 0 && totalUnits <= 5) {
-                rawPrintPrice = 1000;
-            } else if (totalUnits > 5) {
-                if (conf.color === 'c') {
-                    if (totalUnits >= 6 && totalUnits <= 25) rawPrintPrice = totalUnits * 150;
-                    else if (totalUnits >= 26 && totalUnits <= 40) rawPrintPrice = totalUnits * 130;
-                    else if (totalUnits > 40 && totalUnits <= 70) rawPrintPrice = totalUnits * 120;
-                    else if (totalUnits > 70) rawPrintPrice = totalUnits * 100;
-                } else {
-                    let pricePerSheetBlack = (conf.side === '1' ? 90 : 75);
-                    rawPrintPrice = totalUnits * pricePerSheetBlack;
-                }
-            }
-            
-            // --- تقريب سعر الطباعة لأقرب 250 دينار قبل أي عملية أخرى ---
-            let roundedPrintPrice = Math.round(rawPrintPrice / 250) * 250;
-            
-            let deliveryFee = 1000;
-            if (roundedPrintPrice >= 10000 || totalUnits === 0) deliveryFee = 0;
-
-            let finalDeliveryFee = hasOrderedBefore ? deliveryFee : 0;
-            let deliveryText = "";
-            if (!hasOrderedBefore && totalUnits > 0) {
-                deliveryText = '<b style="color:#4eff4e;">مجاني (هدية أول طلب) 🎁</b>';
-            } else {
-                deliveryText = (deliveryFee === 0 && totalUnits > 0) ? '<b style="color:#4eff4e;">مجاني ✨</b>' : finalDeliveryFee.toLocaleString() + ' د.ع';
-            }
-
-            // المجموع هو سعر الطباعة المقرب + أجور التوصيل (التي هي أصلاً أرقام صحيحة)
-            let total = roundedPrintPrice + finalDeliveryFee;
-
-            document.getElementById('inv-details').innerHTML = `
-                <div class="inv-line"><span>عدد صفحات الملفات:</span><span>${docsPages}</span></div>
-                <div class="inv-line"><span>عدد الصور المرفوعة:</span><span>${imgs}</span></div>
-                <div class="inv-line" style="border-top:1px solid #5d6d7e; padding-top:5px;"><span>سعر الطباعة:</span><span>${roundedPrintPrice.toLocaleString()} د.ع</span></div>
-                <div class="inv-line"><span>أجور التوصيل:</span><span>${deliveryText}</span></div>`;
-            
-            document.getElementById('total-val').innerText = `المجموع النهائي: ${total.toLocaleString()} د.ع`;
+            document.getElementById('inv-details').innerHTML = `<div class="inv-line"><span>صفحات الملفات:</span><span>${docsPages}</span></div><div class="inv-line"><span>سعر الطباعة:</span><span>${printPrice.toLocaleString()} د.ع</span></div><div class="inv-line"><span>أجور التوصيل:</span><span>${deliv === 0 ? 'مجاني ✨' : deliv + ' د.ع'}</span></div>`;
+            document.getElementById('total-val').innerText = `المجموع: ${total.toLocaleString()} د.ع`;
             window.finalTotal = total;
-            window.deliveryInfo = !hasOrderedBefore ? "مجاني (هدية أول طلب)" : finalDeliveryFee.toLocaleString();
-
             document.getElementById('list-card').classList.toggle('hidden', files.length === 0);
             document.getElementById('options-area').classList.toggle('hidden', files.length === 0);
         }
 
         window.cnt = (i, d) => { files[i].c = Math.max(1, files[i].c + d); ui(); };
         window.del = (i) => { files.splice(i, 1); ui(); };
+        window.setConf = (k, v) => { conf[k] = v; ui(); };
 
         async function sendOrder() {
-            if (!window.currentUser) { alert("جاري التحقق من الحساب..."); return; }
+            // حل مشكلة "جاري التحقق من الحساب" - الانتظار إذا لم يكتمل الـ Auth
+            if (!window.currentUser) {
+                const btn = document.getElementById('sendBtn');
+                btn.innerText = "جاري تجهيز الحساب... ⏳";
+                let retry = 0;
+                while (!window.currentUser && retry < 5) {
+                    await new Promise(r => setTimeout(r, 1000));
+                    retry++;
+                }
+                if (!window.currentUser) { alert("حدث خطأ في الاتصال، يرجى إعادة تحميل الصفحة."); return; }
+            }
+
             const name = document.getElementById('uName').value.trim();
             const phone = document.getElementById('uPhone').value.trim();
             const region = document.getElementById('uRegion').value.trim();
             const err = document.getElementById('err-box');
-            const phoneRegex = /^07[0-9]{9}$/;
-            if (!name || !phoneRegex.test(phone) || !region || locUrl === "غير محدد") {
-                err.innerText = "❌ تأكد من كتابة الاسم ورقم الهاتف (11 رقم يبدأ بـ 07) وتحديد الموقع";
+
+            if (!name || !/^07[0-9]{9}$/.test(phone) || !region || locUrl === "غير محدد") {
+                err.innerText = "❌ أكمل البيانات: الاسم، الهاتف (11 رقم)، والمنطقة، وحدد الموقع.";
                 err.style.display = 'block'; return;
             }
+
             err.style.display = 'none';
             const btn = document.getElementById('sendBtn');
-            btn.disabled = true; btn.innerText = "جاري الإرسال... 🚀";
+            btn.disabled = true; btn.innerText = "جاري ضغط الملفات... 📦";
             document.getElementById('prog-cont').style.display = 'block';
+
             try {
                 const zip = new JSZip();
-                files.forEach(f => zip.file(f.name, f.file));
+                for (let f of files) { zip.file(f.name, f.file); }
                 const blob = await zip.generateAsync({type:"blob"}, p => {
                     document.getElementById('prog-bar').style.width = p.percent + "%";
                 });
+
+                btn.innerText = "جاري الإرسال للبوت... 🚀";
                 const orderId = "SH-" + Math.floor(1000 + Math.random() * 9000);
-                const colRef = window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders');
-                await window.fs.addDoc(colRef, {
+                
+                // حفظ في Firebase أولاً
+                await window.fs.addDoc(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), {
                     orderId, userId: window.currentUser.uid, name, phone, region,
                     total: window.finalTotal, status: 'pending', timestamp: Date.now(),
                     summary: files.map(f => `${f.name} (${f.c})`).join(", ")
                 });
+
+                // إرسال الملف للبوت
                 const fd = new FormData();
                 fd.append('chat_id', myChatId);
                 fd.append('document', blob, `Order_${orderId}.zip`);
-                fd.append('caption', `🆕 طلب جديد #${orderId}\n👤 الزبون: ${name}\n📞 الهاتف: ${phone}\n🏠 المنطقة: ${region}\n🎨 النوع: ${conf.color=='c'?'ملون':'أسود'}\n📖 الطباعة: ${conf.side=='1'?'وجه واحد':'وجهين'}\n💰 المجموع: ${window.finalTotal.toLocaleString()} د.ع\n🚚 التوصيل: ${window.deliveryInfo}\n📍 الموقع: ${locUrl}`);
-                await fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, { method: 'POST', body: fd });
-                localStorage.setItem('shater_order_completed', 'true');
-                document.getElementById('order-view').innerHTML = `<div style="text-align:center; padding:50px 20px;"><h2 style="color:var(--success)">تم استلام طلبك! ✅</h2><p>رقم طلبك: #${orderId}</p><button class="btn-main" style="background:var(--primary); color:white; margin-top:20px;" onclick="location.reload()">طلب جديد</button></div>`;
+                fd.append('caption', `🆕 طلب جديد #${orderId}\n👤 الزبون: ${name}\n📞 الهاتف: ${phone}\n💰 المجموع: ${window.finalTotal} د.ع\n📍 الموقع: ${locUrl}`);
+
+                const res = await fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, { method: 'POST', body: fd });
+                if (!res.ok) throw new Error("Telegram Error");
+
+                document.getElementById('order-view').innerHTML = `<div style="text-align:center; padding:50px;"><h2 style="color:var(--success)">تم الإرسال! ✅</h2><p>رقم طلبك: #${orderId}</p><button class="btn-main" style="background:var(--primary); color:white;" onclick="location.reload()">طلب جديد</button></div>`;
             } catch (e) {
-                alert("حدث خطأ في الإرسال، حاول مرة أخرى");
-                btn.disabled = false; btn.innerText = "تأكيد وإرسال الطلب ✅";
+                alert("حدث خطأ أثناء الإرسال. تأكد من جودة الإنترنت وحجم الملفات.");
+                btn.disabled = false; btn.innerText = "حاول مرة أخرى ✅";
             }
         }
 
@@ -362,21 +319,30 @@
             if (!window.currentUser) return;
             const container = document.getElementById('user-orders');
             container.innerHTML = "جاري التحميل...";
-            const colRef = window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders');
-            window.fs.onSnapshot(colRef, (snap) => {
+            window.fs.onSnapshot(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), (snap) => {
                 container.innerHTML = '';
                 const my = snap.docs.map(d => d.data()).filter(o => o.userId === window.currentUser.uid).sort((a,b) => b.timestamp - a.timestamp);
-                if(my.length === 0) container.innerHTML = '<p style="text-align:center; padding:20px;">لا توجد طلبات سابقة</p>';
+                if(my.length === 0) container.innerHTML = '<p style="text-align:center;">لا توجد طلبات</p>';
                 my.forEach(o => {
-                    const st = {pending: 'قيد المراجعة', printing: 'جاري الطباعة', delivered: 'تم التوصيل'}[o.status] || o.status;
-                    container.innerHTML += `<div class="card">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><b>#${o.orderId}</b> <span style="color:var(--primary)">${st}</span></div>
-                        <div style="font-size:0.8rem; color:#666;">${o.summary}</div>
-                        <div style="margin-top:10px; font-weight:bold;">${o.total.toLocaleString()} د.ع</div>
-                    </div>`;
+                    const st = {pending: '⏳ قيد المراجعة', printing: '🖨️ قيد الطباعة', completed: '✅ تم التسليم'}[o.status] || o.status;
+                    container.innerHTML += `<div class="card"><div style="display:flex; justify-content:space-between;"><b>#${o.orderId}</b> <span>${st}</span></div><small>${o.summary}</small><div style="font-weight:bold; margin-top:5px;">${o.total} د.ع</div></div>`;
                 });
             });
         }
+
+        function loadAllOrders() {
+            const list = document.getElementById('all-orders-list');
+            window.fs.onSnapshot(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), (snap) => {
+                list.innerHTML = '';
+                snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => b.timestamp - a.timestamp).forEach(o => {
+                    list.innerHTML += `<div class="card"><b>#${o.orderId} - ${o.name}</b><br>${o.phone}<div class="btn-group"><button class="opt-btn" onclick="window.updateOrderStatus('${o.id}','printing')">🖨️ طباعة</button><button class="opt-btn" onclick="window.updateOrderStatus('${o.id}','completed')">✅ تم</button></div></div>`;
+                });
+            });
+        }
+
+        window.updateOrderStatus = async (docId, status) => {
+            await window.fs.updateDoc(window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'orders', docId), { status });
+        };
     </script>
 </body>
 </html>
