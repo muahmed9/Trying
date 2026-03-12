@@ -30,7 +30,6 @@
             window.appId = appId;
             window.fs = { collection, doc, getDoc, setDoc, addDoc, onSnapshot, updateDoc, serverTimestamp, query, where };
 
-            // قاعدة 3: المصادقة أولاً
             const initAuth = async () => {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
@@ -43,20 +42,17 @@
             onAuthStateChanged(auth, async (user) => {
                 window.currentUser = user;
                 if (user) {
-                    console.log("Firebase Authenticated:", user.uid);
                     await syncUserProfile();
-                    // محاولة تحديث قائمة الطلبات فوراً
-                    if (window.loadUserOrders) window.loadUserOrders();
+                    window.dispatchEvent(new CustomEvent('authReady'));
                 }
             });
 
             async function syncUserProfile() {
                 const tg = window.Telegram.WebApp;
                 const tgUser = tg.initDataUnsafe?.user;
-                if (!tgUser || !window.fs) return;
+                if (!tgUser) return;
 
                 const tgId = String(tgUser.id).trim();
-                // قاعدة 1: مسار المستخدم الخاص
                 const userRef = window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'users', tgId);
                 
                 try {
@@ -74,91 +70,86 @@
                     } else {
                         await window.fs.updateDoc(userRef, userData);
                         const existing = snap.data();
+                        window.cachedUserData = existing; // حفظ البيانات محلياً للفلترة لاحقاً
                         if (existing.phone && document.getElementById('uPhone')) document.getElementById('uPhone').value = existing.phone;
                         if (existing.fullName && document.getElementById('uName')) document.getElementById('uName').value = existing.fullName;
-                        if (existing.region && document.getElementById('uRegion')) document.getElementById('uRegion').value = existing.region;
                     }
-                } catch (e) { console.error("Sync Profile Error", e); }
+                } catch (e) { console.error("Sync Error", e); }
             }
-        } catch (e) { console.error("Critical Firebase Init Failure"); }
+        } catch (e) { console.error("Firebase Init Failed"); }
     </script>
 
     <style>
         :root { --primary: #248bcf; --bg: #f4f7f9; --success: #28a745; --dark: #1e293b; --error: #dc3545; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 0 0 80px 0; direction: rtl; color: #333; overflow-x: hidden; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 0 0 80px 0; direction: rtl; color: #333; overflow-x: hidden; }
         
         .header { text-align: center; padding: 15px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .logo-circle { width: 75px; height: 75px; background: white url('logo.png') no-repeat center; background-size: contain; border-radius: 50%; margin: 0 auto 10px; border: 3px solid var(--primary); cursor: pointer; }
+        .logo-circle { width: 70px; height: 70px; background: white url('logo.png') no-repeat center; background-size: contain; border-radius: 50%; margin: 0 auto 10px; border: 3px solid var(--primary); cursor: pointer; }
         
         .container { padding: 12px; }
-        .card { background: white; border-radius: 15px; padding: 18px; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #edf2f7; }
+        .card { background: white; border-radius: 15px; padding: 18px; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         
         .upload-area { border: 2px dashed var(--primary); padding: 25px; text-align: center; color: var(--primary); cursor: pointer; border-radius: 15px; background: #f0f9ff; }
         .btn-group { display: flex; gap: 8px; margin: 10px 0; }
         .opt-btn { flex: 1; padding: 14px; border: 1px solid #ddd; border-radius: 12px; cursor: pointer; font-weight: bold; background: white; font-size: 0.95rem; }
         .opt-btn.active { background: var(--primary) !important; color: white !important; border-color: var(--primary); }
 
-        .input-field { width: 100%; padding: 15px; border: 1px solid #ddd; border-radius: 12px; margin-bottom: 10px; background: #fafafa; font-size: 1rem; outline: none; transition: 0.3s; }
+        .input-field { width: 100%; padding: 15px; border: 1px solid #ddd; border-radius: 12px; margin-bottom: 10px; background: #fafafa; font-size: 1rem; outline: none; }
         .input-field:focus { border-color: var(--primary); background: white; }
         
         .invoice { background: var(--dark); color: white; border-radius: 15px; padding: 20px; margin-top: 10px; }
         .inv-line { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; }
         .total-price { font-size: 1.4rem; color: #4eff4e; text-align: center; margin-top: 15px; border-top: 1px dashed #555; padding-top: 15px; font-weight: bold; }
 
-        .btn-main { width: 100%; padding: 16px; border: none; border-radius: 14px; font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.2s; }
+        .btn-main { width: 100%; padding: 16px; border: none; border-radius: 14px; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
         .btn-main:active { transform: scale(0.98); }
         .btn-main:disabled { background: #cbd5e0 !important; color: #718096 !important; }
 
-        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; border-top: 1px solid #eee; z-index: 100; padding: 5px 0; }
-        .nav-item { flex: 1; text-align: center; padding: 12px; color: #666; font-weight: bold; cursor: pointer; }
+        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; border-top: 1px solid #eee; z-index: 100; }
+        .nav-item { flex: 1; text-align: center; padding: 15px; color: #666; font-weight: bold; cursor: pointer; }
         .nav-item.active { color: var(--primary); border-top: 3px solid var(--primary); }
 
         #welcome-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 2000; }
         .modal-content { background: white; padding: 30px; border-radius: 20px; text-align: center; width: 85%; max-width: 400px; }
-        .error-msg { background: #fff1f2; color: var(--error); padding: 12px; border-radius: 10px; font-size: 0.85rem; margin-bottom: 12px; display: none; text-align: center; border: 1px solid #fecdd3; font-weight: bold; }
+        .error-msg { background: #fff1f2; color: var(--error); padding: 12px; border-radius: 10px; font-size: 0.85rem; margin-bottom: 12px; display: none; text-align: center; border: 1px solid #fecdd3; }
         
         .progress-container { width: 100%; background: #ddd; height: 10px; border-radius: 5px; margin: 15px 0; display: none; overflow: hidden; }
         .progress-bar { width: 0%; height: 100%; background: var(--success); transition: width 0.3s; }
         
-        .file-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
-        .counter { display: flex; align-items: center; gap: 8px; }
-        .btn-count { background: #f1f5f9; border: 1px solid #e2e8f0; width: 32px; height: 32px; border-radius: 8px; font-weight: bold; }
         .hidden { display: none !important; }
-        
-        .diagnostic-text { font-size: 0.65rem; color: #999; text-align: center; margin-top: 20px; direction: ltr; }
+        .diagnostic-box { font-size: 10px; color: #999; background: #eee; padding: 10px; border-radius: 8px; margin-top: 20px; direction: ltr; }
     </style>
 </head>
 <body>
 
-    <!-- Welcome Modal -->
     <div id="welcome-modal">
         <div class="modal-content">
             <div class="logo-circle"></div>
             <h2 style="color:var(--primary)">خدمات الشاطر الطلابية</h2>
             <p>أهلاً بك! ارفع مستنداتك وسنتولى طباعتها وتوصيلها إليك بجودة عالية.</p>
-            <button class="btn-main" style="background:var(--primary); color:white; margin-top:15px;" onclick="closeWelcome()">ابدأ طلبك الآن</button>
+            <button class="btn-main" style="background:var(--primary); color:white;" onclick="closeWelcome()">ابدأ طلبك الآن</button>
         </div>
     </div>
 
     <div class="header">
         <div class="logo-circle" id="logo-main"></div>
-        <h1 style="margin:0; font-size: 1.2rem; color:var(--primary);">مكتبة الشاطر</h1>
+        <h1 style="margin:0; font-size: 1.1rem; color:var(--primary);">مكتبة الشاطر</h1>
     </div>
 
     <div class="container">
-        <!-- New Order View -->
+        <!-- New Order -->
         <div id="order-view">
             <div class="card">
                 <div class="upload-area" onclick="document.getElementById('fileInp').click()">
                     <b>📁 اضغط هنا لإضافة الملفات</b>
-                    <span style="font-size:0.75rem;">يدعم PDF, Word, PowerPoint والصور</span>
+                    <span style="font-size:0.75rem;">PDF, PowerPoint, Word, صور</span>
                 </div>
                 <input type="file" id="fileInp" multiple hidden>
             </div>
 
             <div id="list-card" class="card hidden">
-                <p style="margin-top:0; font-weight:bold;">الملفات المختارة:</p>
+                <p style="margin:0 0 10px; font-weight:bold;">الملفات المختارة:</p>
                 <div id="list-items"></div>
             </div>
 
@@ -194,36 +185,36 @@
                     <div class="progress-container" id="prog-cont">
                         <div class="progress-bar" id="prog-bar"></div>
                     </div>
-                    <p id="status-text" style="text-align:center; font-size:0.8rem; color:#666; margin-top:5px;"></p>
+                    <p id="status-text" style="text-align:center; font-size:0.8rem; color:#666;"></p>
                     
                     <button id="sendBtn" class="btn-main" style="background:var(--success); color:white;" onclick="sendOrder()">تأكيد وإرسال الطلب ✅</button>
                 </div>
             </div>
         </div>
 
-        <!-- Tracking View -->
+        <!-- Tracking -->
         <div id="tracking-view" class="hidden">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
                 <h3 style="margin:0;">📦 طلباتي</h3>
-                <button onclick="window.loadUserOrders()" style="background:none; border:none; color:var(--primary); font-size:0.8rem; font-weight:bold; cursor:pointer;">🔄 تحديث</button>
+                <button onclick="loadUserOrders(true)" style="background:none; border:none; color:var(--primary); font-weight:bold; cursor:pointer;">🔄 تحديث</button>
             </div>
-            <div id="user-orders-list-container">
-                <div style="text-align:center; padding:20px; color:#666;">جاري التحقق من الهوية... ⏳</div>
+            <div id="user-orders-list">
+                <div style="text-align:center; padding:30px; color:#666;">جاري تحميل طلباتك... ⏳</div>
             </div>
-            <div id="id-diagnostic" class="diagnostic-text"></div>
+            
+            <div id="diagnostic-info" class="diagnostic-box hidden"></div>
         </div>
 
-        <!-- Admin View -->
+        <!-- Admin -->
         <div id="admin-view" class="hidden">
-            <h3 style="margin: 0 10px 15px 0;">⚙️ الإدارة</h3>
+            <h3 style="margin:0 0 15px;">⚙️ الإدارة</h3>
             <div id="all-orders-list"></div>
         </div>
     </div>
 
-    <!-- Bottom Navbar -->
     <div class="navbar">
         <div class="nav-item active" id="nav-new" onclick="switchTab('order')">➕ طلب جديد</div>
-        <div class="nav-item" id="nav-track" onclick="switchTab('track')">🔍 طلباتي</div>
+        <div class="nav-item" id="nav-track" onclick="switchTab('track')">🔍 تتبع طلباتي</div>
     </div>
 
     <script>
@@ -249,16 +240,14 @@
                 const navId = tab === 'order' ? 'nav-new' : 'nav-track';
                 document.getElementById(navId).classList.add('active');
             }
-            
-            if (tab === 'track') window.loadUserOrders();
+            if (tab === 'track') loadUserOrders();
             if (tab === 'admin') loadAllOrders();
         };
 
-        // الدخول السري للإدارة بضغط مطول على اللوجو
+        // الدخول للإدارة
         let lt;
-        const logo = document.getElementById('logo-main');
-        logo.onmousedown = logo.ontouchstart = () => lt = setTimeout(() => window.switchTab('admin'), 2500);
-        logo.onmouseup = logo.ontouchend = () => clearTimeout(lt);
+        document.getElementById('logo-main').onmousedown = document.getElementById('logo-main').ontouchstart = () => lt = setTimeout(() => window.switchTab('admin'), 2500);
+        document.getElementById('logo-main').onmouseup = document.getElementById('logo-main').ontouchend = () => clearTimeout(lt);
 
         document.getElementById('fileInp').onchange = async (e) => {
             for (let f of e.target.files) {
@@ -277,7 +266,7 @@
 
         window.askLoc = () => {
             const btn = document.getElementById('locBtn');
-            btn.innerText = "جاري تحديد الموقع... ⏳";
+            btn.innerText = "جاري التحديد... ⏳";
             navigator.geolocation.getCurrentPosition(p => {
                 locUrl = `https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`;
                 btn.innerText = "✅ تم حفظ الموقع";
@@ -290,23 +279,25 @@
 
         function ui() {
             const list = document.getElementById('list-items'); list.innerHTML = '';
-            let sheetsCount = 0; let docsPages = 0; let imgs = 0;
+            let docsPages = 0; let imgs = 0; let totalSheets = 0;
             files.forEach((f, i) => {
-                list.innerHTML += `<div class="file-item"><span>${f.name.substring(0,18)}</span>
-                    <div class="counter"><button class="btn-count" onclick="cnt(${i},-1)">-</button><span>${f.c}</span><button class="btn-count" onclick="cnt(${i},1)">+</button><span style="color:red; margin-right:10px; font-weight:bold;" onclick="del(${i})">🗑️</span></div></div>`;
+                list.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.9rem;">
+                    <span>${f.name.substring(0,15)}..</span>
+                    <div><button onclick="cnt(${i},-1)">-</button> <span>${f.c}</span> <button onclick="cnt(${i},1)">+</button> <span style="color:red; cursor:pointer;" onclick="del(${i})">🗑️</span></div>
+                </div>`;
                 if (f.isImg) imgs += f.c;
                 else {
                     docsPages += (f.p * f.c);
-                    sheetsCount += (conf.side === '2' ? Math.ceil(f.p / 2) : f.p) * f.c;
+                    totalSheets += (conf.side === '2' ? Math.ceil(f.p / 2) : f.p) * f.c;
                 }
             });
-            let totalUnits = sheetsCount + imgs;
-            let printPrice = totalUnits <= 5 ? 1000 : (totalUnits * (conf.color === 'c' ? 150 : 90));
-            printPrice = Math.round(printPrice / 250) * 250;
-            let deliv = printPrice >= 10000 || totalUnits === 0 ? 0 : 1000;
-            let total = printPrice + deliv;
+            let units = totalSheets + imgs;
+            let pPrice = units <= 5 ? 1000 : (units * (conf.color === 'c' ? 150 : 90));
+            pPrice = Math.round(pPrice / 250) * 250;
+            let deliv = pPrice >= 10000 || units === 0 ? 0 : 1000;
+            let total = pPrice + deliv;
 
-            document.getElementById('inv-details').innerHTML = `<div class="inv-line"><span>صفحات الملفات:</span><span>${docsPages}</span></div><div class="inv-line"><span>سعر الطباعة:</span><span>${printPrice.toLocaleString()} د.ع</span></div><div class="inv-line"><span>أجور التوصيل:</span><span>${deliv === 0 ? 'مجاني ✨' : deliv + ' د.ع'}</span></div>`;
+            document.getElementById('inv-details').innerHTML = `<div class="inv-line"><span>الصفحات:</span><span>${docsPages}</span></div><div class="inv-line"><span>الطباعة:</span><span>${pPrice.toLocaleString()} د.ع</span></div><div class="inv-line"><span>التوصيل:</span><span>${deliv === 0 ? 'مجاني' : '1,000 د.ع'}</span></div>`;
             document.getElementById('total-val').innerText = `المجموع: ${total.toLocaleString()} د.ع`;
             window.finalTotal = total;
             document.getElementById('list-card').classList.toggle('hidden', files.length === 0);
@@ -319,138 +310,97 @@
 
         async function sendOrder() {
             const btn = document.getElementById('sendBtn');
-            const statusText = document.getElementById('status-text');
+            const status = document.getElementById('status-text');
             const err = document.getElementById('err-box');
-            const progCont = document.getElementById('prog-cont');
 
-            if (!window.currentUser) { alert("جاري الاتصال بالخادم، يرجى الانتظار..."); return; }
-
+            if (!window.currentUser) { alert("جاري الاتصال.. حاول مجدداً"); return; }
             const name = document.getElementById('uName').value.trim();
             const phone = document.getElementById('uPhone').value.trim();
             const region = document.getElementById('uRegion').value.trim();
 
-            if (!name || phone.length < 10 || !region) {
-                err.innerText = "❌ يرجى ملء كافة البيانات.";
-                err.style.display = 'block'; return;
-            }
+            if (!name || phone.length < 10 || !region) { err.innerText = "❌ أكمل البيانات"; err.style.display = 'block'; return; }
 
-            if (files.length === 0) {
-                err.innerText = "❌ أضف ملفات أولاً.";
-                err.style.display = 'block'; return;
-            }
+            err.style.display = 'none'; btn.disabled = true;
+            document.getElementById('prog-cont').style.display = 'block';
+            status.innerText = "جاري التجهيز... 📦";
 
-            err.style.display = 'none';
-            btn.disabled = true;
-            progCont.style.display = 'block';
-            statusText.innerText = "جاري تحضير الملفات... 📦";
-
-            // جلب الهوية من تليجرام في هذه اللحظة
-            const tgId = tg.initDataUnsafe?.user?.id ? String(tg.initDataUnsafe.user.id).trim() : "unknown";
+            const tid = tg.initDataUnsafe?.user?.id ? String(tg.initDataUnsafe.user.id).trim() : "anon";
 
             try {
                 const zip = new JSZip();
-                for (let f of files) { zip.file(f.name, f.file); }
-                const blob = await zip.generateAsync({type:"blob", compression:"DEFLATE"}, (p) => {
-                    document.getElementById('prog-bar').style.width = p.percent + "%";
-                });
+                for (let f of files) zip.file(f.name, f.file);
+                const blob = await zip.generateAsync({type:"blob"}, p => { document.getElementById('prog-bar').style.width = p.percent + "%"; });
 
-                if(blob.size > 48 * 1024 * 1024) throw new Error("الملفات كبيرة جداً، يرجى تقليل العدد.");
-
-                statusText.innerText = "جاري الإرسال للبوت... 🚀";
-                const orderId = "SH-" + Math.floor(1000 + Math.random() * 9000);
+                status.innerText = "جاري الإرسال... 🚀";
+                const oid = "SH-" + Math.floor(1000 + Math.random() * 9000);
                 
                 const fd = new FormData();
                 fd.append('chat_id', myChatId);
-                fd.append('document', blob, `Order_${orderId}.zip`);
-                fd.append('caption', `🆕 طلب جديد #${orderId}\n👤 الزبون: ${name}\n📞 الهاتف: ${phone}\n💰 المجموع: ${window.finalTotal.toLocaleString()} د.ع\n🆔 تليجرام: ${tgId}\n🔗 يوزر: @${tg.initDataUnsafe?.user?.username || "بدون"}\n📍 الموقع: ${locUrl}`);
+                fd.append('document', blob, `Order_${oid}.zip`);
+                fd.append('caption', `🆕 طلب #${oid}\n👤 ${name}\n📞 ${phone}\n💰 ${window.finalTotal} د.ع\n🆔 ${tid}\n📍 ${locUrl}`);
 
-                const response = await fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, { method: 'POST', body: fd });
-                const resData = await response.json();
-                if (!resData.ok) throw new Error("فشل إرسال الملف للبوت.");
+                const res = await fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, { method: 'POST', body: fd });
+                if (!res.ok) throw new Error("Telegram Fail");
 
-                // قاعدة 1: حفظ الطلب في المسار الصحيح
+                // تسجيل الطلب في Firebase
                 await window.fs.addDoc(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), {
-                    orderId, 
-                    tgUserId: tgId, 
-                    userId: window.currentUser.uid,
-                    name, phone, region,
-                    total: window.finalTotal, 
-                    status: 'pending', 
-                    timestamp: Date.now(),
-                    summary: files.map(f => `${f.name} (${f.c})`).join(", ")
+                    orderId: oid, tgUserId: tid, userId: window.currentUser.uid,
+                    name, phone, region, total: window.finalTotal,
+                    status: 'pending', timestamp: Date.now(), summary: files.map(f => f.name).join(", ")
                 });
 
-                document.getElementById('order-view').innerHTML = `<div style="text-align:center; padding:50px 10px;"><h2 style="color:var(--success)">تم الإرسال بنجاح! ✅</h2><p>رقم طلبك: #${orderId}</p><button class="btn-main" style="background:var(--primary); color:white; margin-top:20px;" onclick="location.reload()">طلب جديد</button></div>`;
-                setTimeout(() => window.loadUserOrders(), 2000);
+                document.getElementById('order-view').innerHTML = `<div style="text-align:center; padding:50px 10px;"><h2 style="color:var(--success)">تم الإرسال! ✅</h2><p>رقم طلبك: #${oid}</p><button class="btn-main" style="background:var(--primary); color:white; margin-top:20px;" onclick="location.reload()">طلب جديد</button></div>`;
             } catch (e) {
-                btn.disabled = false; btn.innerText = "حاول مرة أخرى ✅";
-                statusText.innerText = "";
-                err.innerText = "❌ تعذر الإرسال: " + e.message;
-                err.style.display = 'block';
+                btn.disabled = false; status.innerText = "";
+                err.innerText = "❌ خطأ في الإرسال، تأكد من الإنترنت"; err.style.display = 'block';
             }
         }
 
-        window.loadUserOrders = () => {
-            const container = document.getElementById('user-orders-list-container');
-            const diagnostic = document.getElementById('id-diagnostic');
+        window.loadUserOrders = (isManual = false) => {
+            const list = document.getElementById('user-orders-list');
+            const diagnostic = document.getElementById('diagnostic-info');
             
-            // جلب الهوية اللحظية
-            const tgUser = tg.initDataUnsafe?.user;
-            const tid = tgUser ? String(tgUser.id).trim() : "";
+            // جلب البيانات اللازمة للفلترة
+            const tid = tg.initDataUnsafe?.user?.id ? String(tg.initDataUnsafe.user.id).trim() : "";
+            const phone = document.getElementById('uPhone')?.value?.trim() || (window.cachedUserData?.phone || "");
             const uid = window.currentUser ? window.currentUser.uid : "";
 
-            if(diagnostic) diagnostic.innerText = `TG-ID: ${tid || 'N/A'} | FB-UID: ${uid.substring(0,6)}...`;
+            if (isManual) list.innerHTML = '<div style="text-align:center; padding:20px;">جاري التحديث... ⏳</div>';
 
-            if (!tid && !uid) { 
-                container.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">يرجى فتح التطبيق من تليجرام للتتبع.</p>'; 
-                return; 
-            }
-            
-            if (!window.fs || !window.currentUser) {
-                container.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">جاري مزامنة الاتصال... ⏳</div>';
-                return;
-            }
-            
-            container.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">جاري جلب طلباتك... ⏳</div>';
-            
-            // قاعدة 1: استعلام المسار الصحيح
+            // معلومات تشخيصية لمساعدتنا في حل المشكلة
+            diagnostic.innerHTML = `DEBUG: TG_ID: ${tid || 'None'} | PHONE: ${phone || 'None'} | UID: ${uid.substring(0,5)}..`;
+            diagnostic.classList.remove('hidden');
+
+            if (!window.fs || !window.currentUser) return;
+
             window.fs.onSnapshot(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), (snap) => {
-                container.innerHTML = '';
-                // فلترة الطلبات يدوياً في الذاكرة لضمان الدقة
-                const my = snap.docs.map(d => d.data())
-                                   .filter(o => {
-                                       const matchTg = (tid && o.tgUserId && String(o.tgUserId).trim() === tid);
-                                       const matchFb = (uid && o.userId && o.userId === uid);
-                                       return matchTg || matchFb;
-                                   })
-                                   .sort((a,b) => b.timestamp - a.timestamp);
+                list.innerHTML = '';
+                const orders = snap.docs.map(d => d.data());
                 
-                if(my.length === 0) {
-                    container.innerHTML = '<p style="text-align:center; color:#999; padding:20px;">لا توجد طلبات سابقة مرتبطة بحسابك حالياً.</p>';
+                // فلترة ذكية جداً (بناءً على الآيدي أو رقم الهاتف أو آيدي فايربيس)
+                const my = orders.filter(o => {
+                    const matchId = tid && o.tgUserId && String(o.tgUserId).trim() === tid;
+                    const matchPhone = phone && o.phone && String(o.phone).trim() === phone;
+                    const matchUid = uid && o.userId === uid;
+                    return matchId || matchPhone || matchUid;
+                }).sort((a,b) => b.timestamp - a.timestamp);
+
+                if (my.length === 0) {
+                    list.innerHTML = '<p style="text-align:center; color:#999; padding:20px;">لا توجد طلبات سابقة.<br><small>تأكد من استخدام نفس رقم الهاتف دائماً.</small></p>';
                 } else {
                     my.forEach(o => {
-                        const st = { 
-                            pending: '⏳ قيد المراجعة', 
-                            printing: '🖨️ جاري الطباعة', 
-                            completed: '✅ تم التسليم' 
-                        }[o.status] || o.status;
-
-                        container.innerHTML += `
-                            <div class="card">
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                                    <b>#${o.orderId}</b> 
-                                    <span style="color:var(--primary); font-weight:bold; font-size:0.85rem;">${st}</span>
-                                </div>
-                                <small style="color:#666; display:block; margin-bottom:5px;">${o.summary}</small>
-                                <div style="font-weight:bold; color:var(--primary)">المجموع: ${o.total.toLocaleString()} د.ع</div>
-                            </div>`;
+                        const sMap = { pending: '⏳ قيد المراجعة', printing: '🖨️ جاري الطباعة', completed: '✅ تم التسليم' };
+                        list.innerHTML += `<div class="card">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <b>#${o.orderId}</b> <span style="color:var(--primary); font-weight:bold;">${sMap[o.status] || o.status}</span>
+                            </div>
+                            <small style="color:#666; display:block; margin:5px 0;">${o.summary}</small>
+                            <div style="font-weight:bold; color:var(--primary)">${o.total.toLocaleString()} د.ع</div>
+                        </div>`;
                     });
                 }
-            }, (err) => { 
-                console.error("Snapshot error:", err);
-                container.innerHTML = '<p style="text-align:center; color:red; padding:20px;">حدث خطأ في الاتصال بالبيانات.</p>'; 
             });
-        }
+        };
 
         function loadAllOrders() {
             const list = document.getElementById('all-orders-list');
@@ -458,14 +408,19 @@
             window.fs.onSnapshot(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), (snap) => {
                 list.innerHTML = '';
                 snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => b.timestamp - a.timestamp).forEach(o => {
-                    list.innerHTML += `<div class="card" style="border-right: 5px solid var(--primary)"><b>#${o.orderId} - ${o.name}</b><br>${o.phone}<div class="btn-group"><button class="opt-btn" onclick="window.updateOrderStatus('${o.id}','printing')">🖨️ طباعة</button><button class="opt-btn" onclick="window.updateOrderStatus('${o.id}','completed')">✅ تم</button><button class="opt-btn" onclick="window.open('${o.locUrl || o.location}')">📍 موقع</button></div></div>`;
+                    list.innerHTML += `<div class="card" style="border-right: 5px solid var(--primary)">
+                        <b>#${o.orderId} - ${o.name}</b><br>${o.phone}
+                        <div class="btn-group">
+                            <button class="opt-btn" onclick="window.upd('${o.id}','printing')">🖨️ طباعة</button>
+                            <button class="opt-btn" onclick="window.upd('${o.id}','completed')">✅ تم</button>
+                        </div>
+                    </div>`;
                 });
             });
         }
 
-        window.updateOrderStatus = async (docId, status) => {
-            if (!window.fs) return;
-            await window.fs.updateDoc(window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'orders', docId), { status: status });
+        window.upd = async (id, s) => {
+            await window.fs.updateDoc(window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'orders', id), { status: s });
         };
     </script>
 </body>
