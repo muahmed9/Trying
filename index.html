@@ -30,6 +30,7 @@
             window.appId = appId;
             window.fs = { collection, doc, getDoc, setDoc, addDoc, onSnapshot, updateDoc, serverTimestamp, query, where };
 
+            // قاعدة 3: المصادقة أولاً
             const initAuth = async () => {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
@@ -42,9 +43,9 @@
             onAuthStateChanged(auth, async (user) => {
                 window.currentUser = user;
                 if (user) {
+                    console.log("Firebase Authenticated:", user.uid);
                     await syncUserProfile();
-                    window.dispatchEvent(new CustomEvent('systemReady'));
-                    // تحميل الطلبات فوراً عند جاهزية النظام
+                    // محاولة تحديث قائمة الطلبات فوراً
                     if (window.loadUserOrders) window.loadUserOrders();
                 }
             });
@@ -55,6 +56,7 @@
                 if (!tgUser || !window.fs) return;
 
                 const tgId = String(tgUser.id).trim();
+                // قاعدة 1: مسار المستخدم الخاص
                 const userRef = window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'users', tgId);
                 
                 try {
@@ -76,15 +78,15 @@
                         if (existing.fullName && document.getElementById('uName')) document.getElementById('uName').value = existing.fullName;
                         if (existing.region && document.getElementById('uRegion')) document.getElementById('uRegion').value = existing.region;
                     }
-                } catch (e) { console.error("Sync Error", e); }
+                } catch (e) { console.error("Sync Profile Error", e); }
             }
-        } catch (e) { console.error("Init Error"); }
+        } catch (e) { console.error("Critical Firebase Init Failure"); }
     </script>
 
     <style>
         :root { --primary: #248bcf; --bg: #f4f7f9; --success: #28a745; --dark: #1e293b; --error: #dc3545; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0 0 80px 0; direction: rtl; color: #333; overflow-x: hidden; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 0 0 80px 0; direction: rtl; color: #333; overflow-x: hidden; }
         
         .header { text-align: center; padding: 15px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .logo-circle { width: 75px; height: 75px; background: white url('logo.png') no-repeat center; background-size: contain; border-radius: 50%; margin: 0 auto 10px; border: 3px solid var(--primary); cursor: pointer; }
@@ -110,7 +112,7 @@
 
         .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; border-top: 1px solid #eee; z-index: 100; padding: 5px 0; }
         .nav-item { flex: 1; text-align: center; padding: 12px; color: #666; font-weight: bold; cursor: pointer; }
-        .nav-item.active { color: var(--primary); }
+        .nav-item.active { color: var(--primary); border-top: 3px solid var(--primary); }
 
         #welcome-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 2000; }
         .modal-content { background: white; padding: 30px; border-radius: 20px; text-align: center; width: 85%; max-width: 400px; }
@@ -123,10 +125,13 @@
         .counter { display: flex; align-items: center; gap: 8px; }
         .btn-count { background: #f1f5f9; border: 1px solid #e2e8f0; width: 32px; height: 32px; border-radius: 8px; font-weight: bold; }
         .hidden { display: none !important; }
+        
+        .diagnostic-text { font-size: 0.65rem; color: #999; text-align: center; margin-top: 20px; direction: ltr; }
     </style>
 </head>
 <body>
 
+    <!-- Welcome Modal -->
     <div id="welcome-modal">
         <div class="modal-content">
             <div class="logo-circle"></div>
@@ -200,10 +205,12 @@
         <div id="tracking-view" class="hidden">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
                 <h3 style="margin:0;">📦 طلباتي</h3>
-                <button onclick="loadUserOrders()" style="background:none; border:none; color:var(--primary); font-size:0.8rem; font-weight:bold;">🔄 تحديث</button>
+                <button onclick="window.loadUserOrders()" style="background:none; border:none; color:var(--primary); font-size:0.8rem; font-weight:bold; cursor:pointer;">🔄 تحديث</button>
             </div>
-            <div id="user-orders-list-container"></div>
-            <div id="id-diagnostic" style="font-size: 0.6rem; color: #ccc; text-align: center; margin-top: 20px;"></div>
+            <div id="user-orders-list-container">
+                <div style="text-align:center; padding:20px; color:#666;">جاري التحقق من الهوية... ⏳</div>
+            </div>
+            <div id="id-diagnostic" class="diagnostic-text"></div>
         </div>
 
         <!-- Admin View -->
@@ -213,6 +220,7 @@
         </div>
     </div>
 
+    <!-- Bottom Navbar -->
     <div class="navbar">
         <div class="nav-item active" id="nav-new" onclick="switchTab('order')">➕ طلب جديد</div>
         <div class="nav-item" id="nav-track" onclick="switchTab('track')">🔍 طلباتي</div>
@@ -221,18 +229,13 @@
     <script>
         const botToken = '8507186698:AAEsoTIakrgnvR19Uc-hl3YsXYOVuhgSZWU';
         const myChatId = '7618746133';
-        const tg = window.Telegram.WebApp; tg.ready();
+        const tg = window.Telegram.WebApp;
+        tg.ready();
         tg.expand();
 
         let files = []; 
         let conf = { color: 'c', side: '1' };
         let locUrl = "غير محدد";
-
-        // وظيفة ثابتة لجلب الآيدي في أي وقت
-        const getGlobalTgId = () => {
-            const id = tg.initDataUnsafe?.user?.id;
-            return id ? String(id).trim() : "";
-        };
 
         window.closeWelcome = () => document.getElementById('welcome-modal').classList.add('hidden');
 
@@ -240,15 +243,21 @@
             document.getElementById('order-view').classList.toggle('hidden', tab !== 'order');
             document.getElementById('tracking-view').classList.toggle('hidden', tab !== 'track');
             document.getElementById('admin-view').classList.toggle('hidden', tab !== 'admin');
+            
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            if(tab !== 'admin') document.getElementById(tab === 'order' ? 'nav-new' : 'nav-track').classList.add('active');
+            if(tab !== 'admin') {
+                const navId = tab === 'order' ? 'nav-new' : 'nav-track';
+                document.getElementById(navId).classList.add('active');
+            }
+            
             if (tab === 'track') window.loadUserOrders();
             if (tab === 'admin') loadAllOrders();
         };
 
+        // الدخول السري للإدارة بضغط مطول على اللوجو
         let lt;
         const logo = document.getElementById('logo-main');
-        logo.onmousedown = logo.ontouchstart = () => lt = setTimeout(() => window.switchTab('admin'), 2000);
+        logo.onmousedown = logo.ontouchstart = () => lt = setTimeout(() => window.switchTab('admin'), 2500);
         logo.onmouseup = logo.ontouchend = () => clearTimeout(lt);
 
         document.getElementById('fileInp').onchange = async (e) => {
@@ -314,6 +323,8 @@
             const err = document.getElementById('err-box');
             const progCont = document.getElementById('prog-cont');
 
+            if (!window.currentUser) { alert("جاري الاتصال بالخادم، يرجى الانتظار..."); return; }
+
             const name = document.getElementById('uName').value.trim();
             const phone = document.getElementById('uPhone').value.trim();
             const region = document.getElementById('uRegion').value.trim();
@@ -323,12 +334,18 @@
                 err.style.display = 'block'; return;
             }
 
+            if (files.length === 0) {
+                err.innerText = "❌ أضف ملفات أولاً.";
+                err.style.display = 'block'; return;
+            }
+
             err.style.display = 'none';
             btn.disabled = true;
             progCont.style.display = 'block';
             statusText.innerText = "جاري تحضير الملفات... 📦";
 
-            const tid = getGlobalTgId() || "unknown";
+            // جلب الهوية من تليجرام في هذه اللحظة
+            const tgId = tg.initDataUnsafe?.user?.id ? String(tg.initDataUnsafe.user.id).trim() : "unknown";
 
             try {
                 const zip = new JSZip();
@@ -337,42 +354,37 @@
                     document.getElementById('prog-bar').style.width = p.percent + "%";
                 });
 
+                if(blob.size > 48 * 1024 * 1024) throw new Error("الملفات كبيرة جداً، يرجى تقليل العدد.");
+
                 statusText.innerText = "جاري الإرسال للبوت... 🚀";
                 const orderId = "SH-" + Math.floor(1000 + Math.random() * 9000);
                 
-                const tgUser = tg.initDataUnsafe?.user;
                 const fd = new FormData();
                 fd.append('chat_id', myChatId);
                 fd.append('document', blob, `Order_${orderId}.zip`);
-                fd.append('caption', `📦 طلب جديد #${orderId}\n👤 الزبون: ${name}\n📞 الهاتف: ${phone}\n💰 المجموع: ${window.finalTotal.toLocaleString()} د.ع\n🆔 آيدي: ${tid}\n🔗 يوزر: @${tgUser?.username || "بدون"}\n📍 الموقع: ${locUrl}`);
+                fd.append('caption', `🆕 طلب جديد #${orderId}\n👤 الزبون: ${name}\n📞 الهاتف: ${phone}\n💰 المجموع: ${window.finalTotal.toLocaleString()} د.ع\n🆔 تليجرام: ${tgId}\n🔗 يوزر: @${tg.initDataUnsafe?.user?.username || "بدون"}\n📍 الموقع: ${locUrl}`);
 
                 const response = await fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, { method: 'POST', body: fd });
                 const resData = await response.json();
-                if (!resData.ok) throw new Error("فشل إرسال الملف.");
+                if (!resData.ok) throw new Error("فشل إرسال الملف للبوت.");
 
-                if (window.fs && window.db) {
-                    // تحديث بيانات المستخدم
-                    await window.fs.updateDoc(window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'users', tid), {
-                        phone, fullName: name, region
-                    }).catch(() => {});
-
-                    // تسجيل الطلب
-                    await window.fs.addDoc(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), {
-                        orderId, 
-                        tgUserId: String(tid).trim(), 
-                        userId: window.currentUser ? window.currentUser.uid : "anon",
-                        name, phone, region,
-                        total: window.finalTotal, 
-                        status: 'pending', 
-                        timestamp: Date.now(),
-                        summary: files.map(f => `${f.name} (${f.c})`).join(", ")
-                    });
-                }
+                // قاعدة 1: حفظ الطلب في المسار الصحيح
+                await window.fs.addDoc(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), {
+                    orderId, 
+                    tgUserId: tgId, 
+                    userId: window.currentUser.uid,
+                    name, phone, region,
+                    total: window.finalTotal, 
+                    status: 'pending', 
+                    timestamp: Date.now(),
+                    summary: files.map(f => `${f.name} (${f.c})`).join(", ")
+                });
 
                 document.getElementById('order-view').innerHTML = `<div style="text-align:center; padding:50px 10px;"><h2 style="color:var(--success)">تم الإرسال بنجاح! ✅</h2><p>رقم طلبك: #${orderId}</p><button class="btn-main" style="background:var(--primary); color:white; margin-top:20px;" onclick="location.reload()">طلب جديد</button></div>`;
-                setTimeout(window.loadUserOrders, 1500);
+                setTimeout(() => window.loadUserOrders(), 2000);
             } catch (e) {
                 btn.disabled = false; btn.innerText = "حاول مرة أخرى ✅";
+                statusText.innerText = "";
                 err.innerText = "❌ تعذر الإرسال: " + e.message;
                 err.style.display = 'block';
             }
@@ -381,14 +393,19 @@
         window.loadUserOrders = () => {
             const container = document.getElementById('user-orders-list-container');
             const diagnostic = document.getElementById('id-diagnostic');
-            if (!container) return;
             
-            const tid = getGlobalTgId();
+            // جلب الهوية اللحظية
+            const tgUser = tg.initDataUnsafe?.user;
+            const tid = tgUser ? String(tgUser.id).trim() : "";
             const uid = window.currentUser ? window.currentUser.uid : "";
-            
-            // عرض تشخيصي للآيدي المستخدم (يظهر بخط باهت جداً للتأكد من المزامنة)
-            if(diagnostic) diagnostic.innerText = `ID: ${tid || 'Browser Mode'} | UID: ${uid.substring(0,5)}...`;
 
+            if(diagnostic) diagnostic.innerText = `TG-ID: ${tid || 'N/A'} | FB-UID: ${uid.substring(0,6)}...`;
+
+            if (!tid && !uid) { 
+                container.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">يرجى فتح التطبيق من تليجرام للتتبع.</p>'; 
+                return; 
+            }
+            
             if (!window.fs || !window.currentUser) {
                 container.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">جاري مزامنة الاتصال... ⏳</div>';
                 return;
@@ -396,10 +413,10 @@
             
             container.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">جاري جلب طلباتك... ⏳</div>';
             
+            // قاعدة 1: استعلام المسار الصحيح
             window.fs.onSnapshot(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), (snap) => {
                 container.innerHTML = '';
-                
-                // البحث المزدوج: باستخدام آيدي تليجرام أو آيدي فايربيس
+                // فلترة الطلبات يدوياً في الذاكرة لضمان الدقة
                 const my = snap.docs.map(d => d.data())
                                    .filter(o => {
                                        const matchTg = (tid && o.tgUserId && String(o.tgUserId).trim() === tid);
@@ -417,7 +434,7 @@
                             printing: '🖨️ جاري الطباعة', 
                             completed: '✅ تم التسليم' 
                         }[o.status] || o.status;
-                        
+
                         container.innerHTML += `
                             <div class="card">
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
@@ -431,7 +448,7 @@
                 }
             }, (err) => { 
                 console.error("Snapshot error:", err);
-                container.innerHTML = '<p style="text-align:center; color:red;">خطأ في جلب البيانات.</p>'; 
+                container.innerHTML = '<p style="text-align:center; color:red; padding:20px;">حدث خطأ في الاتصال بالبيانات.</p>'; 
             });
         }
 
@@ -441,7 +458,7 @@
             window.fs.onSnapshot(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), (snap) => {
                 list.innerHTML = '';
                 snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => b.timestamp - a.timestamp).forEach(o => {
-                    list.innerHTML += `<div class="card" style="border-right: 5px solid var(--primary)"><b>#${o.orderId} - ${o.name}</b><br>${o.phone}<div class="btn-group"><button class="opt-btn" onclick="window.updateOrderStatus('${o.id}','printing')">🖨️ طباعة</button><button class="opt-btn" onclick="window.updateOrderStatus('${o.id}','completed')">✅ تم</button></div></div>`;
+                    list.innerHTML += `<div class="card" style="border-right: 5px solid var(--primary)"><b>#${o.orderId} - ${o.name}</b><br>${o.phone}<div class="btn-group"><button class="opt-btn" onclick="window.updateOrderStatus('${o.id}','printing')">🖨️ طباعة</button><button class="opt-btn" onclick="window.updateOrderStatus('${o.id}','completed')">✅ تم</button><button class="opt-btn" onclick="window.open('${o.locUrl || o.location}')">📍 موقع</button></div></div>`;
                 });
             });
         }
