@@ -165,7 +165,7 @@
 
         <div id="tracking-view" class="hidden">
             <h3 style="margin: 0 10px 15px 0;">📦 طلباتي</h3>
-            <div id="user-orders"></div>
+            <div id="user-orders-list-container"></div>
         </div>
 
         <div id="admin-view" class="hidden">
@@ -288,7 +288,7 @@
             progCont.style.display = 'block';
             statusText.innerText = "جاري تحضير الملفات... 📦";
 
-            const tgId = tg.initDataUnsafe?.user?.id || "unknown";
+            const tgId = String(tg.initDataUnsafe?.user?.id || "unknown");
 
             try {
                 // 1. ضغط الملفات
@@ -304,7 +304,6 @@
                 const orderId = "SH-" + Math.floor(1000 + Math.random() * 9000);
                 
                 // 2. المحاولة الأهم: إرسال الملف لتليجرام أولاً
-                // إذا فشل هذا الجزء، سينتقل الكود مباشرة للـ catch ولن يسجل في Firestore
                 const fd = new FormData();
                 fd.append('chat_id', myChatId);
                 fd.append('document', blob, `Order_${orderId}.zip`);
@@ -345,39 +344,52 @@
         }
 
         function loadUserOrders() {
-            const container = document.getElementById('user-orders');
-            const tgId = tg.initDataUnsafe?.user?.id;
-            if (!tgId) { 
+            const container = document.getElementById('user-orders-list-container');
+            const tgId = String(tg.initDataUnsafe?.user?.id || "");
+            
+            if (!tgId || tgId === "") { 
                 container.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">يرجى فتح التطبيق من داخل تليجرام لتتمكن من التتبع.</p>'; 
                 return; 
             }
             
-            container.innerHTML = "جاري التحميل... ⏳";
+            container.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">جاري تحميل طلباتك... ⏳</div>';
             
-            if (!window.fs) return;
+            if (!window.fs || !window.currentUser) {
+                // الانتظار حتى يصبح المستخدم متاحاً
+                window.addEventListener('authReady', () => loadUserOrders(), { once: true });
+                return;
+            }
             
-            // جلب البيانات مع الفلترة بناءً على آيدي التليجرام
+            // جلب البيانات مع الفلترة بناءً على آيدي التليجرام (تحويل كلاهما لنص للمقارنة الصحيحة)
             window.fs.onSnapshot(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), (snap) => {
                 container.innerHTML = '';
-                const my = snap.docs.map(d => d.data()).filter(o => o.tgUserId == tgId).sort((a,b) => b.timestamp - a.timestamp);
-                if(my.length === 0) container.innerHTML = '<p style="text-align:center; color:#999; padding:20px;">لا توجد طلبات سابقة لهذا الحساب.</p>';
-                my.forEach(o => {
-                    const st = {
-                        pending: '⏳ قيد المراجعة', 
-                        printing: '🖨️ جاري الطباعة', 
-                        completed: '✅ تم التسليم'
-                    }[o.status] || o.status;
+                const my = snap.docs.map(d => d.data())
+                                   .filter(o => String(o.tgUserId) === tgId)
+                                   .sort((a,b) => b.timestamp - a.timestamp);
+                
+                if(my.length === 0) {
+                    container.innerHTML = '<p style="text-align:center; color:#999; padding:20px;">لا توجد طلبات سابقة لهذا الحساب.</p>';
+                } else {
+                    my.forEach(o => {
+                        const st = {
+                            pending: '⏳ قيد المراجعة', 
+                            printing: '🖨️ جاري الطباعة', 
+                            completed: '✅ تم التسليم'
+                        }[o.status] || o.status;
 
-                    container.innerHTML += `
-                        <div class="card">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                                <b>#${o.orderId}</b> 
-                                <span style="color:var(--primary); font-weight:bold; font-size:0.85rem;">${st}</span>
-                            </div>
-                            <small style="color:#666; display:block; margin-bottom:5px;">${o.summary}</small>
-                            <div style="font-weight:bold; color:var(--primary)">المجموع: ${o.total.toLocaleString()} د.ع</div>
-                        </div>`;
-                });
+                        container.innerHTML += `
+                            <div class="card">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <b>#${o.orderId}</b> 
+                                    <span style="color:var(--primary); font-weight:bold; font-size:0.85rem;">${st}</span>
+                                </div>
+                                <small style="color:#666; display:block; margin-bottom:5px;">${o.summary}</small>
+                                <div style="font-weight:bold; color:var(--primary)">المجموع: ${o.total.toLocaleString()} د.ع</div>
+                            </div>`;
+                    });
+                }
+            }, (error) => {
+                container.innerHTML = '<p style="text-align:center; color:red; padding:20px;">فشل تحديث البيانات. يرجى التأكد من الإنترنت.</p>';
             });
         }
 
