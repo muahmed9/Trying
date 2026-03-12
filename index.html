@@ -30,7 +30,6 @@
             window.appId = appId;
             window.fs = { collection, doc, addDoc, onSnapshot, updateDoc, serverTimestamp, query, where };
 
-            // تسجيل الدخول صامت للوصول لقاعدة البيانات
             const initAuth = async () => {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
@@ -42,7 +41,14 @@
 
             onAuthStateChanged(auth, (user) => {
                 window.currentUser = user;
+                console.log("Auth State: Verified");
+                // إطلاق حدث عالمي عند جاهزية المستخدم
                 window.dispatchEvent(new CustomEvent('authReady'));
+                
+                // تحميل الطلبات تلقائياً بمجرد الدخول إذا كان المستخدم في تبويب التتبع
+                if (document.getElementById('tracking-view').style.display !== 'none') {
+                    loadUserOrders();
+                }
             });
         } catch (e) { 
             console.error("Firebase Config Error");
@@ -291,7 +297,6 @@
             const tgId = String(tg.initDataUnsafe?.user?.id || "unknown");
 
             try {
-                // 1. ضغط الملفات
                 const zip = new JSZip();
                 for (let f of files) { zip.file(f.name, f.file); }
                 const blob = await zip.generateAsync({type:"blob", compression:"DEFLATE"}, (p) => {
@@ -303,7 +308,6 @@
                 statusText.innerText = "جاري الإرسال للبوت... 🚀";
                 const orderId = "SH-" + Math.floor(1000 + Math.random() * 9000);
                 
-                // 2. المحاولة الأهم: إرسال الملف لتليجرام أولاً
                 const fd = new FormData();
                 fd.append('chat_id', myChatId);
                 fd.append('document', blob, `Order_${orderId}.zip`);
@@ -315,12 +319,8 @@
                 });
                 
                 const responseData = await response.json();
-                
-                if (!responseData.ok) {
-                    throw new Error(responseData.description || "فشل إرسال الملف للبوت. يرجى المحاولة لاحقاً.");
-                }
+                if (!responseData.ok) throw new Error("فشل إرسال الملف للبوت.");
 
-                // 3. الخطوة الأخيرة: الحفظ في قاعدة البيانات فقط بعد نجاح التليجرام
                 if (window.fs && window.db) {
                     await window.fs.addDoc(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), {
                         orderId, 
@@ -335,7 +335,6 @@
 
                 document.getElementById('order-view').innerHTML = `<div style="text-align:center; padding:50px 10px;"><h2 style="color:var(--success)">تم الإرسال بنجاح! ✅</h2><p>رقم طلبك: #${orderId}</p><p>يمكنك متابعة حالة الطلب من قسم 'طلباتي'.</p><button class="btn-main" style="background:var(--primary); color:white; margin-top:20px;" onclick="location.reload()">طلب جديد</button></div>`;
             } catch (e) {
-                console.error("Critical Send Error:", e);
                 btn.disabled = false; btn.innerText = "حاول مرة أخرى ✅";
                 statusText.innerText = "";
                 err.innerText = "❌ تعذر الإرسال: " + e.message;
@@ -345,26 +344,28 @@
 
         function loadUserOrders() {
             const container = document.getElementById('user-orders-list-container');
-            const tgId = String(tg.initDataUnsafe?.user?.id || "");
+            const tgUser = tg.initDataUnsafe?.user;
+            const tgId = tgUser ? String(tgUser.id).trim() : "";
             
-            if (!tgId || tgId === "") { 
-                container.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">يرجى فتح التطبيق من داخل تليجرام لتتمكن من التتبع.</p>'; 
+            if (!tgId) { 
+                container.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">⚠️ يرجى فتح التطبيق من داخل تليجرام لتتمكن من رؤية طلباتك.</p>'; 
                 return; 
+            }
+            
+            // التأكد من جاهزية Firebase Auth قبل الاستعلام
+            if (!window.fs || !window.currentUser) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">جاري التحقق من الحساب... ⏳</div>';
+                // المحاولة مرة أخرى بعد ثوانٍ قليلة إذا لم تكن الهوية جاهزة
+                setTimeout(loadUserOrders, 2000);
+                return;
             }
             
             container.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">جاري تحميل طلباتك... ⏳</div>';
             
-            if (!window.fs || !window.currentUser) {
-                // الانتظار حتى يصبح المستخدم متاحاً
-                window.addEventListener('authReady', () => loadUserOrders(), { once: true });
-                return;
-            }
-            
-            // جلب البيانات مع الفلترة بناءً على آيدي التليجرام (تحويل كلاهما لنص للمقارنة الصحيحة)
             window.fs.onSnapshot(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), (snap) => {
                 container.innerHTML = '';
                 const my = snap.docs.map(d => d.data())
-                                   .filter(o => String(o.tgUserId) === tgId)
+                                   .filter(o => String(o.tgUserId).trim() === tgId)
                                    .sort((a,b) => b.timestamp - a.timestamp);
                 
                 if(my.length === 0) {
@@ -389,7 +390,7 @@
                     });
                 }
             }, (error) => {
-                container.innerHTML = '<p style="text-align:center; color:red; padding:20px;">فشل تحديث البيانات. يرجى التأكد من الإنترنت.</p>';
+                container.innerHTML = '<p style="text-align:center; color:red; padding:20px;">حدث خطأ في الاتصال بالبيانات.</p>';
             });
         }
 
