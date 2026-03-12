@@ -2,327 +2,426 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>خدمات الشاطر الطلابية</title>
+    
     <!-- SDKs -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, updateDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, addDoc, onSnapshot, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Firebase Configuration with Safety Check
-        try {
-            const firebaseConfig = typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
-            const app = initializeApp(firebaseConfig);
-            const auth = getAuth(app);
-            const db = getFirestore(app);
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-            window.db = db;
-            window.auth = auth;
-            window.appId = appId;
-            window.fs = { collection, doc, setDoc, addDoc, onSnapshot, updateDoc, query, where, serverTimestamp };
+        window.db = db;
+        window.auth = auth;
+        window.appId = appId;
+        window.fs = { collection, doc, addDoc, onSnapshot, updateDoc, serverTimestamp };
 
-            const initAuth = async () => {
-                try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                } catch (error) {
-                    console.error("Auth Error:", error);
-                }
-            };
-            
-            initAuth();
-            
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    window.currentUser = user;
-                    if (document.getElementById('nav-tracking').classList.contains('active')) loadUserOrders();
-                }
-            });
-        } catch (e) {
-            console.error("Firebase Init Error:", e);
-        }
+        // Rule 3: Auth First
+        const initAuth = async () => {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
+            }
+        };
+        initAuth();
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                window.currentUser = user;
+                console.log("Authenticated:", user.uid);
+            }
+        });
     </script>
 
     <style>
         :root { 
-            --main-blue: #248bcf; 
-            --bg-gray: #f4f7f9; 
-            --success: #28a745; 
-            --text-dark: #333; 
+            --primary: #248bcf; 
+            --secondary: #1e293b;
+            --bg: #f8fafc; 
+            --success: #10b981;
+            --danger: #ef4444;
+            --text: #0f172a;
         }
+        
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: var(--bg-gray); 
-            padding: 15px 15px 90px 15px; 
-            direction: rtl; 
+            background: var(--bg); 
             margin: 0; 
-            color: var(--text-dark); 
+            padding: 0;
+            direction: rtl; 
+            color: var(--text);
             overflow-x: hidden;
         }
-        .header { text-align: center; padding: 10px 0; }
-        .logo-circle { 
-            width: 85px; height: 85px; 
-            background: white url('logo.png') no-repeat center; 
-            background-size: contain; 
-            border-radius: 50%; 
-            margin: 0 auto 10px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-            border: 3px solid var(--main-blue); 
-            cursor: pointer; 
-        }
-        .card { 
-            background: white; 
-            border-radius: 18px; 
-            padding: 20px; 
-            margin-bottom: 15px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
-            border: 1px solid #edf2f7; 
-        }
-        .upload-area { 
-            border: 2px dashed var(--main-blue); 
-            padding: 30px; 
+
+        /* Container for mobile padding */
+        .container { padding: 16px; padding-bottom: 100px; }
+
+        .header { text-align: center; padding: 20px 0; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .logo { width: 70px; height: 70px; background: var(--primary); border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 30px; border: 4px solid #dbeafe; }
+
+        .card { background: white; border-radius: 20px; padding: 16px; margin-bottom: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #f1f5f9; }
+        
+        .upload-zone { 
+            border: 2px dashed var(--primary); 
+            padding: 30px 10px; 
             text-align: center; 
-            color: var(--main-blue); 
-            cursor: pointer; 
             border-radius: 15px; 
-            background: #f0f9ff;
+            background: #f0f9ff; 
+            color: var(--primary);
+            cursor: pointer;
         }
-        .btn-group { display: flex; gap: 10px; margin-top: 12px; }
+
+        .label { font-weight: bold; margin-bottom: 10px; display: block; font-size: 0.95rem; }
+
+        .option-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .opt-btn { 
-            flex: 1; padding: 12px; 
+            padding: 14px; 
             border: 1px solid #e2e8f0; 
             border-radius: 12px; 
-            cursor: pointer; 
+            background: white; 
             font-weight: bold; 
-            background: white;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.9rem;
         }
-        .opt-btn.active { background: var(--main-blue) !important; color: white !important; }
-        input { 
-            width: 100%; padding: 14px; 
+        .opt-btn.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 12px rgba(36,139,207,0.3); }
+
+        .input-field { 
+            width: 100%; 
+            padding: 14px; 
             border: 1px solid #e2e8f0; 
             border-radius: 12px; 
-            box-sizing: border-box; 
             margin-bottom: 12px; 
             outline: none; 
             font-size: 1rem;
+            background: #fcfcfc;
         }
-        .invoice { background: #1a202c; color: white; border-radius: 18px; padding: 20px; }
-        .total-price { 
-            font-size: 1.5rem; color: #4ade80; 
-            text-align: center; margin-top: 15px; 
-            border-top: 1px dashed #4a5568; 
-            padding-top: 15px; font-weight: bold; 
-        }
-        .btn-main { 
-            width: 100%; padding: 16px; 
-            border: none; border-radius: 14px; 
-            font-weight: bold; font-size: 1.1rem; 
+        .input-field:focus { border-color: var(--primary); background: white; }
+
+        /* Invoice Style */
+        .invoice { background: var(--secondary); color: white; border-radius: 20px; padding: 20px; margin-top: 20px; }
+        .inv-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.9rem; color: #cbd5e1; }
+        .inv-total { border-top: 1px dashed #475569; margin-top: 15px; padding-top: 15px; text-align: center; }
+        .total-amount { font-size: 1.8rem; font-weight: bold; color: #4ade80; display: block; }
+
+        .btn-action { 
+            width: 100%; 
+            padding: 16px; 
+            border: none; 
+            border-radius: 15px; 
+            font-weight: bold; 
+            font-size: 1.1rem; 
             cursor: pointer; 
+            margin-top: 10px;
         }
-        .navbar { 
-            position: fixed; bottom: 0; left: 0; 
-            width: 100%; background: white; 
-            display: flex; border-top: 1px solid #edf2f7; 
-            z-index: 100; 
-        }
-        .nav-item { 
-            flex: 1; text-align: center; 
-            padding: 14px; color: #718096; 
-            cursor: pointer; font-size: 0.9rem; font-weight: bold; 
-        }
-        .nav-item.active { color: var(--main-blue); border-top: 3px solid var(--main-blue); }
-        
-        #welcome-modal { 
-            position: fixed; top: 0; left: 0; 
-            width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.85); 
-            display: flex; align-items: center; justify-content: center; 
-            z-index: 2000; 
-        }
-        .modal-content { 
-            background: white; padding: 35px; 
-            border-radius: 25px; text-align: center; 
-            width: 85%; max-width: 400px; 
-        }
+        .btn-confirm { background: var(--success); color: white; }
+        .btn-location { background: #64748b; color: white; font-size: 0.9rem; }
+
+        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; border-top: 1px solid #e2e8f0; z-index: 100; }
+        .nav-item { flex: 1; text-align: center; padding: 15px; color: #94a3b8; font-size: 0.85rem; font-weight: bold; cursor: pointer; }
+        .nav-item.active { color: var(--primary); }
+
+        /* File List */
+        .file-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+        .file-info { font-size: 0.85rem; color: #475569; }
+        .counter { display: flex; align-items: center; gap: 10px; }
+        .count-btn { width: 30px; height: 30px; border-radius: 8px; border: 1px solid #e2e8f0; background: white; font-weight: bold; }
+
+        #welcome-screen { position: fixed; inset: 0; background: rgba(15,23,42,0.95); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .modal { background: white; border-radius: 30px; padding: 30px; text-align: center; max-width: 350px; width: 100%; }
+
         .hidden { display: none !important; }
-        .file-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
     </style>
 </head>
 <body>
 
-    <!-- Welcome Modal -->
-    <div id="welcome-modal">
-        <div class="modal-content">
-            <div class="logo-circle"></div>
-            <h2 style="color:var(--main-blue); margin-bottom: 10px;">خدمات الشاطر الطلابية</h2>
-            <p style="color:#4a5568; line-height: 1.6;">أهلاً بك! ارفع مستنداتك وسنتولى طباعتها وتوصيلها إليك بأسرع وقت.</p>
-            <button class="btn-main" style="background: var(--main-blue); color:white; margin-top: 20px;" onclick="window.closeWelcome()">ابدأ طلبك الآن</button>
+    <!-- Welcome -->
+    <div id="welcome-screen">
+        <div class="modal">
+            <div class="logo">🛒</div>
+            <h2>مكتبة الشاطر</h2>
+            <p style="color: #64748b; margin-bottom: 25px;">أهلاً بك! ارفع ملفاتك الآن وسنتولى طباعتها وتوصيلها لباب بيتك.</p>
+            <button class="btn-action" style="background: var(--primary); color:white;" onclick="closeWelcome()">ابدأ الآن</button>
         </div>
     </div>
 
-    <div id="app-content">
-        <div class="header">
-            <div class="logo-circle" id="logo-main"></div>
-            <h1 style="margin:0; color:var(--main-blue); font-size: 1.4rem;">خدمات الشاطر</h1>
-        </div>
+    <div class="header">
+        <div class="logo" id="logo-main">🎓</div>
+        <h1 style="margin:0; font-size: 1.2rem; color: var(--primary);">خدمات الشاطر الطلابية</h1>
+    </div>
 
+    <div class="container">
+        
         <div id="order-view">
+            <!-- Upload -->
             <div class="card">
-                <div class="upload-area" onclick="document.getElementById('fileInp').click()">
-                    <span style="font-size: 1.2rem;">📁 اضغط لإضافة ملفاتك</span>
+                <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+                    <span style="font-size: 1.5rem; display:block;">📁</span>
+                    <b>اضغط لإضافة ملفات (PDF/صور)</b>
+                    <p style="font-size: 0.75rem; margin-top: 5px;">يمكنك إضافة أكثر من ملف في وقت واحد</p>
                 </div>
-                <input type="file" id="fileInp" multiple style="display:none">
+                <input type="file" id="fileInput" multiple hidden>
             </div>
-            <div id="file-list" class="card hidden"></div>
-            <div id="order-options" class="hidden">
+
+            <!-- List -->
+            <div id="files-card" class="card hidden">
+                <span class="label">الملفات المضافة:</span>
+                <div id="files-list"></div>
+            </div>
+
+            <!-- Settings -->
+            <div id="settings-area" class="hidden">
                 <div class="card">
-                    <p><b>نوع الطباعة:</b></p>
-                    <div class="btn-group">
-                        <button id="color-c" class="opt-btn active" onclick="window.setOpt('color','c')">🌈 ملون</button>
-                        <button id="color-n" class="opt-btn" onclick="window.setOpt('color','n')">⚪ أسود</button>
+                    <span class="label">نوع الطباعة:</span>
+                    <div class="option-grid">
+                        <button id="clr-c" class="opt-btn active" onclick="updatePref('color', 'c')">🌈 ملون</button>
+                        <button id="clr-n" class="opt-btn" onclick="updatePref('color', 'n')">⚪ أسود وأبيض</button>
+                    </div>
+
+                    <span class="label">طريقة الطباعة:</span>
+                    <div class="option-grid">
+                        <button id="side-1" class="opt-btn active" onclick="updatePref('side', '1')">📄 وجه واحد</button>
+                        <button id="side-2" class="opt-btn" onclick="updatePref('side', '2')">📖 وجهين</button>
                     </div>
                 </div>
+
+                <!-- Invoice -->
                 <div class="invoice">
-                    <div id="inv-details"></div>
-                    <div class="total-price" id="total-display">0 د.ع</div>
+                    <div class="inv-row"><span>عدد الأوراق التقريبي:</span><span id="sheet-count">0</span></div>
+                    <div class="inv-row"><span>سعر الطباعة:</span><span id="print-price">0 د.ع</span></div>
+                    <div class="inv-row"><span>أجور التوصيل:</span><span id="deliv-price">2,000 د.ع</span></div>
+                    <div class="inv-total">
+                        <span>المجموع الكلي:</span>
+                        <span class="total-amount" id="grand-total">0 د.ع</span>
+                    </div>
                 </div>
-                <div class="card" style="margin-top:15px;">
-                    <input type="text" id="uName" placeholder="✍️ الاسم الكامل">
-                    <input type="tel" id="uPhone" placeholder="📞 رقم الهاتف">
-                    <input type="text" id="uRegion" placeholder="🏠 المنطقة">
-                    <button id="locBtn" class="btn-main" style="background:#718096; color:white; margin-bottom: 10px;" onclick="window.askLoc()">📍 تحديد الموقع</button>
-                    <button id="sendBtn" class="btn-main" style="background:var(--success); color:white;" onclick="window.sendOrder()">تأكيد الطلب ✅</button>
+
+                <!-- Info -->
+                <div class="card" style="margin-top: 20px;">
+                    <span class="label">معلومات الزبون:</span>
+                    <input type="text" id="uName" class="input-field" placeholder="الاسم الكامل">
+                    <input type="tel" id="uPhone" class="input-field" placeholder="رقم الهاتف (11 رقم)" maxlength="11">
+                    <input type="text" id="uRegion" class="input-field" placeholder="المنطقة / العنوان">
+                    
+                    <button id="locBtn" class="btn-action btn-location" onclick="getLocation()">📍 تحديد موقعي الحالي</button>
+                    <button id="sendBtn" class="btn-action btn-confirm" onclick="confirmOrder()">إرسال الطلب عبر البوت ✅</button>
                 </div>
             </div>
         </div>
 
+        <!-- Tracking View -->
         <div id="tracking-view" class="hidden">
-            <h3 style="margin-right:10px;">📦 طلباتي</h3>
-            <div id="user-orders-list"></div>
-        </div>
-
-        <div id="admin-view" class="hidden">
-            <h3 style="margin-right:10px;">⚙️ الإدارة</h3>
-            <div id="all-orders-list"></div>
+            <h3 style="margin-bottom: 15px;">🔍 تتبع طلباتك</h3>
+            <div id="my-orders"></div>
         </div>
     </div>
 
+    <!-- Nav -->
     <div class="navbar">
-        <div class="nav-item active" id="nav-order" onclick="window.switchTab('order')">➕ طلب جديد</div>
-        <div class="nav-item" id="nav-tracking" onclick="window.switchTab('tracking')">🔍 طلباتي</div>
+        <div class="nav-item active" id="nav-order" onclick="switchView('order')">➕ طلب جديد</div>
+        <div class="nav-item" id="nav-track" onclick="switchView('track')">📦 طلباتي</div>
     </div>
 
     <script>
-        // --- الأساسيات ---
         const botToken = '8446310296:AAE3S3faplYwmvM4jYQgeAYPenq2bDUYTrQ'; 
-        const myChatId = '7618746133'; 
-        const tg = window.Telegram.WebApp;
-        tg.ready();
+        const myChatId = '7618746133';
+        
+        let files = [];
+        let prefs = { color: 'c', side: '1' };
+        let userLocation = null;
 
-        let selectedFiles = [];
-        let orderPrefs = { color: 'c' };
-        let userLocation = "غير محدد";
+        function closeWelcome() { document.getElementById('welcome-screen').classList.add('hidden'); }
 
-        // --- وظائف عامة (Global) لضمان عمل الأزرار ---
-        window.closeWelcome = () => {
-            document.getElementById('welcome-modal').classList.add('hidden');
-        };
-
-        window.switchTab = (tab) => {
-            document.getElementById('order-view').classList.toggle('hidden', tab !== 'order');
-            document.getElementById('tracking-view').classList.toggle('hidden', tab !== 'tracking');
-            document.getElementById('admin-view').classList.toggle('hidden', tab !== 'admin');
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            if(tab !== 'admin') document.getElementById('nav-' + tab).classList.add('active');
-            if(tab === 'tracking') loadUserOrders();
-            if(tab === 'admin') loadAllOrders();
-        };
-
-        window.setOpt = (key, val) => {
-            orderPrefs[key] = val;
-            document.getElementById('color-c').classList.toggle('active', val === 'c');
-            document.getElementById('color-n').classList.toggle('active', val === 'n');
-            updateUI();
-        };
-
-        window.askLoc = () => {
-            navigator.geolocation.getCurrentPosition(p => {
-                userLocation = `https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`;
-                document.getElementById('locBtn').innerText = "✅ تم حفظ الموقع";
-                document.getElementById('locBtn').style.background = "#28a745";
-            }, () => alert("يرجى تفعيل الموقع"));
-        };
-
-        // --- منطق الملفات ---
-        document.getElementById('fileInp').onchange = (e) => {
-            for (let f of e.target.files) {
-                selectedFiles.push({ name: f.name, copies: 1 });
-            }
-            updateUI();
-        };
-
-        function updateUI() {
-            const list = document.getElementById('file-list');
-            list.innerHTML = '';
-            let sheets = 0;
-            selectedFiles.forEach((f, i) => {
-                list.innerHTML += `<div class="file-item"><span>${f.name}</span>
-                    <div><button onclick="window.upd(${i},-1)">-</button> ${f.copies} <button onclick="window.upd(${i},1)">+</button></div></div>`;
-                sheets += f.copies;
-            });
-            const price = sheets * (orderPrefs.color === 'c' ? 150 : 75);
-            const total = price + (price >= 15000 ? 0 : 2000);
-            document.getElementById('total-display').innerText = total + " د.ع";
-            window.lastTotal = total;
-            document.getElementById('file-list').classList.toggle('hidden', selectedFiles.length === 0);
-            document.getElementById('order-options').classList.toggle('hidden', selectedFiles.length === 0);
+        function switchView(v) {
+            document.getElementById('order-view').classList.toggle('hidden', v !== 'order');
+            document.getElementById('tracking-view').classList.toggle('hidden', v !== 'track');
+            document.getElementById('nav-order').classList.toggle('active', v === 'order');
+            document.getElementById('nav-track').classList.toggle('active', v === 'track');
+            if(v === 'track') loadOrders();
         }
 
-        window.upd = (i, d) => { selectedFiles[i].copies = Math.max(1, selectedFiles[i].copies + d); updateUI(); };
+        document.getElementById('fileInput').onchange = async (e) => {
+            for (let f of e.target.files) {
+                let pCount = 1;
+                if(f.name.toLowerCase().endsWith('.pdf')) {
+                    try {
+                        const arrayBuffer = await f.arrayBuffer();
+                        const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+                        pCount = pdf.numPages;
+                    } catch(e) { pCount = 1; }
+                }
+                files.push({ name: f.name, pages: pCount, copies: 1 });
+            }
+            renderFiles();
+        };
 
-        window.sendOrder = async () => {
-            if (!window.currentUser) return alert("انتظر تحميل الحساب...");
-            const name = document.getElementById('uName').value;
-            const phone = document.getElementById('uPhone').value;
-            if(!name || !phone) return alert("اكمل البيانات");
+        function renderFiles() {
+            const list = document.getElementById('files-list');
+            list.innerHTML = '';
+            let totalSheets = 0;
+
+            files.forEach((f, i) => {
+                let sheetsForThisFile = prefs.side === '2' ? Math.ceil(f.pages / 2) : f.pages;
+                let subTotal = sheetsForThisFile * f.copies;
+                totalSheets += subTotal;
+
+                list.innerHTML += `
+                    <div class="file-row">
+                        <div>
+                            <div style="font-weight:bold; font-size:0.9rem;">${f.name.substring(0,20)}...</div>
+                            <div class="file-info">${f.pages} صفحة × ${f.copies} نسخة</div>
+                        </div>
+                        <div class="counter">
+                            <button class="count-btn" onclick="updateCopy(${i},-1)">-</button>
+                            <span>${f.copies}</span>
+                            <button class="count-btn" onclick="updateCopy(${i},1)">+</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            const pPrice = totalSheets * (prefs.color === 'c' ? 150 : 75);
+            const dFee = (pPrice >= 15000 || pPrice === 0) ? 0 : 2000;
+            const final = pPrice + dFee;
+
+            document.getElementById('sheet-count').innerText = totalSheets;
+            document.getElementById('print-price').innerText = pPrice.toLocaleString() + " د.ع";
+            document.getElementById('deliv-price').innerText = dFee === 0 ? "مجاني 🎁" : dFee.toLocaleString() + " د.ع";
+            document.getElementById('grand-total').innerText = final.toLocaleString() + " د.ع";
+            window.finalAmount = final;
+
+            document.getElementById('files-card').classList.toggle('hidden', files.length === 0);
+            document.getElementById('settings-area').classList.toggle('hidden', files.length === 0);
+        }
+
+        window.updateCopy = (i, d) => { files[i].copies = Math.max(1, files[i].copies + d); renderFiles(); };
+
+        window.updatePref = (k, v) => {
+            prefs[k] = v;
+            document.getElementById('clr-c').className = prefs.color === 'c' ? 'opt-btn active' : 'opt-btn';
+            document.getElementById('clr-n').className = prefs.color === 'n' ? 'opt-btn active' : 'opt-btn';
+            document.getElementById('side-1').className = prefs.side === '1' ? 'opt-btn active' : 'opt-btn';
+            document.getElementById('side-2').className = prefs.side === '2' ? 'opt-btn active' : 'opt-btn';
+            renderFiles();
+        };
+
+        window.getLocation = () => {
+            const btn = document.getElementById('locBtn');
+            btn.innerText = "جاري البحث... ⏳";
+            navigator.geolocation.getCurrentPosition(
+                p => {
+                    userLocation = `https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`;
+                    btn.innerText = "✅ تم تحديد الموقع";
+                    btn.style.background = "#059669";
+                },
+                err => {
+                    alert("يرجى تفعيل الـ GPS لإرسال الموقع");
+                    btn.innerText = "❌ فشل تحديد الموقع";
+                }
+            );
+        };
+
+        window.confirmOrder = async () => {
+            const name = document.getElementById('uName').value.trim();
+            const phone = document.getElementById('uPhone').value.trim();
+            const region = document.getElementById('uRegion').value.trim();
+
+            if(!name || phone.length !== 11 || !region) {
+                alert("يرجى التأكد من كتابة الاسم ورقم الهاتف (11 رقم) والمنطقة");
+                return;
+            }
+            if(!userLocation) {
+                alert("يرجى الضغط على زر تحديد الموقع أولاً");
+                return;
+            }
 
             const btn = document.getElementById('sendBtn');
-            btn.disabled = true; btn.innerText = "جاري الإرسال...";
+            btn.disabled = true;
+            btn.innerText = "جاري الإرسال... 🚀";
 
             const orderId = "SH-" + Math.floor(1000 + Math.random() * 9000);
-            const data = {
-                orderId, userId: window.currentUser.uid, name, phone,
-                total: window.lastTotal, status: 'pending', timestamp: Date.now(),
-                files: selectedFiles.map(f => f.name).join(', ')
+            const orderData = {
+                orderId,
+                userId: window.auth.currentUser?.uid || "anon",
+                name, phone, region,
+                location: userLocation,
+                total: window.finalAmount,
+                status: 'pending',
+                timestamp: Date.now(),
+                details: files.map(f => `${f.name} (${f.copies}x)`).join(", ")
             };
 
             try {
-                await window.fs.addDoc(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders'), data);
+                // Firebase - Rule 1
+                const colRef = window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders');
+                await window.fs.addDoc(colRef, orderData);
+
+                // Telegram
+                const msg = `📦 *طلب جديد* #${orderId}\n👤 الزبون: ${name}\n📞 الهاتف: ${phone}\n🏠 المنطقة: ${region}\n💰 المبلغ: ${window.finalAmount} د.ع\n📍 الموقع: ${userLocation}\n📄 الملفات: ${orderData.details}`;
+                
                 await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ chat_id: myChatId, text: `📦 طلب جديد #${orderId}\nالزبون: ${name}\nالهاتف: ${phone}\nالموقع: ${userLocation}` })
+                    body: JSON.stringify({ chat_id: myChatId, text: msg, parse_mode: 'Markdown' })
                 });
-                alert("تم الإرسال بنجاح!");
-                location.reload();
-            } catch (e) { alert("خطأ في الإرسال"); btn.disabled = false; }
+
+                document.getElementById('order-view').innerHTML = `
+                    <div class="card" style="text-align:center; padding: 40px 10px;">
+                        <h2 style="color:var(--success)">تم استلام طلبك! ✅</h2>
+                        <p>رقم طلبك: <b>${orderId}</b></p>
+                        <p>سنقوم بالتواصل معك قريباً لتأكيد موعد التوصيل.</p>
+                        <button class="btn-action" style="background:var(--primary); color:white;" onclick="location.reload()">طلب جديد</button>
+                    </div>
+                `;
+            } catch (e) {
+                alert("حدث خطأ في النظام. يرجى المحاولة لاحقاً");
+                btn.disabled = false;
+                btn.innerText = "إرسال الطلب ✅";
+            }
         };
 
-        // الدخول للإدارة بلمسة طويلة على الشعار
-        let lt;
-        document.getElementById('logo-main').onmousedown = () => lt = setTimeout(() => window.switchTab('admin'), 2000);
-        document.getElementById('logo-main').onmouseup = () => clearTimeout(lt);
+        function loadOrders() {
+            if(!window.currentUser) return;
+            const container = document.getElementById('my-orders');
+            container.innerHTML = "جاري التحميل...";
+            
+            const colRef = window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'orders');
+            window.fs.onSnapshot(colRef, (snap) => {
+                const my = snap.docs
+                    .map(d => d.data())
+                    .filter(o => o.userId === window.currentUser.uid)
+                    .sort((a,b) => b.timestamp - a.timestamp);
+                
+                if(my.length === 0) { container.innerHTML = "لا توجد طلبات سابقة"; return; }
+                
+                container.innerHTML = '';
+                my.forEach(o => {
+                    const st = {pending: 'قيد المراجعة', printing: 'جاري الطباعة', delivered: 'تم التوصيل'}[o.status] || o.status;
+                    container.innerHTML += `
+                        <div class="card">
+                            <div style="display:flex; justify-content:space-between;">
+                                <b>#${o.orderId}</b>
+                                <span style="color:var(--primary)">${st}</span>
+                            </div>
+                            <div style="font-size:0.8rem; color:#64748b; margin-top:5px;">${o.details}</div>
+                            <div style="margin-top:10px; font-weight:bold;">${o.total.toLocaleString()} د.ع</div>
+                        </div>
+                    `;
+                });
+            });
+        }
     </script>
 </body>
 </html>
