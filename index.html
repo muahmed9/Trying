@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>خدمات الشاطر الطلابية</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --main-blue:#248bcf; --bg-gray:#f4f7f9; --success:#28a745; --text-dark:#333; --error:#dc3545; --gold:#eab308; }
+        * { box-sizing:border-box; }
+        body { font-family:'Segoe UI',Tahoma,sans-serif; background:var(--bg-gray); direction:rtl; margin:0; padding:0 0 75px; color:var(--text-dark); }
+        .bottom-nav { position:fixed; bottom:0; left:0; right:0; background:white; border-top:1px solid #e8ecef; display:flex; z-index:200; box-shadow:0 -3px 15px rgba(0,0,0,0.08); }
+        .nav-btn { flex:1; padding:10px 5px; border:none; background:none; cursor:pointer; font-size:0.72rem; color:#aaa; display:flex; flex-direction:column; align-items:center; gap:3px; transition:color 0.2s; }
+        .nav-btn .nav-icon { font-size:1.5rem; }
+        .nav-btn.active { color:var(--main-blue); }
+        .nav-btn .badge { background:var(--error); color:white; border-radius:10px; font-size:0.6rem; padding:1px 5px; position:absolute; top:6px; margin-right:-18px; }
+        .tab { display:none; padding:15px; }
+        .tab.active { display:block; }
+        .card { background:white; border-radius:15px; padding:20px; margin-bottom:15px; box-shadow:0 2px 12px rgba(0,0,0,0.05); border:1px solid #eef1f4; }
+        .header { text-align:center; padding:15px 0 5px; }
+        .logo-circle { width:80px; height:80px; background:white; border-radius:50%; margin:0 auto 8px; box-shadow:0 4px 15px rgba(0,0,0,0.1); border:3px solid var(--main-blue); display:flex; align-items:center; justify-content:center; font-size:2rem; }
+        .upload-area { border:2px dashed var(--main-blue); padding:25px; text-align:center; color:var(--main-blue); cursor:pointer; border-radius:15px; transition:background 0.2s; }
+        .upload-area:active { background:#e1f0fa; }
+        .btn-group { display:flex; gap:10px; margin-top:10px; }
+        .opt-btn { flex:1; padding:12px; border:1px solid #ddd; border-radius:10px; cursor:pointer; font-weight:bold; font-size:0.95rem; transition:0.2s; }
+        .opt-btn.active { background:var(--main-blue) !important; color:white !important; border-color:var(--main-blue); }
+        .opt-btn.inactive { background:white !important; color:var(--text-dark) !important; }
+        .btn-main { width:100%; padding:15px; border:none; border-radius:12px; font-weight:bold; font-size:1.05rem; cursor:pointer; transition:opacity 0.2s; }
+        .btn-main:disabled { opacity:0.6; cursor:not-allowed; }
+        input[type="text"],input[type="tel"] { width:100%; padding:14px; border:1px solid #ddd; border-radius:12px; font-size:1rem; margin-bottom:10px; background:#fafafa; outline:none; }
+        input:focus { border-color:var(--main-blue); }
+        .toggle-wrap { position:relative; display:inline-block; width:50px; height:27px; flex-shrink:0; }
+        .toggle-wrap input { opacity:0; width:0; height:0; }
+        .toggle-slider { position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:#ccc; border-radius:27px; transition:0.3s; }
+        .toggle-slider:before { content:''; position:absolute; width:21px; height:21px; right:3px; bottom:3px; background:white; border-radius:50%; transition:0.3s; }
+        input:checked + .toggle-slider { background:var(--main-blue); }
+        input:checked + .toggle-slider:before { transform:translateX(-23px); }
+        .invoice { background:#2c3e50; color:white; border-radius:15px; padding:20px; margin-top:15px; }
+        .inv-line { display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.9rem; }
+        .total-price { font-size:1.4rem; color:#4eff4e; text-align:center; margin-top:15px; border-top:1px dashed #5d6d7e; padding-top:15px; font-weight:bold; }
+        .progress-container { width:100%; background:#ddd; height:8px; border-radius:4px; margin:15px 0; display:none; overflow:hidden; }
+        .progress-bar { width:0%; height:100%; background:var(--success); transition:width 0.3s; }
+        .file-item { padding:10px 0; border-bottom:1px solid #f0f0f0; display:flex; justify-content:space-between; align-items:center; }
+        .btn-count { background:#eef1f4; border:1px solid #ddd; width:32px; height:32px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:1rem; }
+        .image-note { color:var(--main-blue); font-size:0.85rem; font-weight:bold; margin:12px 0; display:none; border:1px solid #b3d7ff; padding:10px; border-radius:10px; background:#e7f3ff; text-align:center; }
+        .error-msg { background:#fff1f2; color:var(--error); padding:10px; border-radius:10px; font-size:0.85rem; font-weight:bold; margin-bottom:12px; text-align:center; display:none; border:1px solid #fecdd3; }
+        .ios-hint-box { background:#fffbef; border:2px solid #fbd38d; border-radius:12px; padding:15px; margin-top:15px; }
+        .status-badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:0.8rem; font-weight:bold; }
+        .s-received   { background:#dbeafe; color:#1e40af; }
+        .s-printing   { background:#fef9c3; color:#854d0e; }
+        .s-delivering { background:#dcfce7; color:#166534; }
+        .s-delivered  { background:#f0fdf4; color:#15803d; border:1px solid #86efac; }
+        .s-cancelled  { background:#fee2e2; color:#991b1b; }
+        .order-card { background:white; border-radius:15px; padding:15px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,0.06); border:1px solid #eef1f4; cursor:pointer; transition:transform 0.15s; }
+        .order-card:active { transform:scale(0.98); }
+        .tl-step { display:flex; align-items:flex-start; gap:12px; margin-bottom:5px; }
+        .tl-circle { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.9rem; flex-shrink:0; }
+        .tl-done { background:var(--success); color:white; }
+        .tl-current { background:var(--main-blue); color:white; }
+        .tl-pending { background:#e5e7eb; color:#9ca3af; }
+        .tl-connector { width:2px; height:22px; background:#e5e7eb; margin:2px 0 2px 15px; }
+        .tl-connector.done { background:var(--success); }
+        .points-hero { background:linear-gradient(135deg,#1a3557,#248bcf); color:white; border-radius:20px; padding:25px; margin-bottom:15px; text-align:center; }
+        .points-number { font-size:3.2rem; font-weight:bold; line-height:1; }
+        .tier-badge { display:inline-block; padding:5px 18px; border-radius:20px; font-weight:bold; margin:10px 0 5px; }
+        .tier-gold   { background:#eab308; color:#1e293b; }
+        .tier-silver { background:#94a3b8; color:white; }
+        .tier-bronze { background:#cd7f32; color:white; }
+        .pts-progress-wrap { width:100%; height:8px; background:rgba(255,255,255,0.25); border-radius:4px; overflow:hidden; margin:8px 0; }
+        .pts-progress-fill { height:100%; background:#4eff4e; border-radius:4px; transition:width 0.6s; }
+        .reward-card { background:white; border-radius:13px; padding:14px 15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 8px rgba(0,0,0,0.05); border:1px solid #eef1f4; }
+        .redeem-btn { background:var(--main-blue); color:white; padding:8px 16px; border-radius:10px; font-size:0.85rem; cursor:pointer; font-weight:bold; border:none; transition:opacity 0.2s; }
+        .redeem-btn:disabled { opacity:0.35; cursor:not-allowed; }
+        .pts-hist-item { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid #f1f5f9; font-size:0.88rem; }
+        .sheet-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.65); display:none; align-items:flex-end; justify-content:center; z-index:300; }
+        .sheet-overlay.open { display:flex; }
+        .bottom-sheet { background:white; border-radius:22px 22px 0 0; padding:20px; width:100%; max-height:88vh; overflow-y:auto; }
+        .sheet-handle { width:40px; height:4px; background:#ddd; border-radius:2px; margin:0 auto 15px; }
+        #welcome-modal { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.88); display:flex; align-items:center; justify-content:center; z-index:400; }
+        .modal-content { background:white; padding:30px; border-radius:22px; text-align:center; width:88%; max-width:400px; }
+    </style>
+</head>
+<body>
+
+<div id="welcome-modal">
+    <div class="modal-content">
+        <div class="logo-circle">🖨️</div>
+        <h2 style="color:var(--main-blue);margin:0 0 8px;">خدمات الشاطر الطلابية</h2>
+        <p style="color:#555;margin:0 0 12px;">أهلاً بك! ارفع مستنداتك وسنتولى طباعتها وتوصيلها.</p>
+        <p id="first-order-gift" style="font-size:0.9rem;color:var(--success);font-weight:bold;display:none;">🎁 توصيل مجاني لأول طلب لك!</p>
+        <p style="font-size:0.88rem;color:var(--success);font-weight:bold;">🎁 توصيل مجاني للطلبات 10,000 د.ع فأكثر!</p>
+        <p style="font-size:0.85rem;color:var(--main-blue);">🏆 اكسب نقاط مع كل طلب وتمتع بخصومات!</p>
+        <button class="btn-main" style="background:var(--main-blue);color:white;margin-top:10px;" onclick="closeWelcome()">ابدأ طلبك الآن ✨</button>
+    </div>
+</div>
+
+<div class="sheet-overlay" id="detail-overlay">
+    <div class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+            <h3 style="margin:0;color:var(--main-blue);" id="detail-order-title">تفاصيل الطلب</h3>
+            <button onclick="closeDetail()" style="border:none;background:#f1f5f9;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:1.1rem;">✕</button>
+        </div>
+        <div id="detail-body"></div>
+    </div>
+</div>
+
+<!-- TAB 1 -->
+<div class="tab active" id="tab-order">
+    <div class="header">
+        <div class="logo-circle">🖨️</div>
+        <h1 style="margin:0;color:var(--main-blue);font-size:1.3rem;">خدمات الشاطر الطلابية</h1>
+    </div>
+    <div class="card" style="margin-top:12px;">
+        <div class="upload-area" onclick="document.getElementById('fileInp').click()">
+            <span style="font-size:1.3rem;">📁 اضغط هنا لإضافة الملفات</span>
+            <p style="font-size:0.8rem;margin:6px 0 0;opacity:0.8;">يدعم PDF, Word, Excel, PowerPoint والصور</p>
+        </div>
+        <div class="ios-hint-box">
+            <span style="color:#c05621;font-weight:bold;font-size:1rem;display:flex;align-items:center;gap:5px;margin-bottom:10px;">⚠️ تنبيه لمستخدمي الآيفون</span>
+            <div style="color:#744210;font-size:0.88rem;line-height:1.75;">
+                <p style="margin:0 0 6px;font-weight:600;">للعثور على ملفاتك:</p>
+                <ol style="padding-right:20px;margin:0;">
+                    <li>افتح الملف في واتساب أو تليجرام.</li>
+                    <li>اضغط <b style="color:#c05621;">"مشاركة"</b> ثم <b style="color:#c05621;">"حفظ في الملفات"</b>.</li>
+                    <li>عد للتطبيق واختر <b style="color:#c05621;">"تصفح (Browse)"</b>.</li>
+                </ol>
+            </div>
+        </div>
+        <input type="file" id="fileInp" multiple style="display:none">
+    </div>
+    <div id="list" class="card" style="display:none;"></div>
+    <div id="opts" style="display:none;">
+        <div class="card">
+            <p style="margin:0 0 8px;"><b>نوع الطباعة:</b></p>
+            <div class="btn-group">
+                <button id="c-btn" class="opt-btn active" onclick="setConf('color','c')">🌈 ملون</button>
+                <button id="n-btn" class="opt-btn inactive" onclick="setConf('color','n')">⚪ أسود</button>
+            </div>
+            <div id="img-alert" class="image-note">⚠️ الصور تُطبع وجه واحد فقط.</div>
+            <div id="side-selection-container">
+                <p style="margin:18px 0 8px;"><b>طريقة الطباعة:</b></p>
+                <div class="btn-group">
+                    <button id="s1-btn" class="opt-btn active" onclick="setConf('side','1')">📄 وجه واحد</button>
+                    <button id="s2-btn" class="opt-btn inactive" onclick="setConf('side','2')">📖 وجهين</button>
+                </div>
+            </div>
+        </div>
+        <div class="card" id="pts-discount-card" style="display:none;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div><b>💎 استخدام نقاط الولاء</b>
+                    <p style="margin:4px 0 0;font-size:0.83rem;color:#666;" id="pts-avail-label"></p>
+                </div>
+                <label class="toggle-wrap"><input type="checkbox" id="use-pts-toggle" onchange="ui()"><span class="toggle-slider"></span></label>
+            </div>
+            <p id="pts-saving-label" style="margin:8px 0 0;color:var(--success);font-size:0.85rem;display:none;"></p>
+        </div>
+        <div class="invoice">
+            <div id="inv-details"></div>
+            <div class="total-price" id="total">المجموع النهائي: 0 د.ع</div>
+        </div>
+        <div class="card" style="margin-top:15px;">
+            <div id="validation-error" class="error-msg"></div>
+            <input type="text" id="uName"   placeholder="✍️ ادخل الاسم الكامل">
+            <input type="tel"  id="uPhone"  placeholder="📞 رقم الهاتف (11 رقم)" maxlength="11">
+            <input type="text" id="uRegion" placeholder="🏠 اسم المنطقة / الحي">
+            <button id="locBtn" class="btn-main" style="background:#64748b;color:white;margin-bottom:10px;" onclick="askLoc()">📍 تحديد موقعي على الخريطة</button>
+            <div class="progress-container" id="p-cont"><div class="progress-bar" id="p-bar"></div></div>
+            <p id="upload-status" style="text-align:center;font-size:0.82rem;color:#666;display:none;margin:5px 0;"></p>
+            <button id="sendBtn" class="btn-main" style="background:var(--success);color:white;margin-top:12px;" onclick="sendOrder()">تأكيد وإرسال الطلب ✅</button>
+        </div>
+    </div>
+</div>
+
+<!-- TAB 2 -->
+<div class="tab" id="tab-orders">
+    <h2 style="color:var(--main-blue);margin:0 0 15px;">📋 طلباتي</h2>
+    <div id="orders-container"><div style="text-align:center;padding:50px 20px;color:#aaa;"><div style="font-size:3.5rem;">📦</div><p>لا توجد طلبات بعد</p></div></div>
+</div>
+
+<!-- TAB 3 -->
+<div class="tab" id="tab-points">
+    <h2 style="color:var(--main-blue);margin:0 0 15px;">🏆 نقاط الولاء</h2>
+    <div class="points-hero">
+        <p style="margin:0 0 5px;opacity:0.8;font-size:0.9rem;">رصيد نقاطك الحالي</p>
+        <div class="points-number" id="pts-num">0</div>
+        <div id="tier-display"></div>
+        <div class="pts-progress-wrap"><div class="pts-progress-fill" id="pts-bar" style="width:0%"></div></div>
+        <p style="margin:0;font-size:0.8rem;opacity:0.75;" id="pts-next-label"></p>
+    </div>
+    <div class="card">
+        <h3 style="margin:0 0 12px;">🎁 استبدال النقاط</h3>
+        <div class="reward-card"><div><b>خصم 500 د.ع</b><p style="margin:3px 0 0;font-size:0.8rem;color:#777;">= 100 نقطة</p></div><button class="redeem-btn" id="rbtn-100" onclick="selectRedemption(100,500)">استبدال</button></div>
+        <div class="reward-card"><div><b>خصم 1,500 د.ع</b><p style="margin:3px 0 0;font-size:0.8rem;color:#777;">= 300 نقطة</p></div><button class="redeem-btn" id="rbtn-300" onclick="selectRedemption(300,1500)">استبدال</button></div>
+        <div class="reward-card"><div><b>خصم 3,500 د.ع</b><p style="margin:3px 0 0;font-size:0.8rem;color:#777;">= 700 نقطة</p></div><button class="redeem-btn" id="rbtn-700" onclick="selectRedemption(700,3500)">استبدال</button></div>
+        <div id="redemption-active-banner" style="display:none;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:10px;margin-top:10px;font-size:0.85rem;color:#166534;text-align:center;"></div>
+    </div>
+    <div class="card">
+        <h3 style="margin:0 0 12px;">📊 كيف تكسب النقاط؟</h3>
+        <div style="line-height:2.1;color:#555;font-size:0.88rem;">
+            <div>💳 كل <b>1,000 د.ع</b> = <b style="color:var(--main-blue);">10 نقاط</b></div>
+            <div>🥉 <b>برونز</b> (0–199): مستوى أساسي</div>
+            <div>🥈 <b>فضي</b> (200–499): أولوية في التجهيز</div>
+            <div>🥇 <b>ذهبي</b> (500+): <b style="color:var(--gold);">خصم 5% تلقائي</b></div>
+        </div>
+    </div>
+    <div class="card">
+        <h3 style="margin:0 0 12px;">📜 سجل النقاط</h3>
+        <div id="pts-history-list"><p style="color:#aaa;font-size:0.85rem;">لا يوجد سجل بعد</p></div>
+    </div>
+</div>
+
+<nav class="bottom-nav">
+    <button class="nav-btn active" id="nav-order"  onclick="switchTab('order')"><span class="nav-icon">🖨️</span><span>طلب جديد</span></button>
+    <button class="nav-btn"        id="nav-orders" onclick="switchTab('orders')" style="position:relative;"><span class="nav-icon">📋</span><span>طلباتي</span><span id="orders-badge" class="badge" style="display:none;">!</span></button>
+    <button class="nav-btn"        id="nav-points" onclick="switchTab('points')"><span class="nav-icon">🏆</span><span>نقاطي</span></button>
+</nav>
+
+<script>
+// ╔══════════════════════════════════════════╗
+// ║  ⚠️ ضع بياناتك من Supabase هنا          ║
+// ╚══════════════════════════════════════════╝
+const SUPABASE_URL  = 'https://zrumnqtgdscrwgcguseq.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_xEqE6S21QUMCkDxSMvTskg_9g3pi-vZ';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+const BOT_TOKEN  = '8446310296:AAFLgndwQEozwZ1Ja5Xf1UTdMt0iLFqty5k';
+const ADMIN_CHAT = '7618746133';
+
+const tg     = window.Telegram?.WebApp; tg?.ready();
+const tgUser = tg?.initDataUnsafe?.user;
+const userId = tgUser?.id ? String(tgUser.id) : 'guest_' + Date.now();
+
+let files = [], conf = {color:'c',side:'1'}, locUrl = 'غير محدد';
+let userDoc = {loyalty_points:0, first_order_done:false}, pendingRedeem = null;
+
+async function initUser() {
+    try {
+        const {data} = await sb.from('users').select('*').eq('id', userId).maybeSingle();
+        if (data) { userDoc = data; }
+        else {
+            const u = {id:userId, name:tgUser?.first_name||'', username:tgUser?.username||'', loyalty_points:0, total_orders:0, total_spent:0, first_order_done:false};
+            await sb.from('users').insert(u);
+            userDoc = u;
+        }
+    } catch {}
+    if (!userDoc.first_order_done) document.getElementById('first-order-gift').style.display = 'block';
+    refreshPointsUI();
+}
+
+function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('tab-'+tab).classList.add('active');
+    document.getElementById('nav-'+tab).classList.add('active');
+    if (tab==='orders') loadOrders();
+    if (tab==='points') loadPointsTab();
+}
+function closeWelcome() { document.getElementById('welcome-modal').style.display='none'; }
+
+document.getElementById('fileInp').onchange = async (e) => {
+    const allowed=['.pdf','.docx','.doc','.xlsx','.xls','.pptx','.ppt','.jpg','.jpeg','.png','.webp'];
+    for (const f of e.target.files) {
+        const name=f.name.toLowerCase(), ext=name.substring(name.lastIndexOf('.'));
+        if (!allowed.includes(ext) && !f.type.startsWith('image/')) continue;
+        const obj={file:f, name:f.name, p:1, c:1, isImg:f.type.startsWith('image/'), type:'ملف'};
+        try {
+            const buf=await f.arrayBuffer();
+            if (name.endsWith('.pdf')) {
+                pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+                const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+                obj.p=pdf.numPages; obj.type='PDF'; obj.isImg=false;
+            } else if (name.endsWith('.docx')) {
+                try {
+                    const zip=await JSZip.loadAsync(buf);
+                    const xml=await zip.file('docProps/app.xml').async('string');
+                    const doc=new DOMParser().parseFromString(xml,'text/xml');
+                    const pg=doc.getElementsByTagName('Pages')[0];
+                    obj.p=pg?parseInt(pg.childNodes[0].nodeValue):1; obj.type='Word'; obj.isImg=false;
+                } catch {
+                    const r=await mammoth.extractRawText({arrayBuffer:buf});
+                    obj.p=Math.max(1,Math.ceil(r.value.trim().split(/\s+/).length/300)); obj.type='Word';
+                }
+            } else if (name.endsWith('.pptx')||name.endsWith('.ppt')) {
+                const zip=await JSZip.loadAsync(buf);
+                const xml=await zip.file('docProps/app.xml').async('string');
+                const m=xml.match(/<Slides>(\d+)<\/Slides>/);
+                obj.p=m?parseInt(m[1]):1; obj.type='PowerPoint'; obj.isImg=false;
+            } else if (name.endsWith('.xlsx')||name.endsWith('.xls')) {
+                const wb=XLSX.read(buf,{type:'array'}); let total=0;
+                wb.SheetNames.forEach(sn=>{const s=wb.Sheets[sn];const r=XLSX.utils.decode_range(s['!ref']||'A1:A1');total+=Math.ceil((r.e.r-r.s.r+1)/45)*Math.ceil((r.e.c-r.s.c+1)/8);});
+                obj.p=Math.max(1,total); obj.type='Excel'; obj.isImg=false;
+            } else if (obj.isImg) obj.type='صورة';
+        } catch { obj.p=1; }
+        files.push(obj);
+    }
+    ui(); e.target.value='';
+};
+
+function setConf(k,v) {
+    conf[k]=v;
+    document.getElementById('c-btn').className =conf.color==='c'?'opt-btn active':'opt-btn inactive';
+    document.getElementById('n-btn').className =conf.color==='n'?'opt-btn active':'opt-btn inactive';
+    document.getElementById('s1-btn').className=conf.side==='1'?'opt-btn active':'opt-btn inactive';
+    document.getElementById('s2-btn').className=conf.side==='2'?'opt-btn active':'opt-btn inactive';
+    ui();
+}
+
+function askLoc() {
+    navigator.geolocation.getCurrentPosition(
+        pos=>{locUrl=`https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;const btn=document.getElementById('locBtn');btn.innerText='✅ تم حفظ الموقع';btn.style.background='var(--success)';hideError();},
+        ()=>showError('❌ يرجى تفعيل GPS والسماح بالوصول للموقع')
+    );
+}
+
+function calcPrice(sheets,imgs) {
+    const t=sheets+imgs; if(!t)return 0; if(t<=5)return 1000;
+    if(conf.color==='c'){if(t<=25)return t*150;if(t<=40)return t*130;if(t<=70)return t*120;return t*100;}
+    return t*(conf.side==='1'?90:75);
+}
+
+function ui() {
+    let sheets=0,imgs=0,docsPages=0,hasDocs=false,hasImgs=false;
+    const listEl=document.getElementById('list'); listEl.innerHTML='';
+    files.forEach((f,i)=>{
+        if(f.isImg){hasImgs=true;imgs+=f.c;}
+        else{hasDocs=true;docsPages+=f.p*f.c;const unit=f.type==='PowerPoint'?Math.ceil(f.p/2):f.p;sheets+=(conf.side==='2'?Math.ceil(unit/2):unit)*f.c;}
+        listEl.innerHTML+=`<div class="file-item"><span style="font-size:0.83rem;font-weight:bold;max-width:55%;">${f.name.substring(0,22)}${f.name.length>22?'…':''} <span style="color:#888;">(${f.p} ص)</span></span><div style="display:flex;align-items:center;gap:4px;"><button class="btn-count" onclick="cnt(${i},-1)">−</button><span style="padding:0 8px;font-weight:bold;">${f.c}</span><button class="btn-count" onclick="cnt(${i},1)">+</button><span onclick="del(${i})" style="color:var(--error);margin-right:8px;cursor:pointer;font-size:0.78rem;">حذف</span></div></div>`;
+    });
+    document.getElementById('side-selection-container').style.display=hasDocs?'block':'none';
+    document.getElementById('img-alert').style.display=hasImgs?'block':'none';
+    document.getElementById('list').style.display=files.length?'block':'none';
+    document.getElementById('opts').style.display=files.length?'block':'none';
+
+    const printPrice=calcPrice(sheets,imgs);
+    const isFirstOrder=!userDoc.first_order_done;
+    let deliveryFee=files.length===0?0:(printPrice>=10000||isFirstOrder?0:1000);
+    const isGold=(userDoc.loyalty_points||0)>=500;
+    const tierDisc=isGold?Math.round(printPrice*0.05):0;
+    const usePoints=document.getElementById('use-pts-toggle')?.checked&&pendingRedeem;
+    const ptsDisc=usePoints?pendingRedeem.discount:0;
+
+    const ptsCard=document.getElementById('pts-discount-card');
+    if(pendingRedeem&&files.length>0){
+        ptsCard.style.display='block';
+        document.getElementById('pts-avail-label').innerText=`لديك ${userDoc.loyalty_points||0} نقطة — خصم ${pendingRedeem.discount.toLocaleString()} د.ع جاهز`;
+        const sl=document.getElementById('pts-saving-label');sl.style.display=usePoints?'block':'none';sl.innerText=`✅ سيُخصم ${pendingRedeem.discount.toLocaleString()} د.ع`;
+    } else ptsCard.style.display='none';
+
+    const total=Math.max(0,printPrice-tierDisc-ptsDisc+deliveryFee);
+    const ptsEarned=Math.floor(total/1000)*10;
+    const deliveryText=isFirstOrder?'<b style="color:#4eff4e;">مجاني 🎁 أول طلب</b>':deliveryFee===0?'<b style="color:#4eff4e;">مجاني ✨</b>':deliveryFee.toLocaleString()+' د.ع';
+
+    document.getElementById('inv-details').innerHTML=`
+        <div class="inv-line"><span>صفحات الملفات:</span><span>${docsPages}</span></div>
+        <div class="inv-line"><span>الصور:</span><span>${imgs}</span></div>
+        <div class="inv-line" style="border-top:1px solid #5d6d7e;padding-top:6px;"><span>سعر الطباعة:</span><span>${printPrice.toLocaleString()} د.ع</span></div>
+        ${tierDisc>0?`<div class="inv-line"><span>🥇 خصم الذهبي (5%):</span><span style="color:#4eff4e;">−${tierDisc.toLocaleString()} د.ع</span></div>`:''}
+        ${ptsDisc>0&&usePoints?`<div class="inv-line"><span>💎 خصم النقاط:</span><span style="color:#4eff4e;">−${ptsDisc.toLocaleString()} د.ع</span></div>`:''}
+        <div class="inv-line"><span>التوصيل:</span><span>${deliveryText}</span></div>
+        <div class="inv-line"><span>💎 نقاط ستكسبها:</span><span style="color:#ffd700;">+${ptsEarned}</span></div>`;
+    document.getElementById('total').innerText=`المجموع النهائي: ${total.toLocaleString()} د.ع`;
+    window._calc={printPrice,deliveryFee,tierDisc,ptsDisc,total,ptsEarned,isFirstOrder};
+}
+
+window.cnt=(i,d)=>{files[i].c=Math.max(1,files[i].c+d);ui();};
+window.del=(i)=>{files.splice(i,1);ui();};
+
+function selectRedemption(pts,discount){
+    if((userDoc.loyalty_points||0)<pts){alert('نقاطك غير كافية!');return;}
+    pendingRedeem={points:pts,discount};
+    const b=document.getElementById('redemption-active-banner');b.style.display='block';
+    b.innerHTML=`✅ خصم <b>${discount.toLocaleString()} د.ع</b> جاهز — فعّل خيار النقاط في الطلب 💎`;
+    switchTab('order');ui();
+}
+
+async function sendOrder(){
+    const name=document.getElementById('uName').value.trim();
+    const phone=document.getElementById('uPhone').value.trim();
+    const region=document.getElementById('uRegion').value.trim();
+    if(!name||!/^[\u0600-\u06FF\sA-Za-z]+$/.test(name))return showError('❌ يرجى كتابة الاسم (أحرف فقط)');
+    if(phone.length!==11||isNaN(+phone))return showError('❌ رقم الهاتف يجب أن يكون 11 رقمًا');
+    if(!region)return showError('❌ يرجى إدخال اسم المنطقة');
+    if(locUrl==='غير محدد')return showError('❌ يرجى تحديد موقعك على الخريطة');
+    if(!files.length)return showError('❌ يرجى رفع ملف واحد على الأقل');
+    hideError();
+    const btn=document.getElementById('sendBtn'); btn.disabled=true; btn.innerText='جاري الإرسال... 🚀';
+    document.getElementById('p-cont').style.display='block';
+    const statusEl=document.getElementById('upload-status'); statusEl.style.display='block';
+    try {
+        const orderId='SH-'+Math.floor(1000+Math.random()*9000);
+        const uploadedFiles=[];
+
+        // ── ضغط كل الملفات في ZIP واحد ──
+        statusEl.innerText='جاري تجهيز الملفات...';
+        document.getElementById('p-bar').style.width='20%';
+        const zip = new JSZip();
+        const folder = zip.folder(`طلب-${orderId}`);
+        for(const f of files){
+            const buf = await f.file.arrayBuffer();
+            // لو أكثر من نسخة، أضف نسخ متعددة
+            for(let c=1; c<=f.c; c++){
+                const fname = f.c > 1 ? `(${c}) ${f.name}` : f.name;
+                folder.file(fname, buf);
+            }
+            uploadedFiles.push({name:f.name, pages:f.p, copies:f.c, url:'', type:f.type});
+        }
+        statusEl.innerText='جاري ضغط الملفات...';
+        document.getElementById('p-bar').style.width='40%';
+        const zipBlob = await zip.generateAsync({type:'blob', compression:'DEFLATE'}, meta => {
+            document.getElementById('p-bar').style.width = (40 + meta.percent * 0.3) + '%';
+        });
+
+        // ── رفع ZIP واحد إلى Supabase ──
+        statusEl.innerText='جاري رفع الملفات...';
+        const zipPath = `${orderId}/ملفات-${orderId}.zip`;
+        let zipUrl = '';
+        try {
+            const {error:upErr} = await sb.storage.from('order-files').upload(zipPath, zipBlob, {upsert:true, contentType:'application/zip'});
+            if(!upErr){
+                const {data:u} = sb.storage.from('order-files').getPublicUrl(zipPath);
+                zipUrl = u?.publicUrl || '';
+            }
+        } catch {}
+        document.getElementById('p-bar').style.width='90%';
+        statusEl.innerText='جاري حفظ الطلب...';
+
+        const {printPrice,deliveryFee,tierDisc,ptsDisc,total,ptsEarned,isFirstOrder}=window._calc||{};
+        const usePoints=document.getElementById('use-pts-toggle')?.checked&&pendingRedeem;
+        const ptsUsed=usePoints?pendingRedeem.points:0;
+        // حفظ رابط ZIP في بيانات الملفات
+        uploadedFiles.forEach(f => f.zipUrl = zipUrl);
+        const orderObj={id:orderId,user_id:userId,telegram_id:userId,name,phone,region,loc_url:locUrl,files:uploadedFiles,zip_url:zipUrl,color:conf.color,side:conf.side,print_price:printPrice||0,delivery_fee:deliveryFee||0,tier_discount:tierDisc||0,pts_discount:ptsDisc||0,pts_used:ptsUsed,total:total||0,loyalty_points_earned:ptsEarned||0,is_first_order:!!isFirstOrder,status:'received',status_history:[{status:'received',time:new Date().toISOString()}]};
+        try {
+            await sb.from('orders').insert(orderObj);
+            const newPts=Math.max(0,(userDoc.loyalty_points||0)+(ptsEarned||0)-ptsUsed);
+            await sb.from('users').update({loyalty_points:newPts,total_orders:(userDoc.total_orders||0)+1,total_spent:(userDoc.total_spent||0)+(total||0),first_order_done:true,name,phone}).eq('id',userId);
+            userDoc.loyalty_points=newPts; userDoc.first_order_done=true;
+        } catch {}
+        document.getElementById('p-bar').style.width='100%';
+
+        const filesSummary = uploadedFiles.map(f=>`📄 ${f.name} — ${f.pages} صفحة × ${f.copies} نسخة`).join('\n');
+        const msgAdmin=`🆕 طلب جديد #${orderId}\n${isFirstOrder?'🚚 توصيل مجاني — أول طلب\n':''}👤 ${name}\n📞 ${phone}\n🏠 ${region}\n🎨 ${conf.color==='c'?'ملون':'أسود'} — ${conf.side==='1'?'وجه واحد':'وجهين'}\n💰 ${total?.toLocaleString()} د.ع\n📍 ${locUrl}\n\n📋 الملفات (${uploadedFiles.length}):\n${filesSummary}${zipUrl?'\n\n📦 تحميل كل الملفات (ZIP):\n'+zipUrl:''}`;
+        try{await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:ADMIN_CHAT,text:msgAdmin,disable_web_page_preview:true})});}catch{}
+        if(tgUser?.id){try{await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:tgUser.id,text:`✅ تم استلام طلبك #${orderId}!\n💰 ${total?.toLocaleString()} د.ع\n💎 كسبت ${ptsEarned} نقطة!`})});}catch{}}
+        pendingRedeem=null; refreshPointsUI();
+        document.getElementById('tab-order').innerHTML=`<div style="text-align:center;padding:70px 20px;"><div style="font-size:4rem;margin-bottom:10px;">✅</div><h2 style="color:var(--main-blue);">تم إرسال طلبك بنجاح!</h2><p style="color:#555;">رقم الطلب: <b>#${orderId}</b></p><div style="background:#f0fdf4;border:1px solid #86efac;border-radius:14px;padding:15px;margin:15px 0;"><b style="color:#166534;">💎 كسبت ${ptsEarned} نقطة جديدة!</b></div><p style="font-size:0.85rem;color:#888;">ستصلك رسالة تيليجرام عند كل تحديث</p><button onclick="switchTab('orders')" class="btn-main" style="background:var(--main-blue);color:white;margin-top:15px;">📋 تتبع طلبك</button></div>`;
+    } catch {
+        showError('❌ حدث خطأ، حاول مرة أخرى');
+        btn.disabled=false; btn.innerText='تأكيد وإرسال الطلب ✅'; statusEl.style.display='none';
+    }
+}
+
+async function loadOrders(){
+    const c=document.getElementById('orders-container'); c.innerHTML='<div style="text-align:center;padding:30px;color:#aaa;">جاري التحميل...</div>';
+    const SM={received:{label:'تم الاستلام',cls:'s-received',icon:'📥'},printing:{label:'قيد الطباعة',cls:'s-printing',icon:'🖨️'},delivering:{label:'جاري التوصيل',cls:'s-delivering',icon:'🛵'},delivered:{label:'تم التسليم',cls:'s-delivered',icon:'✅'},cancelled:{label:'ملغى',cls:'s-cancelled',icon:'❌'}};
+    try {
+        const {data,error}=await sb.from('orders').select('*').eq('user_id',userId).order('created_at',{ascending:false}).limit(25);
+        if(error||!data?.length){c.innerHTML=`<div style="text-align:center;padding:50px 20px;color:#aaa;"><div style="font-size:3.5rem;">📦</div><p>لا توجد طلبات بعد</p><button onclick="switchTab('order')" class="btn-main" style="background:var(--main-blue);color:white;max-width:200px;">أنشئ أول طلب</button></div>`;return;}
+        let ac=0;
+        c.innerHTML=data.map(o=>{const s=SM[o.status]||SM.received;if(['received','printing','delivering'].includes(o.status))ac++;const date=new Date(o.created_at).toLocaleDateString('ar-IQ');return `<div class="order-card" onclick="showOrderDetail('${o.id}')"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><b style="color:var(--main-blue);">#${o.id}</b><span class="status-badge ${s.cls}">${s.icon} ${s.label}</span></div><div style="font-size:0.83rem;color:#666;">${date} • ${o.files?.length||0} ملف • ${o.total?.toLocaleString()} د.ع</div><div style="font-size:0.8rem;color:var(--success);margin-top:5px;">💎 +${o.loyalty_points_earned||0} نقطة</div></div>`;}).join('');
+        if(ac>0){const b=document.getElementById('orders-badge');b.innerText=ac;b.style.display='inline';}
+    } catch {c.innerHTML='<div style="text-align:center;padding:40px;color:#aaa;"><p>⚠️ يرجى إعداد Supabase لعرض الطلبات</p></div>';}
+}
+
+async function showOrderDetail(orderId){
+    document.getElementById('detail-overlay').classList.add('open');
+    document.getElementById('detail-body').innerHTML='<div style="text-align:center;padding:20px;color:#aaa;">جاري التحميل...</div>';
+    const steps=[{key:'received',label:'تم الاستلام',icon:'📥'},{key:'printing',label:'قيد الطباعة',icon:'🖨️'},{key:'delivering',label:'جاري التوصيل',icon:'🛵'},{key:'delivered',label:'تم التسليم',icon:'✅'}];
+    try {
+        const {data:o}=await sb.from('orders').select('*').eq('id',orderId).maybeSingle();
+        if(!o){document.getElementById('detail-body').innerHTML='<p style="color:var(--error);">الطلب غير موجود</p>';return;}
+        document.getElementById('detail-order-title').innerText=`تفاصيل الطلب #${o.id}`;
+        const sOrd=steps.map(s=>s.key); const ci=sOrd.indexOf(o.status);
+        let tlHTML='';
+        steps.forEach((step,i)=>{const isDone=i<ci,isCur=i===ci,cls=isDone?'tl-done':isCur?'tl-current':'tl-pending';const hist=o.status_history?.find(h=>h.status===step.key);const ts=hist?new Date(hist.time).toLocaleString('ar-IQ'):'';tlHTML+=`<div class="tl-step"><div style="display:flex;flex-direction:column;align-items:center;"><div class="tl-circle ${cls}">${isDone?'✓':step.icon}</div>${i<steps.length-1?`<div class="tl-connector ${isDone?'done':''}"></div>`:''}</div><div style="padding-top:4px;"><b style="color:${isCur?'var(--main-blue)':'#333'}">${step.label}</b>${ts?`<div style="font-size:0.75rem;color:#aaa;margin-top:2px;">${ts}</div>`:''}</div></div>`;});
+        const fHTML=o.files?.map(f=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9;"><span style="font-size:0.85rem;">📄 ${f.name} — ${f.copies} نسخة</span>${f.url?`<a href="${f.url}" target="_blank" style="color:var(--main-blue);font-size:0.8rem;">⬇️ تحميل</a>`:''}</div>`).join('')||'';
+        document.getElementById('detail-body').innerHTML=`<div style="margin-bottom:15px;">${tlHTML}</div><div style="background:#f8fafc;border-radius:12px;padding:15px;margin-bottom:15px;"><div class="inv-line" style="color:#333;"><span>الطباعة:</span><span>${o.color==='c'?'ملون':'أسود'} • ${o.side==='1'?'وجه واحد':'وجهين'}</span></div><div class="inv-line" style="color:#333;"><span>المجموع:</span><b>${o.total?.toLocaleString()} د.ع</b></div><div class="inv-line" style="color:var(--success);"><span>💎 نقاط:</span><span>+${o.loyalty_points_earned||0}</span></div></div><h4 style="margin:0 0 8px;">الملفات</h4>${fHTML}`;
+    } catch {document.getElementById('detail-body').innerHTML='<p style="color:var(--error);">حدث خطأ</p>';}
+}
+function closeDetail(){document.getElementById('detail-overlay').classList.remove('open');}
+
+function refreshPointsUI(){
+    const pts=userDoc?.loyalty_points||0;
+    document.getElementById('pts-num').innerText=pts.toLocaleString();
+    let tier,cls,next,pct;
+    if(pts>=500){tier='🥇 ذهبي';cls='tier-gold';next='أنت في أعلى مستوى! 🎉';pct=100;}
+    else if(pts>=200){tier='🥈 فضي';cls='tier-silver';next=`${500-pts} نقطة للذهبي`;pct=((pts-200)/300)*100;}
+    else{tier='🥉 برونز';cls='tier-bronze';next=`${200-pts} نقطة للفضي`;pct=(pts/200)*100;}
+    document.getElementById('tier-display').innerHTML=`<div class="tier-badge ${cls}">${tier}</div>`;
+    document.getElementById('pts-next-label').innerText=next;
+    document.getElementById('pts-bar').style.width=pct+'%';
+    [['rbtn-100',100],['rbtn-300',300],['rbtn-700',700]].forEach(([id,cost])=>{const b=document.getElementById(id);if(b)b.disabled=pts<cost;});
+}
+
+async function loadPointsTab(){
+    refreshPointsUI();
+    try {
+        const {data}=await sb.from('users').select('*').eq('id',userId).maybeSingle();
+        if(data){userDoc=data;refreshPointsUI();}
+        const {data:orders}=await sb.from('orders').select('id,loyalty_points_earned,pts_used,created_at').eq('user_id',userId).order('created_at',{ascending:false}).limit(15);
+        let h='';
+        (orders||[]).forEach(o=>{const d=new Date(o.created_at).toLocaleDateString('ar-IQ');if(o.loyalty_points_earned>0)h+=`<div class="pts-hist-item"><div><div style="font-weight:bold;font-size:0.85rem;">#${o.id}</div><div style="font-size:0.75rem;color:#aaa;">${d}</div></div><span style="color:var(--success);font-weight:bold;">+${o.loyalty_points_earned} نقطة</span></div>`;if(o.pts_used>0)h+=`<div class="pts-hist-item"><div><div style="font-weight:bold;font-size:0.85rem;">#${o.id} — استبدال</div><div style="font-size:0.75rem;color:#aaa;">${d}</div></div><span style="color:var(--error);font-weight:bold;">−${o.pts_used} نقطة</span></div>`;});
+        document.getElementById('pts-history-list').innerHTML=h||'<p style="color:#aaa;font-size:0.85rem;">لا يوجد سجل بعد</p>';
+    } catch {document.getElementById('pts-history-list').innerHTML='<p style="color:#aaa;font-size:0.85rem;">⚠️ يرجى إعداد Supabase أولاً</p>';}
+}
+
+function showError(msg){const el=document.getElementById('validation-error');el.innerText=msg;el.style.display='block';}
+function hideError(){document.getElementById('validation-error').style.display='none';}
+
+initUser();
+
+// ══ REAL-TIME: تحديث حالة الطلب تلقائياً ══
+let realtimeSub = null;
+function startRealtimeOrders() {
+    if (realtimeSub) sb.removeChannel(realtimeSub);
+    realtimeSub = sb.channel("orders-live")
+        .on("postgres_changes", {
+            event: "UPDATE",
+            schema: "public",
+            table: "orders",
+            filter: `user_id=eq.${userId}`
+        }, payload => {
+            const SM={received:{label:"تم الاستلام",cls:"s-received",icon:"📥"},printing:{label:"قيد الطباعة",cls:"s-printing",icon:"🖨️"},delivering:{label:"جاري التوصيل",cls:"s-delivering",icon:"🛵"},delivered:{label:"تم التسليم",cls:"s-delivered",icon:"✅"},cancelled:{label:"ملغى",cls:"s-cancelled",icon:"❌"}};
+            const o = payload.new;
+            const s = SM[o.status] || SM.received;
+            // Update badge in orders tab
+            const badge = document.getElementById("orders-badge");
+            const active = ["received","printing","delivering"].includes(o.status);
+            // Show toast notification
+            showToast(`${s.icon} طلبك #${o.id}: ${s.label}`);
+            // Reload orders if tab is open
+            if (document.getElementById("tab-orders").classList.contains("active")) loadOrders();
+        })
+        .subscribe();
+}
+
+function showToast(msg) {
+    let t = document.getElementById("toast-notif");
+    if (!t) {
+        t = document.createElement("div");
+        t.id = "toast-notif";
+        t.style.cssText = "position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#2c3e50;color:white;padding:12px 20px;border-radius:12px;font-size:0.88rem;z-index:999;box-shadow:0 4px 15px rgba(0,0,0,0.3);max-width:90%;text-align:center;transition:opacity 0.3s;";
+        document.body.appendChild(t);
+    }
+    t.innerText = msg;
+    t.style.opacity = "1";
+    t.style.display = "block";
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => { t.style.opacity="0"; setTimeout(()=>t.style.display="none",300); }, 4000);
+}
+
+startRealtimeOrders();
+</script>
+</body>
+</html>
