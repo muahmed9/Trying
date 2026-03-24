@@ -119,7 +119,8 @@ input:focus{border-color:var(--blue);}
 <script>
 const SB_URL = 'https://zrumnqtgdscrwgcguseq.supabase.co';
 const SB_KEY = 'sb_publishable_xEqE6S21QUMCkDxSMvTskg_9g3pi-vZ';
-const BOT    = '8446310296:AAFLgndwQEozwZ1Ja5Xf1UTdMtOiLFqty5k';
+// تم تصحيح توكن البوت لضمان التواصل مع السيرفر
+const BOT    = '8446310296:AAFLgndwQEozwZ1Ja5XflUTdMtOiLFqty5k';
 const ADMIN  = '7618746133';
 
 const ADMIN_USER = 'admin';
@@ -258,7 +259,6 @@ async function chStatus(docId, newSt, tgId, oid) {
     // جلب بيانات الزبون لتحديث رصيده التراكمي
     const { data: user } = await sb.from('users').select('*').eq('id', order.user_id).single();
     if (user) {
-      // نحدّث النقاط المكتسبة والمبلغ التراكمي. (تم حساب طلب جديد مسبقاً في index.html)
       await sb.from('users').update({
         loyalty_points: (user.loyalty_points || 0) + pts,
         total_spent: (user.total_spent || 0) + cash,
