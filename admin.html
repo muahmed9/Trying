@@ -40,7 +40,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;direction:rtl;background:var(--bg)
 .abtn:active{opacity:.7;}
 .aprint{background:#fef9c3;color:#854d0e;}
 .adeliv{background:#dcfce7;color:#166534;}
-.adone{background:#f0fdf4;color:#15803d;border:1px solid #86efac;}
+.adone{background:var(--green);color:#fff;border:1px solid var(--green);}
 .acanc{background:#fee2e2;color:#991b1b;}
 /* INPUTS */
 input[type=text],input[type=password]{width:100%;padding:13px;border:1px solid #dde2ea;border-radius:12px;font-size:.95rem;margin-bottom:12px;outline:none;background:#f8fafc;}
@@ -84,7 +84,7 @@ input:focus{border-color:var(--blue);}
       <div style="background:rgba(255,255,255,.2);padding:5px 12px;border-radius:20px;font-size:.82rem;">
         <span class="ldot"></span><span id="pcnt">0</span> معلق
       </div>
-      <button onclick="doLogout()" style="background:rgba(255,255,255,.15);border:none;color:#fff;padding:7px 12px;border-radius:9px;cursor:pointer;font-size:.82rem;">خروج</button>
+      <button onclick="doLogout()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;padding:7px 12px;border-radius:9px;cursor:pointer;font-size:0.82rem;">خروج</button>
     </div>
   </div>
   <div class="main">
@@ -117,17 +117,11 @@ input:focus{border-color:var(--blue);}
 </div>
 
 <script>
-// ══════════════════════════════════════
-//  CONFIG
-// ══════════════════════════════════════
 const SB_URL = 'https://zrumnqtgdscrwgcguseq.supabase.co';
 const SB_KEY = 'sb_publishable_xEqE6S21QUMCkDxSMvTskg_9g3pi-vZ';
 const BOT    = '8446310296:AAFLgndwQEozwZ1Ja5Xf1UTdMtOiLFqty5k';
 const ADMIN  = '7618746133';
 
-// ══════════════════════════════════════
-//  ⚠️ بيانات دخول الأدمن — غيّرها!
-// ══════════════════════════════════════
 const ADMIN_USER = 'admin';
 const ADMIN_PASS = 'shater2024';
 
@@ -135,16 +129,20 @@ const sb = window.supabase.createClient(SB_URL, SB_KEY);
 let allOrders=[], curFilter='all', rtCh=null;
 
 const SM = {
-  received:  {l:'تم الاستلام',  c:'sr',i:'📥'},
-  printing:  {l:'قيد الطباعة', c:'sp',i:'🖨️'},
-  delivering:{l:'جاري التوصيل',c:'sd',i:'🛵'},
-  delivered: {l:'تم التسليم',  c:'sv',i:'✅'},
-  cancelled: {l:'ملغى',        c:'sc',i:'❌'}
+  received:   {l:'تم الاستلام',  c:'sr',i:'📥'},
+  printing:   {l:'قيد الطباعة', c:'sp',i:'🖨️'},
+  delivering: {l:'جاري التوصيل',c:'sd',i:'🛵'},
+  delivered:  {l:'تم التسليم',  c:'sv',i:'✅'},
+  cancelled:  {l:'ملغى',        c:'sc',i:'❌'}
 };
 
-// ══════════════════════════════════════
-//  AUTH — بسيط بدون Supabase Auth
-// ══════════════════════════════════════
+const MSGS = {
+  printing:   id => `🖨️ طلبك #${id} قيد الطباعة الآن!\nسنُخطرك عند الإرسال للتوصيل.`,
+  delivering: id => `🛵 طلبك #${id} في الطريق إليك!\nالمندوب متجه نحوك الآن.`,
+  delivered:  id => `✅ تم تسليم طلبك #${id} بنجاح!\nشكراً لتعاملك معنا. رصيد نقاطك تم تحديثه 💎`,
+  cancelled:  id => `❌ نعتذر منك، تم إلغاء طلبك #${id}.\nللاستفسار تواصل مع الإدارة.`
+};
+
 function doLogin() {
   const u = document.getElementById('adm-user').value.trim();
   const p = document.getElementById('adm-pass').value;
@@ -156,7 +154,7 @@ function doLogin() {
     document.getElementById('dashboard').style.display = 'block';
     startListening();
   } else {
-    e.innerText = '❌ اسم المستخدم أو كلمة المرور غير صحيحة';
+    e.innerText = '❌ خطأ في الدخول';
     e.style.display = 'block';
   }
 }
@@ -164,25 +162,15 @@ function doLogin() {
 function doLogout() {
   sessionStorage.removeItem('adm');
   if (rtCh) sb.removeChannel(rtCh);
-  document.getElementById('dashboard').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
+  location.reload();
 }
 
-// تحقق لو مسجّل دخول سابقاً
 if (sessionStorage.getItem('adm') === '1') {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
   setTimeout(startListening, 100);
 }
 
-// Enter key للدخول
-document.addEventListener('keydown', e => {
-  if (e.key==='Enter' && document.getElementById('login-screen').style.display !== 'none') doLogin();
-});
-
-// ══════════════════════════════════════
-//  REAL-TIME
-// ══════════════════════════════════════
 async function startListening() {
   await fetchOrders();
   rtCh = sb.channel('admin-orders')
@@ -191,32 +179,30 @@ async function startListening() {
 }
 
 async function fetchOrders() {
-  const {data, error} = await sb.from('orders').select('*').order('created_at',{ascending:false}).limit(100);
-  if (error) { console.log('fetch error:', error); return; }
+  const {data, error} = await sb.from('orders').select('*').order('created_at',{ascending:false});
+  if (error) return;
   allOrders = data || [];
   calcStats();
   renderOrders();
 }
 
-// ══════════════════════════════════════
-//  STATS
-// ══════════════════════════════════════
 function calcStats() {
   const tod = new Date(); tod.setHours(0,0,0,0);
-  const todayOrds   = allOrders.filter(o => new Date(o.created_at) >= tod);
+  const todayOrds = allOrders.filter(o => new Date(o.created_at) >= tod);
   const pendingOrds = allOrders.filter(o => ['received','printing','delivering'].includes(o.status));
-  const todayRev    = todayOrds.reduce((s,o) => s+(o.total||0), 0);
-  document.getElementById('s-today').innerText   = todayOrds.length;
+  
+  // الإيرادات تُحسب فقط من الطلبات التي حالتها (تم التسليم)
+  const todayRev = todayOrds
+    .filter(o => o.status === 'delivered')
+    .reduce((s,o) => s + (o.total || 0), 0);
+
+  document.getElementById('s-today').innerText = todayOrds.length;
   document.getElementById('s-pending').innerText = pendingOrds.length;
-  document.getElementById('s-revenue').innerText = (todayRev/1000).toFixed(0)+'K';
-  document.getElementById('s-total').innerText   = allOrders.length;
-  document.getElementById('pcnt').innerText      = pendingOrds.length;
-  document.getElementById('s-pending').style.color = pendingOrds.length>0?'var(--red)':'var(--green)';
+  document.getElementById('s-revenue').innerText = (todayRev/1000).toFixed(0) + 'K';
+  document.getElementById('s-total').innerText = allOrders.length;
+  document.getElementById('pcnt').innerText = pendingOrds.length;
 }
 
-// ══════════════════════════════════════
-//  RENDER ORDERS
-// ══════════════════════════════════════
 function setFilter(f, el) {
   curFilter = f;
   document.querySelectorAll('.ftab').forEach(b=>b.classList.remove('active'));
@@ -227,146 +213,121 @@ function setFilter(f, el) {
 function renderOrders() {
   const cont = document.getElementById('olist');
   const list = curFilter==='all' ? allOrders : allOrders.filter(o=>o.status===curFilter);
-  if (!list.length) { cont.innerHTML='<div style="text-align:center;padding:50px;color:#aaa;">لا توجد طلبات</div>'; return; }
+  if (!list.length) { cont.innerHTML='<div style="text-align:center;padding:40px;color:#aaa;">لا توجد طلبات</div>'; return; }
+  
   const now = Date.now();
   cont.innerHTML = list.map(o => {
     const s = SM[o.status]||SM.received;
-    const dt = new Date(o.created_at).toLocaleString('ar-IQ');
-    const isNew = now - new Date(o.created_at).getTime() < 10*60*1000;
+    const isNew = now - new Date(o.created_at).getTime() < 15*60*1000;
     const sp = 'event.stopPropagation()';
     let act = '';
-    if(o.status==='received')   act=`<button class="abtn aprint" onclick="${sp};chStatus('${o.id}','printing','${o.telegram_id}','${o.id}')">🖨️ بدء الطباعة</button><button class="abtn acanc" onclick="${sp};chStatus('${o.id}','cancelled','${o.telegram_id}','${o.id}')">❌ إلغاء</button>`;
-    if(o.status==='printing')   act=`<button class="abtn adeliv" onclick="${sp};chStatus('${o.id}','delivering','${o.telegram_id}','${o.id}')">🛵 أرسل للتوصيل</button>`;
+    
+    if(o.status==='received')   act=`<button class="abtn aprint" onclick="${sp};chStatus('${o.id}','printing','${o.telegram_id}','${o.id}')">🖨️ طباعة</button><button class="abtn acanc" onclick="${sp};chStatus('${o.id}','cancelled','${o.telegram_id}','${o.id}')">❌ إلغاء</button>`;
+    if(o.status==='printing')   act=`<button class="abtn adeliv" onclick="${sp};chStatus('${o.id}','delivering','${o.telegram_id}','${o.id}')">🛵 توصيل</button>`;
     if(o.status==='delivering') act=`<button class="abtn adone"  onclick="${sp};chStatus('${o.id}','delivered','${o.telegram_id}','${o.id}')">✅ تم التسليم</button>`;
+    
     return `<div class="ocard ${isNew?'isnew':''}" onclick="openDet('${o.id}')">
       <div class="ohdr">
-        <div>${isNew?'<span class="newbdg">جديد</span>':''}<b style="color:var(--blue);">#${o.id}</b></div>
+        <div><b>#${o.id}</b></div>
         <span class="sbdg ${s.c}">${s.i} ${s.l}</span>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:.83rem;color:#555;margin-bottom:4px;">
-        <span>👤 ${o.name}</span><span>📞 ${o.phone}</span>
-        <span>🏠 ${o.region}</span><span>💰 ${(o.total||0).toLocaleString()} د.ع</span>
-        <span>🎨 ${o.color==='c'?'ملون':'أسود'} • ${o.side==='1'?'وجه':'وجهين'}</span>
-        <span>📋 ${o.files?.length||0} ملف</span>
+      <div style="font-size:.85rem;color:#555;line-height:1.6;">
+        <div>👤 ${o.name} | 📞 ${o.phone}</div>
+        <div>💰 ${(o.total||0).toLocaleString()} د.ع | 🎨 ${o.color==='c'?'ملون':'أسود'}</div>
       </div>
-      <div style="font-size:.73rem;color:#bbb;">${dt}</div>
-      ${o.is_first_order?'<div style="font-size:.77rem;color:var(--green);margin-top:4px;">🎁 أول طلب — توصيل مجاني</div>':''}
       ${act?`<div class="arow">${act}</div>`:''}
     </div>`;
   }).join('');
 }
 
 // ══════════════════════════════════════
-//  CHANGE STATUS
+//  CORE STATUS CHANGE (POINTS + REVENUE + NOTIFS)
 // ══════════════════════════════════════
-const MSGS = {
-  printing:   id => `🖨️ طلبك #${id} قيد الطباعة الآن!\nسنُخطرك عند الإرسال للتوصيل.`,
-  delivering: id => `🛵 طلبك #${id} في الطريق إليك!\nالمندوب متجه نحوك الآن.`,
-  delivered:  id => `✅ تم تسليم طلبك #${id} بنجاح!\nشكراً لتعاملك مع خدمات الشاطر 🌟`,
-  cancelled:  id => `❌ تم إلغاء طلبك #${id}.\nللاستفسار تواصل معنا.`
-};
-
 async function chStatus(docId, newSt, tgId, oid) {
-  if (!confirm('تأكيد: تحديث الطلب إلى "' + SM[newSt]?.l + '"؟')) return;
+  if (!confirm('تأكيد تحديث الحالة إلى: ' + (SM[newSt]?.l))) return;
 
-  // ═══ STEP 1: جلب telegram_id الحقيقي من قاعدة البيانات ═══
-  // لا نعتمد على القيمة الممررة من HTML لأنها قد تكون قديمة
-  const {data: orderData, error: fetchErr} = await sb
-    .from('orders')
-    .select('telegram_id, status_history')
-    .eq('id', docId)
-    .maybeSingle();
+  // 1. جلب بيانات الطلب الكاملة
+  const { data: order, error: fErr } = await sb.from('orders').select('*').eq('id', docId).single();
+  if (fErr) return alert('خطأ في جلب بيانات الطلب');
 
-  if (fetchErr) { alert('❌ خطأ في جلب الطلب: ' + fetchErr.message); return; }
-
-  const realTgId   = orderData?.telegram_id || tgId || '';
-  const oldHistory = orderData?.status_history || [];
-  const newHistory = [...oldHistory, {status: newSt, time: new Date().toISOString()}];
-
-  // ═══ STEP 2: تحديث الحالة في قاعدة البيانات ═══
-  const {error: updErr} = await sb
-    .from('orders')
-    .update({status: newSt, status_history: newHistory})
-    .eq('id', docId);
-
-  if (updErr) { alert('❌ خطأ في التحديث: ' + updErr.message); return; }
-
-  // ═══ STEP 3: إشعار تلقائي للزبون عبر البوت ═══
-  const mfn = MSGS[newSt];
-  const isValidTg = realTgId && realTgId !== 'undefined' && realTgId !== 'null' && !realTgId.startsWith('guest_');
-  if (mfn && isValidTg) {
-    const sent = await tgMsg(realTgId, mfn(oid));
-    console.log('Customer notified:', realTgId, '| status:', newSt, '| result:', sent);
-  } else {
-    console.warn('Cannot notify customer — invalid telegram_id:', realTgId);
+  // 2. تحديثات "تم التسليم" (النقاط والإيرادات والولاء)
+  if (newSt === 'delivered' && order.status !== 'delivered') {
+    const pts = order.loyalty_points_earned || 0;
+    const cash = order.total || 0;
+    
+    // جلب بيانات الزبون لتحديث رصيده التراكمي
+    const { data: user } = await sb.from('users').select('*').eq('id', order.user_id).single();
+    if (user) {
+      await sb.from('users').update({
+        loyalty_points: (user.loyalty_points || 0) + pts,
+        total_spent: (user.total_spent || 0) + cash,
+        total_orders: (user.total_orders || 0) + 1,
+        first_order_done: true
+      }).eq('id', order.user_id);
+      console.log('User statistics updated successfully.');
+    }
   }
 
-  // ═══ STEP 4: إشعار تأكيد للأدمن ═══
-  const s = SM[newSt] || {};
-  await tgMsg(ADMIN,
-    '✅ تم تحديث الطلب #' + oid + '\n' +
-    'الحالة الجديدة: ' + (s.i||'') + ' ' + (s.l||newSt) + '\n' +
-    (isValidTg ? '📲 تم إخطار الزبون' : '⚠️ لم يتم إخطار الزبون (غير متاح)')
-  );
+  // 3. تحديث الطلب في قاعدة البيانات
+  const history = [...(order.status_history || []), {status: newSt, time: new Date().toISOString()}];
+  const { error: uErr } = await sb.from('orders').update({
+    status: newSt, 
+    status_history: history
+  }).eq('id', docId);
+
+  if (uErr) return alert('فشل التحديث في السيرفر');
+
+  // 4. إرسال الإشعار للزبون (تأكد من أن معرف التليجرام مخزن)
+  const customerTg = order.telegram_id || tgId;
+  if (MSGS[newSt] && customerTg && !customerTg.startsWith('guest_')) {
+    await tgMsg(customerTg, MSGS[newSt](oid));
+  }
+
+  // 5. إشعار تأكيدي للأدمن
+  await tgMsg(ADMIN, `✅ تم تحديث الطلب #${oid} إلى ${SM[newSt].l}`);
+
+  fetchOrders();
 }
 
 async function tgMsg(cid, txt) {
   try {
-    const res = await fetch('https://api.telegram.org/bot' + BOT + '/sendMessage', {
+    const res = await fetch(`https://api.telegram.org/bot${BOT}/sendMessage`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({chat_id: cid, text: txt, disable_web_page_preview: true})
+      body: JSON.stringify({chat_id: cid, text: txt})
     });
-    const json = await res.json();
-    if (!json.ok) console.error('tgMsg error for', cid, ':', json.description);
-    return json.ok;
-  } catch(e) {
-    console.error('tgMsg fetch failed:', e.message);
-    return false;
-  }
+    return (await res.json()).ok;
+  } catch(e) { return false; }
 }
 
-// ══════════════════════════════════════
-//  DETAIL PANEL
-// ══════════════════════════════════════
 function openDet(docId) {
   const o = allOrders.find(x=>x.id===docId); if(!o) return;
-  document.getElementById('dettitle').innerText = '#' + o.id;
   document.getElementById('detov').style.display = 'block';
   document.getElementById('detpan').classList.add('open');
-  const s   = SM[o.status]||SM.received;
-  const dt  = new Date(o.created_at).toLocaleString('ar-IQ');
-  const zip = o.zip_url||'';
-
-  let detAct = '';
-  if(o.status==='received')   detAct=`<button class="abtn aprint" style="padding:11px;" onclick="chStatus('${o.id}','printing','${o.telegram_id}','${o.id}');closeDet()">🖨️ بدء الطباعة</button><button class="abtn acanc" style="padding:11px;" onclick="chStatus('${o.id}','cancelled','${o.telegram_id}','${o.id}');closeDet()">❌ إلغاء الطلب</button>`;
-  if(o.status==='printing')   detAct=`<button class="abtn adeliv" style="padding:11px;" onclick="chStatus('${o.id}','delivering','${o.telegram_id}','${o.id}');closeDet()">🛵 أرسل للتوصيل</button>`;
-  if(o.status==='delivering') detAct=`<button class="abtn adone"  style="padding:11px;" onclick="chStatus('${o.id}','delivered','${o.telegram_id}','${o.id}');closeDet()">✅ تم التسليم</button>`;
-
+  document.getElementById('dettitle').innerText = '#' + o.id;
+  
+  const s = SM[o.status]||SM.received;
   document.getElementById('detbody').innerHTML = `
-    <div style="text-align:center;margin-bottom:18px;">
-      <span class="sbdg ${s.c}" style="font-size:.9rem;padding:6px 18px;">${s.i} ${s.l}</span>
-      <div style="font-size:.75rem;color:#aaa;margin-top:6px;">${dt}</div>
+    <div style="text-align:center;margin-bottom:20px;">
+      <span class="sbdg ${s.c}" style="font-size:1rem;padding:8px 20px;">${s.i} ${s.l}</span>
     </div>
-    <div style="background:#f8fafc;border-radius:12px;padding:12px;margin-bottom:15px;">
+    <div style="background:#f8fafc;border-radius:12px;padding:15px;margin-bottom:15px;">
       <div class="irow"><span>👤 الاسم</span><b>${o.name}</b></div>
       <div class="irow"><span>📞 الهاتف</span><a href="tel:${o.phone}" style="color:var(--blue);font-weight:700;">${o.phone}</a></div>
       <div class="irow"><span>🏠 المنطقة</span><b>${o.region}</b></div>
-      <div class="irow"><span>📍 الموقع</span><a href="${o.loc_url||'#'}" target="_blank" style="color:var(--blue);">افتح الخريطة 🗺️</a></div>
+      <div class="irow"><span>📍 الموقع</span><a href="${o.loc_url}" target="_blank" style="color:var(--blue);">الخريطة 🗺️</a></div>
     </div>
-    <div style="background:#f8fafc;border-radius:12px;padding:12px;margin-bottom:15px;">
-      <div class="irow"><span>🎨 الطباعة</span><b>${o.color==='c'?'ملون':'أسود'} • ${o.side==='1'?'وجه واحد':'وجهين'}</b></div>
-      <div class="irow"><span>💰 الإجمالي</span><b style="color:var(--blue);font-size:1rem;">${(o.total||0).toLocaleString()} د.ع</b></div>
-      ${o.is_first_order?'<div class="irow"><span>🎁 أول طلب</span><b style="color:var(--green);">توصيل مجاني</b></div>':''}
-      ${(o.pts_used||0)>0?`<div class="irow"><span>💎 نقاط مستخدمة</span><b>${o.pts_used}</b></div>`:''}
-      <div class="irow"><span>💎 نقاط مكتسبة</span><b style="color:#7c3aed;">+${o.loyalty_points_earned||0}</b></div>
+    <div style="background:#f8fafc;border-radius:12px;padding:15px;margin-bottom:15px;">
+      <div class="irow"><span>🎨 الطباعة</span><b>${o.color==='c'?'ملون':'أسود'} | ${o.side==='1'?'وجه':'وجهين'}</b></div>
+      <div class="irow"><span>💰 الإجمالي</span><b style="color:var(--blue);font-size:1.1rem;">${(o.total||0).toLocaleString()} د.ع</b></div>
+      <div class="irow"><span>💎 نقاط مكتسبة</span><b>+${o.loyalty_points_earned}</b></div>
     </div>
-    <h4 style="margin:0 0 10px;color:#333;">الملفات (${o.files?.length||0})</h4>
-    ${zip?`<a href="${zip}" target="_blank" style="display:block;text-align:center;background:var(--blue);color:#fff;padding:12px;border-radius:12px;font-weight:700;text-decoration:none;margin-bottom:10px;">📦 تحميل كل الملفات (ZIP)</a>`:'<p style="color:#aaa;font-size:.85rem;margin-bottom:10px;">⚠️ لم يتم رفع الملفات</p>'}
-    <div style="background:#f8fafc;border-radius:12px;padding:12px;margin-bottom:15px;">
-      ${o.files?.map(f=>`<div style="padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:.85rem;">📄 ${f.name} — ${f.pages}ص × ${f.copies}نسخة</div>`).join('')||''}
+    <h4 style="margin:10px 0;">الملفات (${o.files?.length||0})</h4>
+    ${o.zip_url ? `<a href="${o.zip_url}" target="_blank" style="display:block;text-align:center;background:var(--blue);color:#fff;padding:12px;border-radius:12px;font-weight:700;text-decoration:none;margin-bottom:10px;">📦 تحميل ملفات الطلب (ZIP)</a>` : '<p style="color:red">لم يتم رفع ملفات!</p>'}
+    <div style="background:#f8fafc;border-radius:12px;padding:12px;">
+      ${o.files?.map(f=>`<div style="font-size:.85rem;padding:5px 0;border-bottom:1px solid #eee;">📄 ${f.name} (${f.pages}ص × ${f.copies}ن)</div>`).join('')}
     </div>
-    ${detAct?`<div class="arow">${detAct}</div>`:`<div style="text-align:center;color:#aaa;font-size:.85rem;padding:10px;">${o.status==='delivered'?'✅ الطلب مكتمل':'❌ الطلب ملغى'}</div>`}`;
+  `;
 }
 
 function closeDet() {
