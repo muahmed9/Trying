@@ -258,10 +258,10 @@ async function chStatus(docId, newSt, tgId, oid) {
     // جلب بيانات الزبون لتحديث رصيده التراكمي
     const { data: user } = await sb.from('users').select('*').eq('id', order.user_id).single();
     if (user) {
+      // نحدّث النقاط المكتسبة والمبلغ التراكمي. (تم حساب طلب جديد مسبقاً في index.html)
       await sb.from('users').update({
         loyalty_points: (user.loyalty_points || 0) + pts,
         total_spent: (user.total_spent || 0) + cash,
-        total_orders: (user.total_orders || 0) + 1,
         first_order_done: true
       }).eq('id', order.user_id);
       console.log('User statistics updated successfully.');
@@ -294,7 +294,7 @@ async function tgMsg(cid, txt) {
     const res = await fetch(`https://api.telegram.org/bot${BOT}/sendMessage`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({chat_id: cid, text: txt})
+      body: JSON.stringify({chat_id: cid, text: txt, disable_web_page_preview: true})
     });
     return (await res.json()).ok;
   } catch(e) { return false; }
