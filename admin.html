@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة تحكم الشاطر</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--blue:#248bcf;--green:#28a745;--red:#dc3545;--bg:#f1f4f8;--card:#fff;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Tahoma,sans-serif;direction:rtl;background:var(--bg);color:#333;min-height:100vh;}
+/* LOGIN */
+.loginwrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
+.logincard{background:var(--card);border-radius:22px;padding:40px 30px;width:100%;max-width:380px;box-shadow:0 8px 30px rgba(0,0,0,.1);text-align:center;}
+/* DASHBOARD */
+.dash{display:none;}
+.topbar{background:var(--blue);color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50;box-shadow:0 2px 10px rgba(0,0,0,.15);}
+.main{padding:18px;}
+.sgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px;}
+@media(min-width:600px){.sgrid{grid-template-columns:repeat(4,1fr);}}
+.scard{background:var(--card);border-radius:14px;padding:16px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.06);}
+.snum{font-size:2rem;font-weight:700;}
+.slbl{font-size:.78rem;color:#888;margin-top:3px;}
+.fbar{display:flex;gap:8px;margin-bottom:15px;overflow-x:auto;padding-bottom:4px;}
+.fbar::-webkit-scrollbar{display:none;}
+.ftab{padding:7px 16px;border-radius:20px;border:1px solid #dde2ea;background:var(--card);cursor:pointer;font-size:.83rem;white-space:nowrap;font-weight:600;color:#555;}
+.ftab.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+/* ORDER CARDS */
+.ocard{background:var(--card);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.05);border:1px solid #edf0f4;cursor:pointer;}
+.ocard.isnew{border-right:4px solid var(--red);}
+.ohdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.sbdg{padding:4px 12px;border-radius:20px;font-size:.78rem;font-weight:700;display:inline-block;}
+.sr{background:#dbeafe;color:#1e40af;}
+.sp{background:#fef9c3;color:#854d0e;}
+.sd{background:#dcfce7;color:#166534;}
+.sv{background:#f0fdf4;color:#15803d;border:1px solid #86efac;}
+.sc{background:#fee2e2;color:#991b1b;}
+.arow{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+.abtn{flex:1;min-width:90px;padding:9px;border:none;border-radius:9px;cursor:pointer;font-size:.8rem;font-weight:700;}
+.abtn:active{opacity:.7;}
+.aprint{background:#fef9c3;color:#854d0e;}
+.adeliv{background:#dcfce7;color:#166534;}
+.adone{background:#f0fdf4;color:#15803d;border:1px solid #86efac;}
+.acanc{background:#fee2e2;color:#991b1b;}
+/* INPUTS */
+input[type=text],input[type=password]{width:100%;padding:13px;border:1px solid #dde2ea;border-radius:12px;font-size:.95rem;margin-bottom:12px;outline:none;background:#f8fafc;}
+input:focus{border-color:var(--blue);}
+.bmain{width:100%;padding:14px;border:none;border-radius:12px;font-weight:700;font-size:1rem;cursor:pointer;font-family:inherit;}
+/* DETAIL PANEL */
+.detov{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);display:none;z-index:100;}
+.detpan{position:fixed;right:-100%;top:0;width:100%;max-width:440px;height:100%;background:var(--card);overflow-y:auto;padding:20px;z-index:101;transition:right .3s ease;box-shadow:-4px 0 25px rgba(0,0,0,.12);}
+.detpan.open{right:0;}
+.irow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f1f5f9;font-size:.88rem;}
+.irow:last-child{border-bottom:none;}
+.ldot{width:9px;height:9px;background:#4eff4e;border-radius:50%;display:inline-block;margin-left:5px;animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.3);}}
+.newbdg{background:var(--red);color:#fff;border-radius:10px;font-size:.65rem;padding:1px 7px;font-weight:700;vertical-align:middle;margin-right:5px;}
+.errbox{background:#fee2e2;color:var(--red);padding:10px;border-radius:10px;font-size:.85rem;margin-bottom:12px;display:none;border:1px solid #fecdd3;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="loginwrap" id="login-screen">
+  <div class="logincard">
+    <div style="font-size:3rem;margin-bottom:8px;">🖨️</div>
+    <h2 style="color:var(--blue);margin-bottom:5px;">لوحة التحكم</h2>
+    <p style="color:#888;margin-bottom:25px;font-size:.9rem;">خدمات الشاطر الطلابية</p>
+    <div class="errbox" id="loginerr"></div>
+    <input type="text"     id="adm-user" placeholder="👤 اسم المستخدم">
+    <input type="password" id="adm-pass" placeholder="🔑 كلمة المرور">
+    <button class="bmain" style="background:var(--blue);color:#fff;" onclick="doLogin()">تسجيل الدخول</button>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dash" id="dashboard">
+  <div class="topbar">
+    <div>
+      <div style="font-weight:700;font-size:1.05rem;">🖨️ لوحة الشاطر</div>
+      <div style="font-size:.78rem;opacity:.8;">مرحباً بك</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="background:rgba(255,255,255,.2);padding:5px 12px;border-radius:20px;font-size:.82rem;">
+        <span class="ldot"></span><span id="pcnt">0</span> معلق
+      </div>
+      <button onclick="doLogout()" style="background:rgba(255,255,255,.15);border:none;color:#fff;padding:7px 12px;border-radius:9px;cursor:pointer;font-size:.82rem;">خروج</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="sgrid">
+      <div class="scard"><div class="snum" id="s-today"   style="color:var(--blue);">—</div><div class="slbl">طلبات اليوم</div></div>
+      <div class="scard"><div class="snum" id="s-pending" style="color:var(--red);">—</div><div class="slbl">قيد التنفيذ</div></div>
+      <div class="scard"><div class="snum" id="s-revenue" style="color:var(--green);">—</div><div class="slbl">إيرادات اليوم</div></div>
+      <div class="scard"><div class="snum" id="s-total"   style="color:#7c3aed;">—</div><div class="slbl">إجمالي الطلبات</div></div>
+    </div>
+    <div class="fbar">
+      <button class="ftab active" onclick="setFilter('all',this)">الكل</button>
+      <button class="ftab" onclick="setFilter('received',this)">📥 مستلم</button>
+      <button class="ftab" onclick="setFilter('printing',this)">🖨️ طباعة</button>
+      <button class="ftab" onclick="setFilter('delivering',this)">🛵 توصيل</button>
+      <button class="ftab" onclick="setFilter('delivered',this)">✅ مسلَّم</button>
+      <button class="ftab" onclick="setFilter('cancelled',this)">❌ ملغى</button>
+    </div>
+    <div id="olist"><div style="text-align:center;padding:40px;color:#aaa;">جاري التحميل...</div></div>
+  </div>
+</div>
+
+<!-- DETAIL PANEL -->
+<div class="detov" id="detov" onclick="closeDet()"></div>
+<div class="detpan" id="detpan">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+    <h3 style="color:var(--blue);" id="dettitle">تفاصيل الطلب</h3>
+    <button onclick="closeDet()" style="border:none;background:#f1f5f9;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:1.1rem;">✕</button>
+  </div>
+  <div id="detbody"></div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════
+const SB_URL = 'https://zrumnqtgdscrwgcguseq.supabase.co';
+const SB_KEY = 'sb_publishable_xEqE6S21QUMCkDxSMvTskg_9g3pi-vZ';
+const BOT    = '8446310296:AAFLgndwQEozwZ1Ja5Xf1UTdMtOiLFqty5k';
+const ADMIN  = '7618746133';
+
+// ══════════════════════════════════════
+//  ⚠️ بيانات دخول الأدمن — غيّرها!
+// ══════════════════════════════════════
+const ADMIN_USER = 'admin';
+const ADMIN_PASS = 'shater2024';
+
+const sb = window.supabase.createClient(SB_URL, SB_KEY);
+let allOrders=[], curFilter='all', rtCh=null;
+
+const SM = {
+  received:  {l:'تم الاستلام',  c:'sr',i:'📥'},
+  printing:  {l:'قيد الطباعة', c:'sp',i:'🖨️'},
+  delivering:{l:'جاري التوصيل',c:'sd',i:'🛵'},
+  delivered: {l:'تم التسليم',  c:'sv',i:'✅'},
+  cancelled: {l:'ملغى',        c:'sc',i:'❌'}
+};
+
+// ══════════════════════════════════════
+//  AUTH — بسيط بدون Supabase Auth
+// ══════════════════════════════════════
+function doLogin() {
+  const u = document.getElementById('adm-user').value.trim();
+  const p = document.getElementById('adm-pass').value;
+  const e = document.getElementById('loginerr');
+  e.style.display = 'none';
+  if (u === ADMIN_USER && p === ADMIN_PASS) {
+    sessionStorage.setItem('adm', '1');
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    startListening();
+  } else {
+    e.innerText = '❌ اسم المستخدم أو كلمة المرور غير صحيحة';
+    e.style.display = 'block';
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem('adm');
+  if (rtCh) sb.removeChannel(rtCh);
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+// تحقق لو مسجّل دخول سابقاً
+if (sessionStorage.getItem('adm') === '1') {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  setTimeout(startListening, 100);
+}
+
+// Enter key للدخول
+document.addEventListener('keydown', e => {
+  if (e.key==='Enter' && document.getElementById('login-screen').style.display !== 'none') doLogin();
+});
+
+// ══════════════════════════════════════
+//  REAL-TIME
+// ══════════════════════════════════════
+async function startListening() {
+  await fetchOrders();
+  rtCh = sb.channel('admin-orders')
+    .on('postgres_changes', {event:'*', schema:'public', table:'orders'}, () => fetchOrders())
+    .subscribe();
+}
+
+async function fetchOrders() {
+  const {data, error} = await sb.from('orders').select('*').order('created_at',{ascending:false}).limit(100);
+  if (error) { console.log('fetch error:', error); return; }
+  allOrders = data || [];
+  calcStats();
+  renderOrders();
+}
+
+// ══════════════════════════════════════
+//  STATS
+// ══════════════════════════════════════
+function calcStats() {
+  const tod = new Date(); tod.setHours(0,0,0,0);
+  const todayOrds   = allOrders.filter(o => new Date(o.created_at) >= tod);
+  const pendingOrds = allOrders.filter(o => ['received','printing','delivering'].includes(o.status));
+  const todayRev    = todayOrds.reduce((s,o) => s+(o.total||0), 0);
+  document.getElementById('s-today').innerText   = todayOrds.length;
+  document.getElementById('s-pending').innerText = pendingOrds.length;
+  document.getElementById('s-revenue').innerText = (todayRev/1000).toFixed(0)+'K';
+  document.getElementById('s-total').innerText   = allOrders.length;
+  document.getElementById('pcnt').innerText      = pendingOrds.length;
+  document.getElementById('s-pending').style.color = pendingOrds.length>0?'var(--red)':'var(--green)';
+}
+
+// ══════════════════════════════════════
+//  RENDER ORDERS
+// ══════════════════════════════════════
+function setFilter(f, el) {
+  curFilter = f;
+  document.querySelectorAll('.ftab').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderOrders();
+}
+
+function renderOrders() {
+  const cont = document.getElementById('olist');
+  const list = curFilter==='all' ? allOrders : allOrders.filter(o=>o.status===curFilter);
+  if (!list.length) { cont.innerHTML='<div style="text-align:center;padding:50px;color:#aaa;">لا توجد طلبات</div>'; return; }
+  const now = Date.now();
+  cont.innerHTML = list.map(o => {
+    const s = SM[o.status]||SM.received;
+    const dt = new Date(o.created_at).toLocaleString('ar-IQ');
+    const isNew = now - new Date(o.created_at).getTime() < 10*60*1000;
+    const sp = 'event.stopPropagation()';
+    let act = '';
+    if(o.status==='received')   act=`<button class="abtn aprint" onclick="${sp};chStatus('${o.id}','printing','${o.telegram_id}','${o.id}')">🖨️ بدء الطباعة</button><button class="abtn acanc" onclick="${sp};chStatus('${o.id}','cancelled','${o.telegram_id}','${o.id}')">❌ إلغاء</button>`;
+    if(o.status==='printing')   act=`<button class="abtn adeliv" onclick="${sp};chStatus('${o.id}','delivering','${o.telegram_id}','${o.id}')">🛵 أرسل للتوصيل</button>`;
+    if(o.status==='delivering') act=`<button class="abtn adone"  onclick="${sp};chStatus('${o.id}','delivered','${o.telegram_id}','${o.id}')">✅ تم التسليم</button>`;
+    return `<div class="ocard ${isNew?'isnew':''}" onclick="openDet('${o.id}')">
+      <div class="ohdr">
+        <div>${isNew?'<span class="newbdg">جديد</span>':''}<b style="color:var(--blue);">#${o.id}</b></div>
+        <span class="sbdg ${s.c}">${s.i} ${s.l}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:.83rem;color:#555;margin-bottom:4px;">
+        <span>👤 ${o.name}</span><span>📞 ${o.phone}</span>
+        <span>🏠 ${o.region}</span><span>💰 ${(o.total||0).toLocaleString()} د.ع</span>
+        <span>🎨 ${o.color==='c'?'ملون':'أسود'} • ${o.side==='1'?'وجه':'وجهين'}</span>
+        <span>📋 ${o.files?.length||0} ملف</span>
+      </div>
+      <div style="font-size:.73rem;color:#bbb;">${dt}</div>
+      ${o.is_first_order?'<div style="font-size:.77rem;color:var(--green);margin-top:4px;">🎁 أول طلب — توصيل مجاني</div>':''}
+      ${act?`<div class="arow">${act}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════
+//  CHANGE STATUS
+// ══════════════════════════════════════
+const MSGS = {
+  printing:   id => `🖨️ طلبك #${id} قيد الطباعة الآن!\nسنُخطرك عند الإرسال للتوصيل.`,
+  delivering: id => `🛵 طلبك #${id} في الطريق إليك!\nالمندوب متجه نحوك الآن.`,
+  delivered:  id => `✅ تم تسليم طلبك #${id} بنجاح!\nشكراً لتعاملك مع خدمات الشاطر 🌟`,
+  cancelled:  id => `❌ تم إلغاء طلبك #${id}.\nللاستفسار تواصل معنا.`
+};
+
+async function chStatus(docId, newSt, tgId, oid) {
+  if (!confirm('تأكيد: تحديث الطلب إلى "' + SM[newSt]?.l + '"؟')) return;
+
+  // ═══ STEP 1: جلب telegram_id الحقيقي من قاعدة البيانات ═══
+  // لا نعتمد على القيمة الممررة من HTML لأنها قد تكون قديمة
+  const {data: orderData, error: fetchErr} = await sb
+    .from('orders')
+    .select('telegram_id, status_history')
+    .eq('id', docId)
+    .maybeSingle();
+
+  if (fetchErr) { alert('❌ خطأ في جلب الطلب: ' + fetchErr.message); return; }
+
+  const realTgId   = orderData?.telegram_id || tgId || '';
+  const oldHistory = orderData?.status_history || [];
+  const newHistory = [...oldHistory, {status: newSt, time: new Date().toISOString()}];
+
+  // ═══ STEP 2: تحديث الحالة في قاعدة البيانات ═══
+  const {error: updErr} = await sb
+    .from('orders')
+    .update({status: newSt, status_history: newHistory})
+    .eq('id', docId);
+
+  if (updErr) { alert('❌ خطأ في التحديث: ' + updErr.message); return; }
+
+  // ═══ STEP 3: إشعار تلقائي للزبون عبر البوت ═══
+  const mfn = MSGS[newSt];
+  const isValidTg = realTgId && realTgId !== 'undefined' && realTgId !== 'null' && !realTgId.startsWith('guest_');
+  if (mfn && isValidTg) {
+    const sent = await tgMsg(realTgId, mfn(oid));
+    console.log('Customer notified:', realTgId, '| status:', newSt, '| result:', sent);
+  } else {
+    console.warn('Cannot notify customer — invalid telegram_id:', realTgId);
+  }
+
+  // ═══ STEP 4: إشعار تأكيد للأدمن ═══
+  const s = SM[newSt] || {};
+  await tgMsg(ADMIN,
+    '✅ تم تحديث الطلب #' + oid + '\n' +
+    'الحالة الجديدة: ' + (s.i||'') + ' ' + (s.l||newSt) + '\n' +
+    (isValidTg ? '📲 تم إخطار الزبون' : '⚠️ لم يتم إخطار الزبون (غير متاح)')
+  );
+}
+
+async function tgMsg(cid, txt) {
+  try {
+    const res = await fetch('https://api.telegram.org/bot' + BOT + '/sendMessage', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({chat_id: cid, text: txt, disable_web_page_preview: true})
+    });
+    const json = await res.json();
+    if (!json.ok) console.error('tgMsg error for', cid, ':', json.description);
+    return json.ok;
+  } catch(e) {
+    console.error('tgMsg fetch failed:', e.message);
+    return false;
+  }
+}
+
+// ══════════════════════════════════════
+//  DETAIL PANEL
+// ══════════════════════════════════════
+function openDet(docId) {
+  const o = allOrders.find(x=>x.id===docId); if(!o) return;
+  document.getElementById('dettitle').innerText = '#' + o.id;
+  document.getElementById('detov').style.display = 'block';
+  document.getElementById('detpan').classList.add('open');
+  const s   = SM[o.status]||SM.received;
+  const dt  = new Date(o.created_at).toLocaleString('ar-IQ');
+  const zip = o.zip_url||'';
+
+  let detAct = '';
+  if(o.status==='received')   detAct=`<button class="abtn aprint" style="padding:11px;" onclick="chStatus('${o.id}','printing','${o.telegram_id}','${o.id}');closeDet()">🖨️ بدء الطباعة</button><button class="abtn acanc" style="padding:11px;" onclick="chStatus('${o.id}','cancelled','${o.telegram_id}','${o.id}');closeDet()">❌ إلغاء الطلب</button>`;
+  if(o.status==='printing')   detAct=`<button class="abtn adeliv" style="padding:11px;" onclick="chStatus('${o.id}','delivering','${o.telegram_id}','${o.id}');closeDet()">🛵 أرسل للتوصيل</button>`;
+  if(o.status==='delivering') detAct=`<button class="abtn adone"  style="padding:11px;" onclick="chStatus('${o.id}','delivered','${o.telegram_id}','${o.id}');closeDet()">✅ تم التسليم</button>`;
+
+  document.getElementById('detbody').innerHTML = `
+    <div style="text-align:center;margin-bottom:18px;">
+      <span class="sbdg ${s.c}" style="font-size:.9rem;padding:6px 18px;">${s.i} ${s.l}</span>
+      <div style="font-size:.75rem;color:#aaa;margin-top:6px;">${dt}</div>
+    </div>
+    <div style="background:#f8fafc;border-radius:12px;padding:12px;margin-bottom:15px;">
+      <div class="irow"><span>👤 الاسم</span><b>${o.name}</b></div>
+      <div class="irow"><span>📞 الهاتف</span><a href="tel:${o.phone}" style="color:var(--blue);font-weight:700;">${o.phone}</a></div>
+      <div class="irow"><span>🏠 المنطقة</span><b>${o.region}</b></div>
+      <div class="irow"><span>📍 الموقع</span><a href="${o.loc_url||'#'}" target="_blank" style="color:var(--blue);">افتح الخريطة 🗺️</a></div>
+    </div>
+    <div style="background:#f8fafc;border-radius:12px;padding:12px;margin-bottom:15px;">
+      <div class="irow"><span>🎨 الطباعة</span><b>${o.color==='c'?'ملون':'أسود'} • ${o.side==='1'?'وجه واحد':'وجهين'}</b></div>
+      <div class="irow"><span>💰 الإجمالي</span><b style="color:var(--blue);font-size:1rem;">${(o.total||0).toLocaleString()} د.ع</b></div>
+      ${o.is_first_order?'<div class="irow"><span>🎁 أول طلب</span><b style="color:var(--green);">توصيل مجاني</b></div>':''}
+      ${(o.pts_used||0)>0?`<div class="irow"><span>💎 نقاط مستخدمة</span><b>${o.pts_used}</b></div>`:''}
+      <div class="irow"><span>💎 نقاط مكتسبة</span><b style="color:#7c3aed;">+${o.loyalty_points_earned||0}</b></div>
+    </div>
+    <h4 style="margin:0 0 10px;color:#333;">الملفات (${o.files?.length||0})</h4>
+    ${zip?`<a href="${zip}" target="_blank" style="display:block;text-align:center;background:var(--blue);color:#fff;padding:12px;border-radius:12px;font-weight:700;text-decoration:none;margin-bottom:10px;">📦 تحميل كل الملفات (ZIP)</a>`:'<p style="color:#aaa;font-size:.85rem;margin-bottom:10px;">⚠️ لم يتم رفع الملفات</p>'}
+    <div style="background:#f8fafc;border-radius:12px;padding:12px;margin-bottom:15px;">
+      ${o.files?.map(f=>`<div style="padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:.85rem;">📄 ${f.name} — ${f.pages}ص × ${f.copies}نسخة</div>`).join('')||''}
+    </div>
+    ${detAct?`<div class="arow">${detAct}</div>`:`<div style="text-align:center;color:#aaa;font-size:.85rem;padding:10px;">${o.status==='delivered'?'✅ الطلب مكتمل':'❌ الطلب ملغى'}</div>`}`;
+}
+
+function closeDet() {
+  document.getElementById('detov').style.display = 'none';
+  document.getElementById('detpan').classList.remove('open');
+}
+</script>
+</body>
+</html>

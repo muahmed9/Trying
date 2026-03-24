@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>خدمات الشاطر الطلابية</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--blue:#248bcf;--bg:#f4f7f9;--green:#28a745;--dark:#333;--red:#dc3545;--gold:#eab308;}
+*{box-sizing:border-box;}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:var(--bg);direction:rtl;margin:0;padding:0 0 75px;color:var(--dark);}
+.bnav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e8ecef;display:flex;z-index:200;box-shadow:0 -3px 15px rgba(0,0,0,.08);}
+.nbtn{flex:1;padding:10px 5px;border:none;background:none;cursor:pointer;font-size:.72rem;color:#aaa;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.nbtn .ni{font-size:1.5rem;}
+.nbtn.active{color:var(--blue);}
+.tab{display:none;padding:15px;}
+.tab.active{display:block;}
+.card{background:#fff;border-radius:15px;padding:20px;margin-bottom:15px;box-shadow:0 2px 12px rgba(0,0,0,.05);border:1px solid #eef1f4;}
+.hdr{text-align:center;padding:15px 0 5px;}
+.logo{width:80px;height:80px;background:#fff;border-radius:50%;margin:0 auto 8px;box-shadow:0 4px 15px rgba(0,0,0,.1);border:3px solid var(--blue);display:flex;align-items:center;justify-content:center;font-size:2rem;}
+.upload{border:2px dashed var(--blue);padding:25px;text-align:center;color:var(--blue);cursor:pointer;border-radius:15px;}
+.bgrp{display:flex;gap:10px;margin-top:10px;}
+.obtn{flex:1;padding:12px;border:1px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.95rem;}
+.obtn.on{background:var(--blue)!important;color:#fff!important;border-color:var(--blue);}
+.obtn.off{background:#fff!important;color:var(--dark)!important;}
+.bmain{width:100%;padding:15px;border:none;border-radius:12px;font-weight:700;font-size:1.05rem;cursor:pointer;}
+.bmain:disabled{opacity:.6;cursor:not-allowed;}
+input[type=text],input[type=tel]{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;font-size:1rem;margin-bottom:10px;background:#fafafa;outline:none;}
+input:focus{border-color:var(--blue);}
+.togw{position:relative;display:inline-block;width:50px;height:27px;flex-shrink:0;}
+.togw input{opacity:0;width:0;height:0;}
+.togs{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:27px;transition:.3s;}
+.togs:before{content:'';position:absolute;width:21px;height:21px;right:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;}
+input:checked+.togs{background:var(--blue);}
+input:checked+.togs:before{transform:translateX(-23px);}
+.inv{background:#2c3e50;color:#fff;border-radius:15px;padding:20px;margin-top:15px;}
+.il{display:flex;justify-content:space-between;margin-bottom:8px;font-size:.9rem;}
+.tot{font-size:1.4rem;color:#4eff4e;text-align:center;margin-top:15px;border-top:1px dashed #5d6d7e;padding-top:15px;font-weight:700;}
+.pcon{width:100%;background:#ddd;height:8px;border-radius:4px;margin:15px 0;display:none;overflow:hidden;}
+.pbar{width:0;height:100%;background:var(--green);transition:width .3s;}
+.fi{padding:10px 0;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center;}
+.bcnt{background:#eef1f4;border:1px solid #ddd;width:32px;height:32px;border-radius:8px;cursor:pointer;font-weight:700;font-size:1rem;}
+.inote{color:var(--blue);font-size:.85rem;font-weight:700;margin:12px 0;display:none;border:1px solid #b3d7ff;padding:10px;border-radius:10px;background:#e7f3ff;text-align:center;}
+.errmsg{background:#fff1f2;color:var(--red);padding:10px;border-radius:10px;font-size:.85rem;font-weight:700;margin-bottom:12px;text-align:center;display:none;border:1px solid #fecdd3;}
+.iosbox{background:#fffbef;border:2px solid #fbd38d;border-radius:12px;padding:15px;margin-top:15px;}
+.sbadge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:.8rem;font-weight:700;}
+.s-r{background:#dbeafe;color:#1e40af;}
+.s-p{background:#fef9c3;color:#854d0e;}
+.s-d{background:#dcfce7;color:#166534;}
+.s-v{background:#f0fdf4;color:#15803d;border:1px solid #86efac;}
+.s-c{background:#fee2e2;color:#991b1b;}
+.ocard{background:#fff;border-radius:15px;padding:15px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);border:1px solid #eef1f4;cursor:pointer;}
+.tlstep{display:flex;align-items:flex-start;gap:12px;margin-bottom:5px;}
+.tlc{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;}
+.tld{background:var(--green);color:#fff;}
+.tlcur{background:var(--blue);color:#fff;}
+.tlpen{background:#e5e7eb;color:#9ca3af;}
+.tlcon{width:2px;height:22px;background:#e5e7eb;margin:2px 0 2px 15px;}
+.tlcon.done{background:var(--green);}
+.ptshero{background:linear-gradient(135deg,#1a3557,var(--blue));color:#fff;border-radius:20px;padding:25px;margin-bottom:15px;text-align:center;}
+.ptsnum{font-size:3.2rem;font-weight:700;line-height:1;}
+.tierbadge{display:inline-block;padding:5px 18px;border-radius:20px;font-weight:700;margin:10px 0 5px;}
+.tgold{background:#eab308;color:#1e293b;}
+.tsilv{background:#94a3b8;color:#fff;}
+.tbron{background:#cd7f32;color:#fff;}
+.ptspw{width:100%;height:8px;background:rgba(255,255,255,.25);border-radius:4px;overflow:hidden;margin:8px 0;}
+.ptspf{height:100%;background:#4eff4e;border-radius:4px;transition:width .6s;}
+.rcard{background:#fff;border-radius:13px;padding:14px 15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.05);border:1px solid #eef1f4;}
+.rbtn{background:var(--blue);color:#fff;padding:8px 16px;border-radius:10px;font-size:.85rem;cursor:pointer;font-weight:700;border:none;}
+.rbtn:disabled{opacity:.35;cursor:not-allowed;}
+.phitem{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f1f5f9;font-size:.88rem;}
+.shov{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.65);display:none;align-items:flex-end;justify-content:center;z-index:300;}
+.shov.open{display:flex;}
+.sheet{background:#fff;border-radius:22px 22px 0 0;padding:20px;width:100%;max-height:88vh;overflow-y:auto;}
+.handle{width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 15px;}
+#wmodal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;z-index:400;}
+.mbox{background:#fff;padding:30px;border-radius:22px;text-align:center;width:88%;max-width:400px;}
+#toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:12px 22px;border-radius:14px;font-size:.88rem;z-index:999;display:none;box-shadow:0 4px 18px rgba(0,0,0,.3);max-width:90%;text-align:center;transition:opacity .3s;}
+</style>
+</head>
+<body>
+
+<div id="wmodal">
+  <div class="mbox">
+    <div class="logo">🖨️</div>
+    <h2 style="color:var(--blue);margin:0 0 8px;">خدمات الشاطر الطلابية</h2>
+    <p style="color:#555;margin:0 0 10px;">ارفع مستنداتك وسنطبعها ونوصلها إليك</p>
+    <p id="fo-gift" style="font-size:.9rem;color:var(--green);font-weight:700;display:none;">🎁 توصيل مجاني لأول طلب!</p>
+    <p style="font-size:.88rem;color:var(--green);font-weight:700;">🎁 توصيل مجاني للطلبات +10,000 د.ع!</p>
+    <p style="font-size:.85rem;color:var(--blue);">🏆 اكسب نقاط مع كل طلب!</p>
+    <button class="bmain" style="background:var(--blue);color:#fff;margin-top:12px;" onclick="document.getElementById('wmodal').style.display='none'">ابدأ الآن ✨</button>
+  </div>
+</div>
+
+<div class="shov" id="det-ov">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+      <h3 style="margin:0;color:var(--blue);" id="det-title">تفاصيل الطلب</h3>
+      <button onclick="closeDet()" style="border:none;background:#f1f5f9;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:1.1rem;">✕</button>
+    </div>
+    <div id="det-body"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- TAB 1 -->
+<div class="tab active" id="tab-order">
+  <div class="hdr">
+    <div class="logo">🖨️</div>
+    <h1 style="margin:0;color:var(--blue);font-size:1.3rem;">خدمات الشاطر الطلابية</h1>
+  </div>
+  <div class="card" style="margin-top:12px;">
+    <div class="upload" onclick="document.getElementById('fileinp').click()">
+      <span style="font-size:1.3rem;">📁 اضغط هنا لإضافة الملفات</span>
+      <p style="font-size:.8rem;margin:6px 0 0;opacity:.8;">PDF, Word, Excel, PowerPoint, صور</p>
+    </div>
+    <div class="iosbox">
+      <b style="color:#c05621;">⚠️ تنبيه لمستخدمي الآيفون</b>
+      <ol style="color:#744210;font-size:.85rem;line-height:1.7;margin:8px 0 0;padding-right:18px;">
+        <li>افتح الملف في واتساب أو تيليجرام</li>
+        <li>اضغط <b>"مشاركة"</b> ← <b>"حفظ في الملفات"</b></li>
+        <li>عد للتطبيق واختر <b>"تصفح (Browse)"</b></li>
+      </ol>
+    </div>
+    <input type="file" id="fileinp" multiple style="display:none">
+  </div>
+  <div id="flist" class="card" style="display:none;"></div>
+  <div id="opts" style="display:none;">
+    <div class="card">
+      <p style="margin:0 0 8px;"><b>نوع الطباعة:</b></p>
+      <div class="bgrp">
+        <button id="cbtn" class="obtn on" onclick="setC('c')">🌈 ملون</button>
+        <button id="nbtn" class="obtn off" onclick="setC('n')">⚪ أسود</button>
+      </div>
+      <div class="inote" id="inote">⚠️ الصور تُطبع وجه واحد فقط</div>
+      <div id="sidebox">
+        <p style="margin:18px 0 8px;"><b>طريقة الطباعة:</b></p>
+        <div class="bgrp">
+          <button id="s1btn" class="obtn on" onclick="setS('1')">📄 وجه واحد</button>
+          <button id="s2btn" class="obtn off" onclick="setS('2')">📖 وجهين</button>
+        </div>
+      </div>
+    </div>
+    <div class="card" id="ptscard" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div><b>💎 استخدام نقاط الولاء</b>
+          <p style="margin:4px 0 0;font-size:.83rem;color:#666;" id="ptslbl"></p>
+        </div>
+        <label class="togw"><input type="checkbox" id="ptstog" onchange="calcUI()"><span class="togs"></span></label>
+      </div>
+      <p id="ptssavelbl" style="margin:8px 0 0;color:var(--green);font-size:.85rem;display:none;"></p>
+    </div>
+    <div class="inv">
+      <div id="invdet"></div>
+      <div class="tot" id="totlbl">المجموع النهائي: 0 د.ع</div>
+    </div>
+    <div class="card" style="margin-top:15px;">
+      <div id="errbox" class="errmsg"></div>
+      <input type="text" id="uName"   placeholder="✍️ الاسم الكامل">
+      <input type="tel"  id="uPhone"  placeholder="📞 رقم الهاتف (11 رقم)" maxlength="11">
+      <input type="text" id="uRegion" placeholder="🏠 المنطقة / الحي">
+      <button id="locbtn" class="bmain" style="background:#64748b;color:#fff;margin-bottom:10px;" onclick="getLoc()">📍 تحديد موقعي</button>
+      <div class="pcon" id="pcon"><div class="pbar" id="pbar"></div></div>
+      <p id="statustxt" style="text-align:center;font-size:.82rem;color:#666;display:none;margin:5px 0;"></p>
+      <button id="sendbtn" class="bmain" style="background:var(--green);color:#fff;margin-top:12px;" onclick="sendOrder()">تأكيد وإرسال الطلب ✅</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 2 -->
+<div class="tab" id="tab-orders">
+  <h2 style="color:var(--blue);margin:0 0 15px;">📋 طلباتي</h2>
+  <div id="ordersbox"><div style="text-align:center;padding:50px 20px;color:#aaa;"><div style="font-size:3.5rem;">📦</div><p>لا توجد طلبات بعد</p></div></div>
+</div>
+
+<!-- TAB 3 -->
+<div class="tab" id="tab-points">
+  <h2 style="color:var(--blue);margin:0 0 15px;">🏆 نقاط الولاء</h2>
+  <div class="ptshero">
+    <p style="margin:0 0 5px;opacity:.8;font-size:.9rem;">رصيد نقاطك الحالي</p>
+    <div class="ptsnum" id="ptsnum">0</div>
+    <div id="tierdisp"></div>
+    <div class="ptspw"><div class="ptspf" id="ptsbar" style="width:0%"></div></div>
+    <p style="margin:0;font-size:.8rem;opacity:.75;" id="ptsnext"></p>
+  </div>
+  <div class="card">
+    <h3 style="margin:0 0 12px;">🎁 استبدال النقاط</h3>
+    <div class="rcard"><div><b>خصم 500 د.ع</b><p style="margin:3px 0 0;font-size:.8rem;color:#777;">= 100 نقطة</p></div><button class="rbtn" id="rb100" onclick="redeemPts(100,500)">استبدال</button></div>
+    <div class="rcard"><div><b>خصم 1,500 د.ع</b><p style="margin:3px 0 0;font-size:.8rem;color:#777;">= 300 نقطة</p></div><button class="rbtn" id="rb300" onclick="redeemPts(300,1500)">استبدال</button></div>
+    <div class="rcard"><div><b>خصم 3,500 د.ع</b><p style="margin:3px 0 0;font-size:.8rem;color:#777;">= 700 نقطة</p></div><button class="rbtn" id="rb700" onclick="redeemPts(700,3500)">استبدال</button></div>
+    <div id="redeembanner" style="display:none;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:10px;margin-top:10px;font-size:.85rem;color:#166534;text-align:center;"></div>
+  </div>
+  <div class="card">
+    <h3 style="margin:0 0 12px;">📊 كيف تكسب النقاط؟</h3>
+    <div style="line-height:2.2;color:#555;font-size:.88rem;">
+      <div>💳 كل <b>1,000 د.ع</b> = <b style="color:var(--blue);">10 نقاط</b></div>
+      <div>🥉 <b>برونز</b> 0–199: مستوى أساسي</div>
+      <div>🥈 <b>فضي</b> 200–499: أولوية في التجهيز</div>
+      <div>🥇 <b>ذهبي</b> 500+: <b style="color:var(--gold);">خصم 5% تلقائي</b></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3 style="margin:0 0 12px;">📜 سجل النقاط</h3>
+    <div id="ptshist"><p style="color:#aaa;font-size:.85rem;">لا يوجد سجل بعد</p></div>
+  </div>
+</div>
+
+<nav class="bnav">
+  <button class="nbtn active" id="nav-order"  onclick="goTab('order')"><span class="ni">🖨️</span><span>طلب جديد</span></button>
+  <button class="nbtn"        id="nav-orders" onclick="goTab('orders')" style="position:relative;"><span class="ni">📋</span><span>طلباتي</span><span id="ordbadge" style="display:none;background:var(--red);color:#fff;border-radius:10px;font-size:.6rem;padding:1px 5px;position:absolute;top:6px;margin-right:-18px;"></span></button>
+  <button class="nbtn"        id="nav-points" onclick="goTab('points')"><span class="ni">🏆</span><span>نقاطي</span></button>
+</nav>
+
+<script>
+// ══════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════
+const SB_URL = 'https://zrumnqtgdscrwgcguseq.supabase.co';
+const SB_KEY = 'sb_publishable_xEqE6S21QUMCkDxSMvTskg_9g3pi-vZ';
+const BOT    = '8446310296:AAFLgndwQEozwZ1Ja5Xf1UTdMtOiLFqty5k';
+const ADMIN  = '7618746133';
+
+const sb = window.supabase.createClient(SB_URL, SB_KEY);
+const tg = window.Telegram?.WebApp; tg?.ready();
+const tgU = tg?.initDataUnsafe?.user;
+const userId = tgU?.id ? String(tgU.id) : 'guest_' + Date.now();
+
+let files=[], color='c', side='1', locUrl='', pendingR=null;
+let uDoc={loyalty_points:0,first_order_done:false,total_orders:0,total_spent:0};
+
+// ══════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════
+async function init() {
+  try {
+    const {data} = await sb.from('users').select('*').eq('id', userId).maybeSingle();
+    if (data) {
+      uDoc = data;
+    } else {
+      uDoc = {id:userId, name:tgU?.first_name||'', username:tgU?.username||'',
+        loyalty_points:0, total_orders:0, total_spent:0, first_order_done:false};
+      await sb.from('users').insert(uDoc);
+    }
+  } catch(e) {}
+  if (!uDoc.first_order_done) document.getElementById('fo-gift').style.display = 'block';
+  refreshPtsUI();
+  startRT();
+}
+
+// ══════════════════════════════════════
+//  REALTIME
+// ══════════════════════════════════════
+function startRT() {
+  try {
+    sb.channel('rt-' + userId)
+      .on('postgres_changes', {event:'UPDATE', schema:'public', table:'orders', filter:'user_id=eq.'+userId},
+        p => {
+          const m = {received:'📥 تم الاستلام',printing:'🖨️ قيد الطباعة',delivering:'🛵 جاري التوصيل',delivered:'✅ تم التسليم',cancelled:'❌ ملغى'};
+          showToast(m[p.new.status] || 'تم تحديث طلبك');
+          if (document.getElementById('tab-orders').classList.contains('active')) loadOrders();
+        })
+      .subscribe();
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════
+function goTab(t) {
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nbtn').forEach(x=>x.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  document.getElementById('nav-'+t).classList.add('active');
+  if (t==='orders') loadOrders();
+  if (t==='points') loadPtsTab();
+}
+
+// ══════════════════════════════════════
+//  FILE INPUT
+// ══════════════════════════════════════
+document.getElementById('fileinp').onchange = async e => {
+  const ok=['.pdf','.docx','.doc','.xlsx','.xls','.pptx','.ppt','.jpg','.jpeg','.png','.webp'];
+  for (const f of e.target.files) {
+    const nm = f.name.toLowerCase(), ext = nm.substring(nm.lastIndexOf('.'));
+    if (!ok.includes(ext) && !f.type.startsWith('image/')) continue;
+    const obj = {file:f, name:f.name, p:1, c:1, isImg:f.type.startsWith('image/'), type:'ملف'};
+    try {
+      const buf = await f.arrayBuffer();
+      if (nm.endsWith('.pdf')) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        obj.p = (await pdfjsLib.getDocument({data:buf}).promise).numPages;
+        obj.type = 'PDF'; obj.isImg = false;
+      } else if (nm.endsWith('.docx') || nm.endsWith('.doc')) {
+        try {
+          const z = await JSZip.loadAsync(buf), xf = z.file('docProps/app.xml');
+          if (xf) { const m = (await xf.async('string')).match(/<Pages>(\d+)<\/Pages>/); if(m) obj.p = +m[1]; }
+        } catch {
+          const r = await mammoth.extractRawText({arrayBuffer:buf});
+          obj.p = Math.max(1, Math.ceil(r.value.trim().split(/\s+/).length / 300));
+        }
+        obj.type = 'Word'; obj.isImg = false;
+      } else if (nm.endsWith('.pptx') || nm.endsWith('.ppt')) {
+        const z = await JSZip.loadAsync(buf), xf = z.file('docProps/app.xml');
+        if (xf) { const m = (await xf.async('string')).match(/<Slides>(\d+)<\/Slides>/); if(m) obj.p = +m[1]; }
+        obj.type = 'PowerPoint'; obj.isImg = false;
+      } else if (nm.endsWith('.xlsx') || nm.endsWith('.xls')) {
+        const wb = XLSX.read(buf,{type:'array'}); let tot = 0;
+        wb.SheetNames.forEach(s => { const sh=wb.Sheets[s], r=XLSX.utils.decode_range(sh['!ref']||'A1:A1'); tot+=Math.ceil((r.e.r-r.s.r+1)/45)*Math.ceil((r.e.c-r.s.c+1)/8); });
+        obj.p = Math.max(1,tot); obj.type = 'Excel'; obj.isImg = false;
+      } else if (obj.isImg) obj.type = 'صورة';
+    } catch { obj.p = 1; }
+    files.push(obj);
+  }
+  calcUI(); e.target.value = '';
+};
+
+// ══════════════════════════════════════
+//  PRINT CONFIG
+// ══════════════════════════════════════
+function setC(v) { color=v; document.getElementById('cbtn').className=v==='c'?'obtn on':'obtn off'; document.getElementById('nbtn').className=v==='n'?'obtn on':'obtn off'; calcUI(); }
+function setS(v) { side=v; document.getElementById('s1btn').className=v==='1'?'obtn on':'obtn off'; document.getElementById('s2btn').className=v==='2'?'obtn on':'obtn off'; calcUI(); }
+
+// ══════════════════════════════════════
+//  LOCATION
+// ══════════════════════════════════════
+function getLoc() {
+  navigator.geolocation.getCurrentPosition(
+    p => { locUrl=`https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`; const b=document.getElementById('locbtn'); b.innerText='✅ تم حفظ الموقع'; b.style.background='var(--green)'; hideErr(); },
+    () => showErr('❌ يرجى تفعيل GPS والسماح بالوصول للموقع')
+  );
+}
+
+// ══════════════════════════════════════
+//  PRICE CALC
+// ══════════════════════════════════════
+function calcPrice(sh, im) {
+  const t=sh+im; if(!t) return 0; if(t<=5) return 1000;
+  if(color==='c') { if(t<=25) return t*150; if(t<=40) return t*130; if(t<=70) return t*120; return t*100; }
+  return t*(side==='1'?90:75);
+}
+
+function calcUI() {
+  let sh=0, im=0, dp=0, hasD=false, hasI=false;
+  const fl = document.getElementById('flist'); fl.innerHTML = '';
+  files.forEach((f,i) => {
+    if(f.isImg) { hasI=true; im+=f.c; }
+    else { hasD=true; dp+=f.p*f.c; const u=f.type==='PowerPoint'?Math.ceil(f.p/2):f.p; sh+=(side==='2'?Math.ceil(u/2):u)*f.c; }
+    fl.innerHTML += `<div class="fi"><span style="font-size:.83rem;font-weight:700;max-width:55%;">${f.name.substring(0,22)}${f.name.length>22?'…':''} <span style="color:#888;">(${f.p}ص)</span></span><div style="display:flex;align-items:center;gap:4px;"><button class="bcnt" onclick="adjC(${i},-1)">−</button><span style="padding:0 8px;font-weight:700;">${f.c}</span><button class="bcnt" onclick="adjC(${i},1)">+</button><span onclick="rmF(${i})" style="color:var(--red);margin-right:8px;cursor:pointer;font-size:.78rem;">حذف</span></div></div>`;
+  });
+  document.getElementById('sidebox').style.display = hasD ? 'block' : 'none';
+  document.getElementById('inote').style.display   = hasI ? 'block' : 'none';
+  document.getElementById('flist').style.display   = files.length ? 'block' : 'none';
+  document.getElementById('opts').style.display    = files.length ? 'block' : 'none';
+
+  const pp = calcPrice(sh, im);
+  const isFO = !uDoc.first_order_done;
+  const df = files.length===0 ? 0 : (pp>=10000||isFO ? 0 : 1000);
+  const isG = (uDoc.loyalty_points||0) >= 500;
+  const td = isG ? Math.round(pp*.05) : 0;
+  const useP = document.getElementById('ptstog')?.checked && pendingR;
+  const pd = useP ? pendingR.disc : 0;
+
+  const pc = document.getElementById('ptscard');
+  if (pendingR && files.length) {
+    pc.style.display = 'block';
+    document.getElementById('ptslbl').innerText = `لديك ${uDoc.loyalty_points||0} نقطة — خصم ${pendingR.disc.toLocaleString()} د.ع`;
+    const sl = document.getElementById('ptssavelbl'); sl.style.display=useP?'block':'none'; sl.innerText=`✅ سيُخصم ${pendingR.disc.toLocaleString()} د.ع`;
+  } else pc.style.display = 'none';
+
+  const tot = Math.max(0, pp-td-pd+df);
+  const pe  = Math.floor(tot/1000)*10;
+  const dtxt = isFO ? '<b style="color:#4eff4e;">مجاني 🎁</b>' : df===0 ? '<b style="color:#4eff4e;">مجاني ✨</b>' : df.toLocaleString()+' د.ع';
+
+  document.getElementById('invdet').innerHTML = `
+    <div class="il"><span>صفحات الملفات:</span><span>${dp}</span></div>
+    <div class="il"><span>الصور:</span><span>${im}</span></div>
+    <div class="il" style="border-top:1px solid #5d6d7e;padding-top:6px;"><span>سعر الطباعة:</span><span>${pp.toLocaleString()} د.ع</span></div>
+    ${td>0?`<div class="il"><span>🥇 خصم الذهبي 5%:</span><span style="color:#4eff4e;">−${td.toLocaleString()} د.ع</span></div>`:''}
+    ${pd>0&&useP?`<div class="il"><span>💎 خصم النقاط:</span><span style="color:#4eff4e;">−${pd.toLocaleString()} د.ع</span></div>`:''}
+    <div class="il"><span>التوصيل:</span><span>${dtxt}</span></div>
+    <div class="il"><span>💎 نقاط ستكسبها:</span><span style="color:#ffd700;">+${pe}</span></div>`;
+  document.getElementById('totlbl').innerText = `المجموع النهائي: ${tot.toLocaleString()} د.ع`;
+  window._ord = {pp,df,td,pd,tot,pe,isFO};
+}
+
+window.adjC = (i,d) => { files[i].c=Math.max(1,files[i].c+d); calcUI(); };
+window.rmF  = i => { files.splice(i,1); calcUI(); };
+
+// ══════════════════════════════════════
+//  REDEEM POINTS
+// ══════════════════════════════════════
+function redeemPts(pts, disc) {
+  if ((uDoc.loyalty_points||0) < pts) { alert('نقاطك غير كافية!'); return; }
+  pendingR = {pts, disc};
+  const b = document.getElementById('redeembanner');
+  b.style.display = 'block';
+  b.innerHTML = `✅ خصم <b>${disc.toLocaleString()} د.ع</b> جاهز — فعّل خيار النقاط في الطلب 💎`;
+  goTab('order'); calcUI();
+}
+
+// ══════════════════════════════════════
+//  SEND ORDER
+// ══════════════════════════════════════
+async function sendOrder() {
+  const name   = document.getElementById('uName').value.trim();
+  const phone  = document.getElementById('uPhone').value.trim();
+  const region = document.getElementById('uRegion').value.trim();
+
+  if (!name)                               return showErr('❌ يرجى كتابة الاسم');
+  if (phone.length!==11 || isNaN(+phone)) return showErr('❌ رقم الهاتف يجب أن يكون 11 رقمًا');
+  if (!region)                             return showErr('❌ يرجى إدخال اسم المنطقة');
+  if (!locUrl)                             return showErr('❌ يرجى تحديد موقعك على الخريطة');
+  if (!files.length)                       return showErr('❌ يرجى رفع ملف واحد على الأقل');
+  hideErr();
+
+  const btn = document.getElementById('sendbtn');
+  btn.disabled = true; btn.innerText = 'جاري الإرسال... 🚀';
+  document.getElementById('pcon').style.display = 'block';
+  const stxt = document.getElementById('statustxt'); stxt.style.display = 'block';
+
+  try {
+    const oid  = 'SH-' + Math.floor(1000 + Math.random() * 9000);
+    const {pp, df, td, pd, tot, pe, isFO} = window._ord || {};
+    const useP = document.getElementById('ptstog')?.checked && pendingR;
+    const pu   = useP ? pendingR.pts : 0;
+
+    // ═══ STEP 1: تجهيز الملفات وضغطها ═══
+    stxt.innerText = 'جاري تجهيز الملفات...';
+    document.getElementById('pbar').style.width = '10%';
+    const zip    = new JSZip();
+    const folder = zip.folder('order-' + oid);
+    const meta   = [];
+    for (const f of files) {
+      const buf = await f.file.arrayBuffer();
+      for (let c = 1; c <= f.c; c++) {
+        folder.file(f.c > 1 ? `(${c}) ${f.name}` : f.name, buf);
+      }
+      meta.push({name: f.name, pages: f.p, copies: f.c, type: f.type});
+    }
+    stxt.innerText = 'جاري ضغط الملفات...';
+    const zipBlob = await zip.generateAsync({type:'blob', compression:'DEFLATE'}, m => {
+      document.getElementById('pbar').style.width = (10 + m.percent * 0.4) + '%';
+    });
+
+    // ═══ STEP 2: رفع ZIP والحصول على الرابط النهائي ═══
+    stxt.innerText = 'جاري رفع الملفات...';
+    // مسار ASCII فقط — الحروف العربية تُفشل Supabase Storage بصمت
+    const zpath = 'orders/' + oid + '/files-' + oid + '.zip';
+    let finalZipUrl = '';
+
+    const {data: upData, error: upErr} = await sb.storage
+      .from('order-files')
+      .upload(zpath, zipBlob, {contentType: 'application/zip', upsert: true});
+
+    if (upErr) {
+      // سجّل الخطأ لكن لا تُوقف العملية
+      console.error('ZIP upload error:', upErr.message);
+    } else {
+      // getPublicUrl في Supabase v2 متزامنة (ليست Promise)
+      const {data: urlData} = sb.storage.from('order-files').getPublicUrl(zpath);
+      finalZipUrl = urlData?.publicUrl || '';
+      console.log('ZIP ready:', finalZipUrl);
+    }
+
+    document.getElementById('pbar').style.width = '70%';
+
+    // ═══ STEP 3: حفظ الطلب — بعد التأكد من finalZipUrl ═══
+    stxt.innerText = 'جاري حفظ الطلب...';
+    // telegram_id = userId يُستخدم لاحقاً لإرسال إشعارات الحالة للزبون
+    const order = {
+      id:    oid,
+      user_id:     userId,
+      telegram_id: userId,   // ← ضروري لربط إشعارات الأدمن بالزبون
+      name, phone, region,
+      loc_url:   locUrl,
+      files:     meta,
+      zip_url:   finalZipUrl,  // ← مضمون بعد await كامل
+      color, side,
+      print_price:          pp  || 0,
+      delivery_fee:         df  || 0,
+      tier_discount:        td  || 0,
+      pts_discount:         pd  || 0,
+      pts_used:             pu,
+      total:                tot || 0,
+      loyalty_points_earned: pe || 0,
+      is_first_order:        !!isFO,
+      status:         'received',
+      status_history: [{status: 'received', time: new Date().toISOString()}]
+    };
+
+    const {error: insErr} = await sb.from('orders').insert(order);
+    if (insErr) console.error('Insert error:', insErr.message);
+
+    document.getElementById('pbar').style.width = '80%';
+
+    // ═══ STEP 4: تحديث نقاط المستخدم ═══
+    const np = Math.max(0, (uDoc.loyalty_points || 0) + (pe || 0) - pu);
+    await sb.from('users').update({
+      loyalty_points:  np,
+      total_orders:    (uDoc.total_orders  || 0) + 1,
+      total_spent:     (uDoc.total_spent   || 0) + (tot || 0),
+      first_order_done: true,
+      name, phone
+    }).eq('id', userId);
+    uDoc.loyalty_points  = np;
+    uDoc.first_order_done = true;
+
+    document.getElementById('pbar').style.width = '90%';
+
+    // ═══ STEP 5: إشعار فوري للأدمن ═══
+    const flist = meta.map(f => `📄 ${f.name} — ${f.pages}ص × ${f.copies}نسخة`).join('\n');
+    const adminMsg =
+      `🆕 طلب جديد #${oid}\n` +
+      (isFO ? '🚚 توصيل مجاني — أول طلب\n' : '') +
+      `👤 ${name}\n📞 ${phone}\n🏠 ${region}\n` +
+      `🎨 ${color==='c'?'ملون':'أسود'} — ${side==='1'?'وجه واحد':'وجهين'}\n` +
+      `💰 ${(tot||0).toLocaleString()} د.ع\n📍 ${locUrl}\n\n` +
+      `📋 الملفات (${meta.length}):\n${flist}\n\n` +
+      `📦 رابط التحميل:\n${finalZipUrl || '⚠️ فشل رفع الملفات — راجع الـ Storage'}`;
+
+    const adminRes = await tgMsg(ADMIN, adminMsg);
+    console.log('Admin notified:', adminRes);
+
+    // ═══ STEP 6: إشعار تأكيد للزبون ═══
+    // tgU.id موجود فقط عند الفتح داخل تيليجرام
+    const custId = tgU?.id ? String(tgU.id) : null;
+    if (custId) {
+      const custMsg =
+        `✅ تم استلام طلبك #${oid} بنجاح!\n\n` +
+        `💰 المجموع: ${(tot||0).toLocaleString()} د.ع\n` +
+        `💎 كسبت ${pe || 0} نقطة جديدة!\n\n` +
+        `⏳ جاري مراجعة طلبك — ستصلك رسالة فور بدء الطباعة.`;
+      await tgMsg(custId, custMsg);
+    }
+
+    document.getElementById('pbar').style.width = '100%';
+    pendingR = null;
+    refreshPtsUI();
+
+    // ═══ STEP 7: شاشة النجاح ═══
+    document.getElementById('tab-order').innerHTML = `
+      <div style="text-align:center;padding:50px 20px;animation:fadeIn .4s ease;">
+        <div style="font-size:5rem;margin-bottom:8px;filter:drop-shadow(0 0 20px rgba(40,167,69,.4));">✅</div>
+        <h2 style="color:var(--blue);margin:0 0 6px;">تم إرسال طلبك بنجاح!</h2>
+        <p style="color:#555;margin:0 0 20px;font-size:.95rem;">رقم الطلب: <b style="color:var(--blue);">#${oid}</b></p>
+
+        <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #86efac;border-radius:16px;padding:18px;margin-bottom:15px;">
+          <div style="font-size:1.6rem;margin-bottom:6px;">💎</div>
+          <b style="color:#166534;font-size:1rem;">كسبت ${pe || 0} نقطة جديدة!</b>
+          <p style="margin:4px 0 0;font-size:.82rem;color:#15803d;">رصيدك الجديد: ${np} نقطة</p>
+        </div>
+
+        ${finalZipUrl ? `
+        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:14px;margin-bottom:15px;">
+          <div style="font-size:.85rem;color:#1e40af;margin-bottom:8px;">📦 ملفاتك محفوظة بأمان</div>
+          <a href="${finalZipUrl}" target="_blank"
+             style="display:inline-block;background:var(--blue);color:#fff;padding:9px 20px;border-radius:10px;font-size:.85rem;font-weight:700;text-decoration:none;">
+            ⬇️ تحميل ملفاتك
+          </a>
+        </div>` : ''}
+
+        <div style="background:#fafafa;border:1px solid #eee;border-radius:14px;padding:14px;margin-bottom:20px;font-size:.85rem;color:#555;line-height:1.9;text-align:right;">
+          <div>📱 تم إرسال إشعار لك على تيليجرام</div>
+          <div>🔔 ستصلك رسالة عند كل تحديث للطلب</div>
+          <div>🖨️ سنبدأ الطباعة في أقرب وقت</div>
+        </div>
+
+        <button onclick="goTab('orders')" class="bmain"
+          style="background:var(--blue);color:#fff;margin-bottom:10px;">
+          📋 تتبع طلبك
+        </button>
+        <button onclick="location.reload()" class="bmain"
+          style="background:#f1f5f9;color:#64748b;">
+          🆕 طلب جديد
+        </button>
+      </div>
+      <style>@keyframes fadeIn{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}</style>`;
+
+  } catch(e) {
+    console.error('sendOrder error:', e);
+    showErr('❌ حدث خطأ: ' + e.message);
+    btn.disabled = false;
+    btn.innerText = 'تأكيد وإرسال الطلب ✅';
+    stxt.style.display = 'none';
+  }
+}
+
+async function tgMsg(cid, txt) {
+  try {
+    const res = await fetch('https://api.telegram.org/bot' + BOT + '/sendMessage', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({chat_id: cid, text: txt, disable_web_page_preview: true})
+    });
+    const json = await res.json();
+    if (!json.ok) console.error('tgMsg error for', cid, ':', json.description);
+    return json.ok;
+  } catch(e) {
+    console.error('tgMsg fetch failed:', e.message);
+    return false;
+  }
+}
+
+// ══════════════════════════════════════
+//  ORDERS LIST
+// ══════════════════════════════════════
+async function loadOrders() {
+  const box = document.getElementById('ordersbox');
+  box.innerHTML = '<div style="text-align:center;padding:30px;color:#aaa;">جاري التحميل...</div>';
+  const SM = {
+    received:  {l:'تم الاستلام',  c:'s-r',i:'📥'},
+    printing:  {l:'قيد الطباعة', c:'s-p',i:'🖨️'},
+    delivering:{l:'جاري التوصيل',c:'s-d',i:'🛵'},
+    delivered: {l:'تم التسليم',  c:'s-v',i:'✅'},
+    cancelled: {l:'ملغى',        c:'s-c',i:'❌'}
+  };
+  const {data, error} = await sb.from('orders').select('*').eq('user_id', userId).order('created_at',{ascending:false}).limit(30);
+  if (error || !data?.length) {
+    box.innerHTML = '<div style="text-align:center;padding:50px 20px;color:#aaa;"><div style="font-size:3.5rem;">📦</div><p>لا توجد طلبات بعد</p><button onclick="goTab(\'order\')" class="bmain" style="background:var(--blue);color:#fff;max-width:200px;">أنشئ أول طلب</button></div>';
+    return;
+  }
+  let ac = 0;
+  box.innerHTML = data.map(o => {
+    const s = SM[o.status]||SM.received;
+    if (['received','printing','delivering'].includes(o.status)) ac++;
+    const dt = new Date(o.created_at).toLocaleDateString('ar-IQ');
+    return `<div class="ocard" onclick="showDet('${o.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <b style="color:var(--blue);">#${o.id}</b>
+        <span class="sbadge ${s.c}">${s.i} ${s.l}</span>
+      </div>
+      <div style="font-size:.83rem;color:#666;">${dt} • ${o.files?.length||0} ملف • ${(o.total||0).toLocaleString()} د.ع</div>
+      <div style="font-size:.8rem;color:var(--green);margin-top:5px;">💎 +${o.loyalty_points_earned||0} نقطة</div>
+    </div>`;
+  }).join('');
+  if (ac>0) { const b=document.getElementById('ordbadge'); b.innerText=ac; b.style.display='inline'; }
+}
+
+// ══════════════════════════════════════
+//  ORDER DETAIL
+// ══════════════════════════════════════
+async function showDet(oid) {
+  document.getElementById('det-ov').classList.add('open');
+  document.getElementById('det-body').innerHTML = '<div style="text-align:center;padding:20px;color:#aaa;">جاري التحميل...</div>';
+  const steps = [{k:'received',l:'تم الاستلام',i:'📥'},{k:'printing',l:'قيد الطباعة',i:'🖨️'},{k:'delivering',l:'جاري التوصيل',i:'🛵'},{k:'delivered',l:'تم التسليم',i:'✅'}];
+  const {data:o} = await sb.from('orders').select('*').eq('id', oid).maybeSingle();
+  if (!o) { document.getElementById('det-body').innerHTML='<p style="color:var(--red);">الطلب غير موجود</p>'; return; }
+  document.getElementById('det-title').innerText = 'طلب #' + o.id;
+  const ci = steps.findIndex(s=>s.k===o.status);
+  let tl = '';
+  steps.forEach((s,i) => {
+    const done=i<ci, cur=i===ci, cl=done?'tld':cur?'tlcur':'tlpen';
+    const h = o.status_history?.find(x=>x.status===s.k);
+    const ts = h ? new Date(h.time).toLocaleString('ar-IQ') : '';
+    tl += `<div class="tlstep"><div style="display:flex;flex-direction:column;align-items:center;"><div class="tlc ${cl}">${done?'✓':s.i}</div>${i<steps.length-1?`<div class="tlcon ${done?'done':''}"></div>`:''}</div><div style="padding-top:4px;"><b style="color:${cur?'var(--blue)':'#333'}">${s.l}</b>${ts?`<div style="font-size:.75rem;color:#aaa;">${ts}</div>`:''}</div></div>`;
+  });
+  const zipUrl = o.zip_url || '';
+  document.getElementById('det-body').innerHTML = `
+    <div style="margin-bottom:15px;">${tl}</div>
+    <div style="background:#f8fafc;border-radius:12px;padding:15px;margin-bottom:15px;">
+      <div class="il" style="color:#333;"><span>الطباعة:</span><span>${o.color==='c'?'ملون':'أسود'} • ${o.side==='1'?'وجه واحد':'وجهين'}</span></div>
+      <div class="il" style="color:#333;"><span>المجموع:</span><b>${(o.total||0).toLocaleString()} د.ع</b></div>
+      <div class="il" style="color:var(--green);"><span>💎 نقاط:</span><span>+${o.loyalty_points_earned||0}</span></div>
+    </div>
+    <h4 style="margin:0 0 10px;">الملفات (${o.files?.length||0})</h4>
+    ${zipUrl?`<a href="${zipUrl}" target="_blank" style="display:block;text-align:center;background:var(--blue);color:#fff;padding:12px;border-radius:12px;font-weight:700;text-decoration:none;margin-bottom:10px;">📦 تحميل كل الملفات (ZIP)</a>`:''}
+    <div style="background:#f8fafc;border-radius:12px;padding:12px;">
+      ${o.files?.map(f=>`<div style="padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:.85rem;">📄 ${f.name} — ${f.pages}ص × ${f.copies}نسخة</div>`).join('')||''}
+    </div>`;
+}
+function closeDet() { document.getElementById('det-ov').classList.remove('open'); }
+
+// ══════════════════════════════════════
+//  POINTS UI
+// ══════════════════════════════════════
+function refreshPtsUI() {
+  const p = uDoc?.loyalty_points||0;
+  document.getElementById('ptsnum').innerText = p.toLocaleString();
+  let tier,cls,next,pct;
+  if(p>=500){tier='🥇 ذهبي';cls='tgold';next='أنت في أعلى مستوى! 🎉';pct=100;}
+  else if(p>=200){tier='🥈 فضي';cls='tsilv';next=`${500-p} نقطة للذهبي`;pct=((p-200)/300)*100;}
+  else{tier='🥉 برونز';cls='tbron';next=`${200-p} نقطة للفضي`;pct=(p/200)*100;}
+  document.getElementById('tierdisp').innerHTML = `<div class="tierbadge ${cls}">${tier}</div>`;
+  document.getElementById('ptsnext').innerText  = next;
+  document.getElementById('ptsbar').style.width = pct+'%';
+  [['rb100',100],['rb300',300],['rb700',700]].forEach(([id,c])=>{const b=document.getElementById(id);if(b)b.disabled=p<c;});
+}
+
+async function loadPtsTab() {
+  refreshPtsUI();
+  try {
+    const {data} = await sb.from('users').select('*').eq('id', userId).maybeSingle();
+    if (data) { uDoc=data; refreshPtsUI(); }
+    const {data:ords} = await sb.from('orders').select('id,loyalty_points_earned,pts_used,created_at').eq('user_id',userId).order('created_at',{ascending:false}).limit(20);
+    let h='';
+    (ords||[]).forEach(o=>{
+      const d=new Date(o.created_at).toLocaleDateString('ar-IQ');
+      if(o.loyalty_points_earned>0) h+=`<div class="phitem"><div><b style="font-size:.85rem;">#${o.id}</b><div style="font-size:.75rem;color:#aaa;">${d}</div></div><span style="color:var(--green);font-weight:700;">+${o.loyalty_points_earned} نقطة</span></div>`;
+      if(o.pts_used>0) h+=`<div class="phitem"><div><b style="font-size:.85rem;">#${o.id} — استبدال</b><div style="font-size:.75rem;color:#aaa;">${d}</div></div><span style="color:var(--red);font-weight:700;">−${o.pts_used} نقطة</span></div>`;
+    });
+    document.getElementById('ptshist').innerHTML = h||'<p style="color:#aaa;font-size:.85rem;">لا يوجد سجل بعد</p>';
+  } catch{}
+}
+
+// ══════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════
+function showErr(m){const e=document.getElementById('errbox');e.innerText=m;e.style.display='block';}
+function hideErr(){document.getElementById('errbox').style.display='none';}
+function showToast(m){const t=document.getElementById('toast');t.innerText=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',4000);}
+
+init();
+</script>
+</body>
+</html>
