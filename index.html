@@ -224,7 +224,7 @@ input:checked+.togs:before{transform:translateX(-23px);}
 // ══════════════════════════════════════
 const SB_URL = 'https://zrumnqtgdscrwgcguseq.supabase.co';
 const SB_KEY = 'sb_publishable_xEqE6S21QUMCkDxSMvTskg_9g3pi-vZ';
-const BOT    = '8446310296:AAFLgndwQEozwZ1Ja5Xf1UTdMtOiLFqty5k';
+const BOT    = '8446310296:AAFLgndwQEozwZ1Ja5XflUTdMtOiLFqty5k'; // Token الدقيق والصحيح
 const ADMIN  = '7618746133';
 
 const sb = window.supabase.createClient(SB_URL, SB_KEY);
@@ -255,7 +255,7 @@ async function init() {
 }
 
 // ══════════════════════════════════════
-//  REALTIME
+//  REALTIME (تحديث فوري للحالة)
 // ══════════════════════════════════════
 function startRT() {
   try {
@@ -263,12 +263,23 @@ function startRT() {
       .on('postgres_changes', {event:'UPDATE', schema:'public', table:'orders', filter:'user_id=eq.'+userId},
         p => {
           const m = {received:'📥 تم الاستلام',printing:'🖨️ قيد الطباعة',delivering:'🛵 جاري التوصيل',delivered:'✅ تم التسليم',cancelled:'❌ ملغى'};
-          showToast(m[p.new.status] || 'تم تحديث طلبك');
-          if (document.getElementById('tab-orders').classList.contains('active')) loadOrders();
-          if (p.new.status === 'delivered') init(); // تحديث فوري للنقاط من قاعدة البيانات
+          showToast('🔔 تحديث طلبك: ' + (m[p.new.status] || p.new.status));
+          
+          // 1. تحديث قائمة الطلبات إذا كانت مفتوحة
+          if (document.getElementById('tab-orders').classList.contains('active')) {
+             loadOrders();
+          }
+          
+          // 2. التحديث الفوري لنافذة التفاصيل إذا كانت مفتوحة لتفس الطلب
+          if (document.getElementById('det-ov').classList.contains('open') && document.getElementById('det-title').innerText.includes(p.new.id)) {
+             showDet(p.new.id);
+          }
+
+          // 3. تحديث فوري للنقاط من قاعدة البيانات إذا تم التسليم
+          if (p.new.status === 'delivered') init(); 
         })
-      .subscribe();
-  } catch(e) {}
+      .subscribe((status) => console.log('RT Status:', status));
+  } catch(e) { console.error('Realtime error:', e); }
 }
 
 // ══════════════════════════════════════
@@ -497,7 +508,7 @@ async function sendOrder() {
 
     document.getElementById('pbar').style.width = '80%';
 
-    // ═══ STEP 4: خصم النقاط المستخدمة (وعدم إضافة المكتسبة إلا عند التسليم) ═══
+    // ═══ STEP 4: خصم النقاط المستخدمة فقط (عدم إضافة المكتسبة إلا عند التسليم) ═══
     const np = Math.max(0, (uDoc.loyalty_points || 0) - pu);
     await sb.from('users').update({
       loyalty_points:  np,
@@ -521,7 +532,8 @@ async function sendOrder() {
       `📋 الملفات (${meta.length}):\n${flist}\n\n` +
       `📦 رابط التحميل:\n${finalZipUrl || '⚠️ فشل رفع الملفات — راجع الـ Storage'}`;
 
-    await tgMsg(ADMIN, adminMsg);
+    const tgResAdmin = await tgMsg(ADMIN, adminMsg);
+    console.log('Telegram Admin Msg Status:', tgResAdmin);
 
     // ═══ STEP 6: إشعار تأكيد للزبون ═══
     const custId = tgU?.id ? String(tgU.id) : null;
@@ -531,7 +543,8 @@ async function sendOrder() {
         `💰 المجموع: ${(tot||0).toLocaleString()} د.ع\n` +
         `💎 ستكسب ${pe || 0} نقطة (عند التسليم)!\n\n` +
         `⏳ جاري مراجعة طلبك — ستصلك رسالة فور بدء الطباعة.`;
-      await tgMsg(custId, custMsg);
+      const tgResCust = await tgMsg(custId, custMsg);
+      console.log('Telegram Customer Msg Status:', tgResCust);
     }
 
     document.getElementById('pbar').style.width = '100%';
@@ -577,18 +590,19 @@ async function sendOrder() {
   }
 }
 
+// دالة إرسال التيلجرام المحسنة لمراقبة الأخطاء
 async function tgMsg(cid, txt) {
   try {
-    const res = await fetch('https://api.telegram.org/bot' + BOT + '/sendMessage', {
+    const res = await fetch(`https://api.telegram.org/bot${BOT}/sendMessage`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({chat_id: cid, text: txt, disable_web_page_preview: true})
     });
     const json = await res.json();
-    if (!json.ok) console.error('tgMsg error for', cid, ':', json.description);
+    if (!json.ok) console.error('Telegram Error -> Chat ID:', cid, 'Desc:', json.description);
     return json.ok;
   } catch(e) {
-    console.error('tgMsg fetch failed:', e.message);
+    console.error('Telegram API Failed:', e.message);
     return false;
   }
 }
@@ -647,7 +661,7 @@ async function showDet(oid) {
     tl += `<div class="tlstep"><div style="display:flex;flex-direction:column;align-items:center;"><div class="tlc ${cl}">${done?'✓':s.i}</div>${i<steps.length-1?`<div class="tlcon ${done?'done':''}"></div>`:''}</div><div style="padding-top:4px;"><b style="color:${cur?'var(--blue)':'#333'}">${s.l}</b>${ts?`<div style="font-size:.75rem;color:#aaa;">${ts}</div>`:''}</div></div>`;
   });
   
-  // تم إخفاء وعزل كود تحميل رابط الملفات من الواجهة كلياً للخصوصية
+  // تم إخفاء الرابط للخصوصية وعدم ظهوره للزبون
   
   document.getElementById('det-body').innerHTML = `
     <div style="margin-bottom:15px;">${tl}</div>
