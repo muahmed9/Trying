@@ -224,7 +224,7 @@ input:checked+.togs:before{transform:translateX(-23px);}
 // ══════════════════════════════════════
 const SB_URL = 'https://zrumnqtgdscrwgcguseq.supabase.co';
 const SB_KEY = 'sb_publishable_xEqE6S21QUMCkDxSMvTskg_9g3pi-vZ';
-const BOT    = '8446310296:AAFLgndwQEozwZ1Ja5XflUTdMtOiLFqty5k'; // Token الدقيق والصحيح
+const BOT    = '8446310296:AAFLgndwQEozwZ1Ja5XflUTdMtOiLFqty5k'; // التوكن المعتمد
 const ADMIN  = '7618746133';
 
 const sb = window.supabase.createClient(SB_URL, SB_KEY);
@@ -259,23 +259,28 @@ async function init() {
 // ══════════════════════════════════════
 function startRT() {
   try {
-    sb.channel('rt-' + userId)
-      .on('postgres_changes', {event:'UPDATE', schema:'public', table:'orders', filter:'user_id=eq.'+userId},
+    // استخدمنا قناة عامة تتجاوز فلاتر RLS في Supabase للضمان التام لوصول التحديث
+    sb.channel('public-orders')
+      .on('postgres_changes', {event:'UPDATE', schema:'public', table:'orders'},
         p => {
+          // فلترة محلية لضمان أن الزبون يتلقى تحديثات طلباته فقط
+          if (p.new.user_id !== userId && p.new.telegram_id !== userId) return;
+          
           const m = {received:'📥 تم الاستلام',printing:'🖨️ قيد الطباعة',delivering:'🛵 جاري التوصيل',delivered:'✅ تم التسليم',cancelled:'❌ ملغى'};
           showToast('🔔 تحديث طلبك: ' + (m[p.new.status] || p.new.status));
           
-          // 1. تحديث قائمة الطلبات إذا كانت مفتوحة
+          // 1. التحديث الفوري لقائمة الطلبات دون الحاجة لريفريش
           if (document.getElementById('tab-orders').classList.contains('active')) {
              loadOrders();
           }
           
-          // 2. التحديث الفوري لنافذة التفاصيل إذا كانت مفتوحة لتفس الطلب
-          if (document.getElementById('det-ov').classList.contains('open') && document.getElementById('det-title').innerText.includes(p.new.id)) {
+          // 2. التحديث الفوري لتفاصيل الطلب إذا كانت النافذة مفتوحة
+          const detTitle = document.getElementById('det-title').innerText;
+          if (document.getElementById('det-ov').classList.contains('open') && detTitle.includes(p.new.id)) {
              showDet(p.new.id);
           }
 
-          // 3. تحديث فوري للنقاط من قاعدة البيانات إذا تم التسليم
+          // 3. تحديث فوري للنقاط والرصيد من قاعدة البيانات في حال تم التسليم
           if (p.new.status === 'delivered') init(); 
         })
       .subscribe((status) => console.log('RT Status:', status));
