@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -13,216 +13,378 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
 
+/* ══════════════════════════════════════
+   THEME VARIABLES — Light & Dark
+══════════════════════════════════════ */
 :root {
-  /* ألوان الهوية البصرية لخدمات الشاطر */
-  --navy: #0d3b66;     /* أزرق داكن */
-  --teal: #5ab3c4;     /* تركوازي */
-  --orange: #e86b24;   /* برتقالي */
-  --light-teal: #eef9fa;
-  
-  --bg: #f4f7f9;
-  --card: #ffffff;
-  --text-main: #1e293b;
-  --text-muted: #64748b;
-  --green: #10b981;
-  --red: #ef4444;
-  --gold: #f59e0b;
-  
-  /* للتوافق مع الكود القديم */
-  --blue: var(--navy); 
+  --navy:        #0d3b66;
+  --teal:        #5ab3c4;
+  --orange:      #e86b24;
+  --light-teal:  #eef9fa;
+  --bg:          #f4f7f9;
+  --card:        #ffffff;
+  --text-main:   #1e293b;
+  --text-muted:  #64748b;
+  --green:       #10b981;
+  --red:         #ef4444;
+  --gold:        #f59e0b;
+  --border:      rgba(0,0,0,0.05);
+  --inv-bg:      var(--navy);
+  --inv-row-bg:  rgba(0,0,0,0.15);
+  --input-bg:    #f8fafc;
+  --blue:        var(--navy);
 }
 
+[data-theme="dark"] {
+  --bg:         #0f172a;
+  --card:       #1e293b;
+  --text-main:  #e2e8f0;
+  --text-muted: #94a3b8;
+  --light-teal: rgba(90,179,196,0.08);
+  --border:     rgba(255,255,255,0.07);
+  --inv-bg:     #0d2744;
+  --inv-row-bg: rgba(255,255,255,0.07);
+  --input-bg:   #0f172a;
+}
+
+/* ══════════════════════════════════════
+   GLOBAL
+══════════════════════════════════════ */
 * { box-sizing: border-box; font-family: 'Tajawal', sans-serif; -webkit-tap-highlight-color: transparent; }
-body { background: var(--bg); direction: rtl; margin: 0; padding: 0 0 85px; color: var(--text-main); }
+body { background: var(--bg); direction: rtl; margin: 0; padding: 0 0 85px; color: var(--text-main); transition: background 0.3s, color 0.3s; }
 
-/* حركات انسيابية */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(15px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes pulseGlow {
-  0% { box-shadow: 0 0 0 0 rgba(232, 107, 36, 0.4); }
-  70% { box-shadow: 0 0 0 10px rgba(232, 107, 36, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(232, 107, 36, 0); }
-}
+@keyframes fadeInUp  { from { opacity:0; transform:translateY(15px); } to { opacity:1; transform:translateY(0); } }
+@keyframes pulseGlow { 0%{box-shadow:0 0 0 0 rgba(232,107,36,.4);}70%{box-shadow:0 0 0 10px rgba(232,107,36,0);}100%{box-shadow:0 0 0 0 rgba(232,107,36,0);} }
+@keyframes spin       { to { transform: rotate(360deg); } }
+@keyframes pop        { 0%{transform:scale(0.8);opacity:0;}80%{transform:scale(1.05);}100%{transform:scale(1);opacity:1;} }
 
-/* الشعار */
+/* ══════════════════════════════════════
+   LOGO
+══════════════════════════════════════ */
 .app-logo {
-  width: 90px; height: 90px;
-  border-radius: 50%;
-  border: 3px solid var(--teal);
-  padding: 4px;
-  background: #fff;
-  box-shadow: 0 6px 20px rgba(90, 179, 196, 0.2);
-  margin: 0 auto 12px;
-  display: block;
-  object-fit: contain;
+  width:90px; height:90px; border-radius:50%;
+  border:3px solid var(--teal); padding:4px;
+  background:#fff; box-shadow:0 6px 20px rgba(90,179,196,.2);
+  margin:0 auto 12px; display:block; object-fit:contain;
 }
 
-/* التنقل السفلي */
+/* ══════════════════════════════════════
+   BOTTOM NAV
+══════════════════════════════════════ */
 .bnav {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-top: 1px solid rgba(0,0,0,0.05);
-  display: flex; z-index: 200;
-  box-shadow: 0 -5px 25px rgba(13, 59, 102, 0.05);
-  padding: 5px 10px 15px;
+  position:fixed; bottom:0; left:0; right:0;
+  background:rgba(255,255,255,.95);
+  backdrop-filter:blur(10px);
+  border-top:1px solid var(--border);
+  display:flex; z-index:200;
+  box-shadow:0 -5px 25px rgba(13,59,102,.05);
+  padding:5px 10px 15px;
+  transition: background 0.3s;
 }
-.nbtn {
-  flex: 1; padding: 10px 5px; border: none; background: none; cursor: pointer;
-  font-size: 0.8rem; font-weight: 700; color: var(--text-muted);
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  transition: all 0.3s ease;
+[data-theme="dark"] .bnav { background:rgba(30,41,59,.95); }
+
+.nbtn { flex:1; padding:10px 5px; border:none; background:none; cursor:pointer; font-size:.8rem; font-weight:700; color:var(--text-muted); display:flex; flex-direction:column; align-items:center; gap:4px; transition:all .3s; }
+.nbtn .ni { font-size:1.5rem; transition:transform .3s cubic-bezier(.175,.885,.32,1.275); }
+.nbtn.active { color:var(--teal); }
+.nbtn.active .ni { transform:translateY(-4px) scale(1.1); color:var(--navy); }
+[data-theme="dark"] .nbtn.active .ni { color:var(--teal); }
+
+/* ── Dark mode toggle in nav ── */
+#dm-toggle { flex:0 0 auto; width:44px; }
+#dm-toggle .ni { font-size:1.3rem; }
+
+/* ══════════════════════════════════════
+   TABS & CARDS
+══════════════════════════════════════ */
+.tab { display:none; padding:15px; }
+.tab.active { display:block; animation:fadeInUp .4s ease forwards; }
+.card {
+  background:var(--card); border-radius:20px; padding:22px;
+  margin-bottom:15px; box-shadow:0 4px 15px rgba(0,0,0,.03);
+  border:1px solid var(--border); transition:background .3s;
 }
-.nbtn .ni { font-size: 1.5rem; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-.nbtn.active { color: var(--teal); }
-.nbtn.active .ni { transform: translateY(-4px) scale(1.1); color: var(--navy); }
+.hdr { text-align:center; padding:10px 0 15px; }
 
-/* البطاقات والواجهة */
-.tab { display: none; padding: 15px; }
-.tab.active { display: block; animation: fadeInUp 0.4s ease forwards; }
-.card { background: var(--card); border-radius: 20px; padding: 22px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.02); }
-.hdr { text-align: center; padding: 10px 0 15px; }
-
-/* منطقة الرفع */
+/* ══════════════════════════════════════
+   UPLOAD AREA
+══════════════════════════════════════ */
 .upload {
-  border: 2px dashed var(--teal);
-  background: var(--light-teal);
-  padding: 30px 20px; text-align: center;
-  color: var(--navy); cursor: pointer;
-  border-radius: 20px;
-  transition: all 0.2s ease;
+  border:2px dashed var(--teal); background:var(--light-teal);
+  padding:30px 20px; text-align:center; color:var(--navy);
+  cursor:pointer; border-radius:20px; transition:all .2s;
 }
-.upload:active { transform: scale(0.98); background: #dff2f5; }
-.upload-icon { font-size: 2.5rem; margin-bottom: 8px; display: block; }
+[data-theme="dark"] .upload { color:var(--teal); }
+.upload:active { transform:scale(.98); }
+.upload-icon { font-size:2.5rem; margin-bottom:8px; display:block; }
 
-/* الأزرار */
-.bgrp { display: flex; gap: 10px; margin-top: 10px; }
-.obtn {
-  flex: 1; padding: 14px; border: 1.5px solid #e2e8f0; border-radius: 14px;
-  cursor: pointer; font-weight: 700; font-size: 0.95rem; transition: all 0.2s ease;
-  background: #fff; color: var(--text-muted);
+/* ══════════════════════════════════════
+   FILE PREVIEW CARDS (تأكيد بصري)
+══════════════════════════════════════ */
+.file-card {
+  display:flex; align-items:center; gap:12px;
+  background:var(--input-bg); border:1.5px solid var(--border);
+  border-radius:14px; padding:12px 14px; margin-bottom:10px;
+  animation:pop .25s ease;
 }
-.obtn.on { background: var(--navy) !important; color: #fff !important; border-color: var(--navy); box-shadow: 0 4px 12px rgba(13, 59, 102, 0.15); }
-.obtn:active { transform: scale(0.96); }
-
-.bmain {
-  width: 100%; padding: 16px; border: none; border-radius: 16px;
-  font-weight: 800; font-size: 1.1rem; cursor: pointer; transition: all 0.3s ease;
+.file-icon-box {
+  width:46px; height:46px; border-radius:12px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.6rem; flex-shrink:0;
 }
-.bmain:active { transform: scale(0.97); }
-.bmain:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
-.btn-action { background: var(--orange); color: #fff; box-shadow: 0 6px 15px rgba(232, 107, 36, 0.25); }
+.fi-pdf   { background:#fee2e2; }
+.fi-word  { background:#dbeafe; }
+.fi-xl    { background:#dcfce7; }
+.fi-ppt   { background:#ffedd5; }
+.fi-img   { background:#fdf4ff; }
+.fi-other { background:#f1f5f9; }
 
-/* المدخلات */
-input[type=text], input[type=tel] {
-  width: 100%; padding: 16px; border: 1.5px solid #e2e8f0; border-radius: 14px;
-  font-size: 1rem; margin-bottom: 12px; background: #f8fafc; outline: none;
-  transition: border-color 0.2s, background 0.2s; font-family: 'Tajawal', sans-serif;
+.file-info { flex:1; min-width:0; }
+.file-name { font-weight:800; font-size:.9rem; color:var(--navy); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:160px; }
+[data-theme="dark"] .file-name { color:var(--teal); }
+.file-meta { font-size:.78rem; color:var(--text-muted); margin-top:2px; }
+.file-badge { font-size:.7rem; font-weight:700; padding:2px 8px; border-radius:8px; background:var(--light-teal); color:var(--teal); display:inline-block; margin-top:3px; }
+.file-controls { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+.bcnt { background:var(--light-teal); border:none; width:32px; height:32px; border-radius:10px; cursor:pointer; font-weight:800; font-size:1.1rem; color:var(--navy); transition:background .2s; }
+.bcnt:active { background:#c7e8ec; }
+.file-qty { padding:0 8px; font-weight:800; font-size:1.1rem; color:var(--orange); min-width:24px; text-align:center; }
+.del-btn { background:#fef2f2; border:none; color:var(--red); font-size:.8rem; font-weight:700; padding:6px 10px; border-radius:8px; cursor:pointer; }
+
+/* ══════════════════════════════════════
+   BUTTONS
+══════════════════════════════════════ */
+.bgrp { display:flex; gap:10px; margin-top:10px; }
+.obtn { flex:1; padding:14px; border:1.5px solid #e2e8f0; border-radius:14px; cursor:pointer; font-weight:700; font-size:.95rem; transition:all .2s; background:var(--card); color:var(--text-muted); }
+[data-theme="dark"] .obtn { border-color:#334155; }
+.obtn.on { background:var(--navy)!important; color:#fff!important; border-color:var(--navy); box-shadow:0 4px 12px rgba(13,59,102,.2); }
+.obtn:active { transform:scale(.96); }
+.bmain { width:100%; padding:16px; border:none; border-radius:16px; font-weight:800; font-size:1.1rem; cursor:pointer; transition:all .3s; }
+.bmain:active { transform:scale(.97); }
+.bmain:disabled { opacity:.7; cursor:not-allowed; transform:none; }
+.btn-action { background:var(--orange); color:#fff; box-shadow:0 6px 15px rgba(232,107,36,.25); }
+
+/* ══════════════════════════════════════
+   INPUTS
+══════════════════════════════════════ */
+input[type=text],input[type=tel] {
+  width:100%; padding:16px; border:1.5px solid #e2e8f0; border-radius:14px;
+  font-size:1rem; margin-bottom:12px; background:var(--input-bg);
+  outline:none; transition:border-color .2s,background .2s,color .2s;
+  font-family:'Tajawal',sans-serif; color:var(--text-main);
 }
-input:focus { border-color: var(--teal); background: #fff; box-shadow: 0 0 0 4px rgba(90, 179, 196, 0.1); }
+[data-theme="dark"] input[type=text],[data-theme="dark"] input[type=tel] { border-color:#334155; }
+input:focus { border-color:var(--teal); background:var(--card); box-shadow:0 0 0 4px rgba(90,179,196,.1); }
 
-/* مفتاح التبديل Toggle */
-.togw { position: relative; display: inline-block; width: 52px; height: 28px; flex-shrink: 0; }
-.togw input { opacity: 0; width: 0; height: 0; }
-.togs { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #cbd5e1; border-radius: 28px; transition: .4s; }
-.togs:before { content: ''; position: absolute; width: 22px; height: 22px; right: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .4s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-input:checked + .togs { background: var(--teal); }
-input:checked + .togs:before { transform: translateX(-24px); }
+/* ══════════════════════════════════════
+   TOGGLE
+══════════════════════════════════════ */
+.togw { position:relative; display:inline-block; width:52px; height:28px; flex-shrink:0; }
+.togw input { opacity:0; width:0; height:0; }
+.togs { position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:#cbd5e1; border-radius:28px; transition:.4s; }
+.togs:before { content:''; position:absolute; width:22px; height:22px; right:3px; bottom:3px; background:#fff; border-radius:50%; transition:.4s; box-shadow:0 2px 4px rgba(0,0,0,.1); }
+input:checked+.togs { background:var(--teal); }
+input:checked+.togs:before { transform:translateX(-24px); }
 
-/* الفاتورة */
-.inv { background: var(--navy); color: #fff; border-radius: 18px; padding: 22px; margin-top: 15px; box-shadow: 0 8px 20px rgba(13, 59, 102, 0.15); }
-.il { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.95rem; opacity: 0.9; }
-.tot { font-size: 1.5rem; color: #4eff4e; text-align: center; margin-top: 15px; border-top: 1px dashed rgba(255,255,255,0.2); padding-top: 15px; font-weight: 800; }
+/* ══════════════════════════════════════
+   INVOICE
+══════════════════════════════════════ */
+.inv { background:var(--inv-bg); color:#fff; border-radius:18px; padding:22px; margin-top:15px; box-shadow:0 8px 20px rgba(13,59,102,.15); }
+.il { display:flex; justify-content:space-between; margin-bottom:10px; font-size:.95rem; opacity:.9; }
+.tot { font-size:1.5rem; color:#4eff4e; text-align:center; margin-top:15px; border-top:1px dashed rgba(255,255,255,.2); padding-top:15px; font-weight:800; }
 
-/* شريط التقدم */
-.pcon { width: 100%; background: #e2e8f0; height: 10px; border-radius: 5px; margin: 15px 0; display: none; overflow: hidden; }
-.pbar { width: 0; height: 100%; background: var(--orange); transition: width 0.3s ease; border-radius: 5px; }
+/* ══════════════════════════════════════
+   PROGRESS BAR
+══════════════════════════════════════ */
+.pcon { width:100%; background:#e2e8f0; height:10px; border-radius:5px; margin:15px 0; display:none; overflow:hidden; }
+.pbar { width:0; height:100%; background:var(--orange); transition:width .3s ease; border-radius:5px; }
 
-/* عناصر الملفات */
-.fi { padding: 12px 0; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
-.bcnt { background: #f1f5f9; border: none; width: 34px; height: 34px; border-radius: 10px; cursor: pointer; font-weight: 800; font-size: 1.1rem; color: var(--navy); transition: background 0.2s; }
-.bcnt:active { background: #e2e8f0; }
+/* ══════════════════════════════════════
+   ALERTS
+══════════════════════════════════════ */
+.inote { color:var(--orange); font-size:.85rem; font-weight:700; margin:12px 0; display:none; border:1px solid rgba(232,107,36,.3); padding:12px; border-radius:12px; background:rgba(232,107,36,.05); text-align:center; }
+.errmsg { background:#fef2f2; color:var(--red); padding:12px; border-radius:12px; font-size:.9rem; font-weight:700; margin-bottom:12px; text-align:center; display:none; border:1px solid #fecaca; }
+.iosbox { background:#fffbeb; border:1.5px solid #fde68a; border-radius:14px; padding:15px; margin-top:15px; }
 
-/* التنبيهات */
-.inote { color: var(--orange); font-size: 0.85rem; font-weight: 700; margin: 12px 0; display: none; border: 1px solid rgba(232,107,36,0.3); padding: 12px; border-radius: 12px; background: rgba(232,107,36,0.05); text-align: center; }
-.errmsg { background: #fef2f2; color: var(--red); padding: 12px; border-radius: 12px; font-size: 0.9rem; font-weight: 700; margin-bottom: 12px; text-align: center; display: none; border: 1px solid #fecaca; }
-.iosbox { background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 14px; padding: 15px; margin-top: 15px; }
+/* ══════════════════════════════════════
+   ORDER CARDS
+══════════════════════════════════════ */
+.ocard { background:var(--card); border-radius:16px; padding:18px; margin-bottom:12px; box-shadow:0 3px 10px rgba(0,0,0,.04); border:1px solid var(--border); cursor:pointer; transition:transform .2s; }
+.ocard:active { transform:scale(.98); }
+.sbadge { display:inline-block; padding:6px 14px; border-radius:20px; font-size:.8rem; font-weight:700; }
+.s-r { background:#e0f2fe; color:#1e40af; }
+.s-p { background:#fef3c7; color:#b45309; }
+.s-d { background:#ffedd5; color:var(--orange); }
+.s-v { background:#dcfce7; color:#166534; border:1px solid #bbf7d0; }
+.s-c { background:#fee2e2; color:#991b1b; }
 
-/* بطاقات الطلبات */
-.ocard { background: #fff; border-radius: 16px; padding: 18px; margin-bottom: 12px; box-shadow: 0 3px 10px rgba(0,0,0,0.04); border: 1px solid #f1f5f9; cursor: pointer; transition: transform 0.2s; }
-.ocard:active { transform: scale(0.98); }
-.sbadge { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; }
-.s-r { background: #e0f2fe; color: #1e40af; }
-.s-p { background: #fef3c7; color: #b45309; }
-.s-d { background: #ffedd5; color: var(--orange); }
-.s-v { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-.s-c { background: #fee2e2; color: #991b1b; }
+/* ── Mini progress dots ── */
+.mini-progress { display:flex; align-items:center; gap:4px; margin-top:12px; }
+.mp-dot { width:22px; height:6px; border-radius:3px; background:#e2e8f0; flex:1; }
+.mp-dot.done { background:var(--green); }
+.mp-dot.cur  { background:var(--orange); animation:pulseGlow 2s infinite; }
+.mp-label { font-size:.72rem; color:var(--text-muted); margin-top:4px; text-align:center; font-weight:700; }
 
-/* التايم لاين */
-.tlstep { display: flex; align-items: flex-start; gap: 15px; margin-bottom: 5px; }
-.tlc { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; font-weight: bold; transition: all 0.3s; }
-.tld { background: var(--green); color: #fff; box-shadow: 0 0 10px rgba(16,185,129,0.3); }
-.tlcur { background: var(--orange); color: #fff; box-shadow: 0 0 15px rgba(232,107,36,0.4); animation: pulseGlow 2s infinite; }
-.tlpen { background: #f1f5f9; color: #94a3b8; }
-.tlcon { width: 2px; height: 26px; background: #f1f5f9; margin: 2px 0 2px 17px; border-radius: 2px; }
-.tlcon.done { background: var(--green); }
+/* ══════════════════════════════════════
+   ORDER DETAIL TIMELINE
+══════════════════════════════════════ */
+.tlstep { display:flex; align-items:flex-start; gap:15px; margin-bottom:5px; }
+.tlc { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; font-weight:bold; transition:all .3s; }
+.tld { background:var(--green); color:#fff; box-shadow:0 0 10px rgba(16,185,129,.3); }
+.tlcur { background:var(--orange); color:#fff; box-shadow:0 0 15px rgba(232,107,36,.4); animation:pulseGlow 2s infinite; }
+.tlpen { background:#f1f5f9; color:#94a3b8; }
+[data-theme="dark"] .tlpen { background:#334155; color:#64748b; }
+.tlcon { width:2px; height:26px; background:#f1f5f9; margin:2px 0 2px 17px; border-radius:2px; }
+.tlcon.done { background:var(--green); }
 
-/* قسم النقاط */
-.ptshero { background: linear-gradient(135deg, var(--navy), var(--teal)); color: #fff; border-radius: 24px; padding: 30px 25px; margin-bottom: 15px; text-align: center; box-shadow: 0 8px 20px rgba(13, 59, 102, 0.2); }
-.ptsnum { font-size: 3.5rem; font-weight: 800; line-height: 1.1; margin: 5px 0; text-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-.tierbadge { display: inline-block; padding: 6px 20px; border-radius: 20px; font-weight: 800; margin: 10px 0 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-.tgold { background: linear-gradient(135deg, #fcd34d, #f59e0b); color: #78350f; }
-.tsilv { background: linear-gradient(135deg, #e2e8f0, #94a3b8); color: #1e293b; }
-.tbron { background: linear-gradient(135deg, #fed7aa, #d97706); color: #78350f; }
-.ptspw { width: 100%; height: 10px; background: rgba(255,255,255,0.2); border-radius: 5px; overflow: hidden; margin: 12px 0; }
-.ptspf { height: 100%; background: #4eff4e; border-radius: 5px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+/* ══════════════════════════════════════
+   POINTS
+══════════════════════════════════════ */
+.ptshero { background:linear-gradient(135deg,var(--navy),var(--teal)); color:#fff; border-radius:24px; padding:30px 25px; margin-bottom:15px; text-align:center; box-shadow:0 8px 20px rgba(13,59,102,.2); }
+.ptsnum { font-size:3.5rem; font-weight:800; line-height:1.1; margin:5px 0; }
+.tierbadge { display:inline-block; padding:6px 20px; border-radius:20px; font-weight:800; margin:10px 0 8px; box-shadow:0 4px 10px rgba(0,0,0,.1); }
+.tgold { background:linear-gradient(135deg,#fcd34d,#f59e0b); color:#78350f; }
+.tsilv { background:linear-gradient(135deg,#e2e8f0,#94a3b8); color:#1e293b; }
+.tbron { background:linear-gradient(135deg,#fed7aa,#d97706); color:#78350f; }
+.ptspw { width:100%; height:10px; background:rgba(255,255,255,.2); border-radius:5px; overflow:hidden; margin:12px 0; }
+.ptspf { height:100%; background:#4eff4e; border-radius:5px; transition:width .8s cubic-bezier(.4,0,.2,1); }
+.rcard { background:var(--card); border-radius:16px; padding:16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); }
+.rbtn { background:var(--teal); color:#fff; padding:10px 20px; border-radius:12px; font-size:.9rem; cursor:pointer; font-weight:700; border:none; transition:background .2s; }
+.rbtn:disabled { background:#e2e8f0; color:#94a3b8; cursor:not-allowed; }
 
-.rcard { background: #fff; border-radius: 16px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #f1f5f9; }
-.rbtn { background: var(--teal); color: #fff; padding: 10px 20px; border-radius: 12px; font-size: 0.9rem; cursor: pointer; font-weight: 700; border: none; transition: background 0.2s; }
-.rbtn:active { background: #469ba9; }
-.rbtn:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
+/* ══════════════════════════════════════
+   MODALS & SHEETS
+══════════════════════════════════════ */
+.shov { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,.6); backdrop-filter:blur(4px); display:none; align-items:flex-end; justify-content:center; z-index:300; }
+.shov.open { display:flex; animation:fadeIn .3s; }
+.sheet { background:var(--bg); border-radius:28px 28px 0 0; padding:25px 20px; width:100%; max-height:90vh; overflow-y:auto; animation:slideUp .3s cubic-bezier(.175,.885,.32,1.1); box-shadow:0 -10px 30px rgba(0,0,0,.1); }
+@keyframes slideUp { from{transform:translateY(100%);} to{transform:translateY(0);} }
+.handle { width:50px; height:5px; background:#cbd5e1; border-radius:3px; margin:0 auto 20px; }
 
-/* النوافذ المنبثقة */
-.shov { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: none; align-items: flex-end; justify-content: center; z-index: 300; }
-.shov.open { display: flex; animation: fadeIn 0.3s; }
-.sheet { background: var(--bg); border-radius: 28px 28px 0 0; padding: 25px 20px; width: 100%; max-height: 90vh; overflow-y: auto; animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1); box-shadow: 0 -10px 30px rgba(0,0,0,0.1); }
-@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-.handle { width: 50px; height: 5px; background: #cbd5e1; border-radius: 3px; margin: 0 auto 20px; }
+/* ══════════════════════════════════════
+   ONBOARDING MODAL
+══════════════════════════════════════ */
+#onboarding {
+  position:fixed; top:0; left:0; width:100%; height:100%;
+  background:rgba(13,59,102,.92); backdrop-filter:blur(6px);
+  display:flex; align-items:center; justify-content:center; z-index:500;
+}
+.ob-box {
+  background:var(--card); padding:32px 25px 25px;
+  border-radius:28px; width:92%; max-width:400px;
+  box-shadow:0 25px 50px rgba(0,0,0,.25);
+  animation:pop .4s ease;
+  overflow:hidden; position:relative;
+}
+.ob-slides { display:flex; transition:transform .35s cubic-bezier(.4,0,.2,1); }
+.ob-slide { min-width:100%; text-align:center; padding:0 4px; }
+.ob-emoji { font-size:4.5rem; margin-bottom:14px; display:block; }
+.ob-title { color:var(--navy); font-size:1.3rem; font-weight:800; margin:0 0 10px; }
+[data-theme="dark"] .ob-title { color:var(--teal); }
+.ob-desc { color:var(--text-muted); font-size:.95rem; line-height:1.7; font-weight:500; margin:0; }
 
-#wmodal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; z-index: 400; }
-.mbox { background: #fff; padding: 35px 25px; border-radius: 28px; text-align: center; width: 90%; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: zoomIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.2); }
-@keyframes zoomIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+.ob-dots { display:flex; justify-content:center; gap:7px; margin:20px 0 16px; }
+.ob-dot { width:8px; height:8px; border-radius:50%; background:#e2e8f0; transition:all .3s; }
+.ob-dot.active { background:var(--orange); width:22px; border-radius:4px; }
 
-#toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--navy); color: #fff; padding: 14px 24px; border-radius: 16px; font-size: 0.95rem; font-weight: 700; z-index: 999; display: none; box-shadow: 0 10px 25px rgba(13, 59, 102, 0.3); max-width: 90%; text-align: center; }
+.ob-skip {
+  position:absolute; top:14px; left:16px;
+  background:none; border:none; color:var(--text-muted);
+  font-size:.85rem; cursor:pointer; font-weight:700; font-family:'Tajawal',sans-serif;
+}
+.ob-next {
+  width:100%; padding:15px; border:none; border-radius:14px;
+  background:var(--orange); color:#fff; font-size:1.05rem;
+  font-weight:800; cursor:pointer; font-family:'Tajawal',sans-serif;
+  transition:opacity .2s;
+}
+.ob-next:active { opacity:.85; }
+
+/* ══════════════════════════════════════
+   WELCOME MODAL
+══════════════════════════════════════ */
+#wmodal { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,.85); backdrop-filter:blur(5px); display:none; align-items:center; justify-content:center; z-index:400; }
+.mbox { background:var(--card); padding:35px 25px; border-radius:28px; text-align:center; width:90%; max-width:400px; box-shadow:0 20px 40px rgba(0,0,0,.2); animation:pop .4s cubic-bezier(.175,.885,.32,1.2); }
+
+/* ══════════════════════════════════════
+   TOAST
+══════════════════════════════════════ */
+#toast { position:fixed; top:20px; left:50%; transform:translateX(-50%); background:var(--navy); color:#fff; padding:14px 24px; border-radius:16px; font-size:.95rem; font-weight:700; z-index:999; display:none; box-shadow:0 10px 25px rgba(13,59,102,.3); max-width:90%; text-align:center; }
+
+/* ══════════════════════════════════════
+   IOS HINT
+══════════════════════════════════════ */
+.iosbox { background:#fffbeb; border:1.5px solid #fde68a; border-radius:14px; padding:15px; margin-top:15px; }
 </style>
 </head>
 <body>
 
-<div id="wmodal">
-  <div class="mbox">
-    <!-- استخدام الشعار المرفق مع تصحيح علامات التنصيص -->
-    <img src="Logo.jpg" alt="خدمات الشاطر" class="app-logo" onerror="this.outerHTML=`<div class='app-logo' style='display:flex;align-items:center;justify-content:center;font-size:2.5rem;'>🖨️</div>`">
-    <h2 style="color: var(--navy); margin: 0 0 8px; font-weight: 800;">خدمات الشاطر الطلابية</h2>
-    <p style="color: var(--text-muted); margin: 0 0 15px; font-weight: 500;">ارفع مستنداتك وسنطبعها ونوصلها إليك</p>
-    
-    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 14px; padding: 12px; margin-bottom: 15px;">
-      <p id="fo-gift" style="font-size: 0.9rem; color: var(--green); font-weight: 800; margin: 0 0 5px; display: none;">🎁 توصيل مجاني لأول طلب!</p>
-      <p style="font-size: 0.88rem; color: var(--green); font-weight: 700; margin: 0;">🎁 توصيل مجاني للطلبات +10,000 د.ع</p>
+<!-- ══════════════════════════════════════
+     ONBOARDING — 3 شرائح تعريفية
+══════════════════════════════════════ -->
+<div id="onboarding">
+  <div class="ob-box">
+    <button class="ob-skip" onclick="finishOnboarding()">تخطي ←</button>
+
+    <div class="ob-slides" id="ob-slides">
+
+      <!-- شريحة 1 -->
+      <div class="ob-slide">
+        <span class="ob-emoji">🖨️</span>
+        <h2 class="ob-title">خدمات الشاطر الطلابية</h2>
+        <p class="ob-desc">اطبع مستنداتك بسهولة تامة — ارفع الملفات واختر إعدادات الطباعة وحدد موقعك، وسنوصّل لك في أسرع وقت!</p>
+      </div>
+
+      <!-- شريحة 2 -->
+      <div class="ob-slide">
+        <span class="ob-emoji">📦</span>
+        <h2 class="ob-title">تتبع طلبك لحظة بلحظة</h2>
+        <p class="ob-desc">ستصلك إشعارات فورية على تيليجرام عند كل تغيير في حالة طلبك:<br><br>📥 مستلم ← 🖨️ طباعة ← 🛵 توصيل ← ✅ تسليم</p>
+      </div>
+
+      <!-- شريحة 3 -->
+      <div class="ob-slide">
+        <span class="ob-emoji">💎</span>
+        <h2 class="ob-title">اكسب نقاط ولاء مع كل طلب!</h2>
+        <p class="ob-desc">كل 1,000 د.ع تنفقها = 10 نقاط ولاء.<br>استبدل نقاطك بخصومات حصرية. وعند الوصول للمستوى الذهبي تحصل على خصم 5% دائم! 🥇</p>
+      </div>
+
     </div>
-    
-    <p style="font-size: 0.85rem; color: var(--orange); font-weight: 700;">🏆 اكسب نقاط ولاء مع كل طلب!</p>
-    <button class="bmain btn-action" style="margin-top: 15px;" onclick="document.getElementById('wmodal').style.display='none'">ابدأ الآن ✨</button>
+
+    <!-- Dots -->
+    <div class="ob-dots">
+      <div class="ob-dot active" id="od0"></div>
+      <div class="ob-dot"        id="od1"></div>
+      <div class="ob-dot"        id="od2"></div>
+    </div>
+
+    <button class="ob-next" id="ob-next-btn" onclick="obNext()">التالي ←</button>
   </div>
 </div>
 
+<!-- ══════════════════════════════════════
+     WELCOME MODAL
+══════════════════════════════════════ -->
+<div id="wmodal">
+  <div class="mbox">
+    <img src="Logo.jpg" alt="خدمات الشاطر" class="app-logo"
+         onerror="this.outerHTML=`<div class='app-logo' style='display:flex;align-items:center;justify-content:center;font-size:2.5rem;'>🖨️</div>`">
+    <h2 style="color:var(--navy);margin:0 0 8px;font-weight:800;">خدمات الشاطر الطلابية</h2>
+    <p style="color:var(--text-muted);margin:0 0 15px;font-weight:500;">ارفع مستنداتك وسنطبعها ونوصلها إليك</p>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:14px;padding:12px;margin-bottom:15px;">
+      <p id="fo-gift" style="font-size:.9rem;color:var(--green);font-weight:800;margin:0 0 5px;display:none;">🎁 توصيل مجاني لأول طلب!</p>
+      <p style="font-size:.88rem;color:var(--green);font-weight:700;margin:0;">🎁 توصيل مجاني للطلبات +10,000 د.ع</p>
+    </div>
+    <p style="font-size:.85rem;color:var(--orange);font-weight:700;">🏆 اكسب نقاط ولاء مع كل طلب!</p>
+    <button class="bmain btn-action" style="margin-top:15px;" onclick="document.getElementById('wmodal').style.display='none'">ابدأ الآن ✨</button>
+  </div>
+</div>
+
+<!-- Detail Sheet -->
 <div class="shov" id="det-ov">
   <div class="sheet">
     <div class="handle"></div>
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-      <h3 style="margin:0; color:var(--navy); font-weight: 800;" id="det-title">تفاصيل الطلب</h3>
-      <button onclick="closeDet()" style="border:none; background:#f1f5f9; width:38px; height:38px; border-radius:50%; cursor:pointer; font-size:1.2rem; color: var(--text-muted); transition: background 0.2s;">✕</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h3 style="margin:0;color:var(--navy);font-weight:800;" id="det-title">تفاصيل الطلب</h3>
+      <button onclick="closeDet()" style="border:none;background:#f1f5f9;width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:1.2rem;color:var(--text-muted);">✕</button>
     </div>
     <div id="det-body"></div>
   </div>
@@ -230,22 +392,25 @@ input:checked + .togs:before { transform: translateX(-24px); }
 
 <div id="toast"></div>
 
-<!-- TAB 1: الطلب -->
+<!-- ══════════════════════════════════════
+     TAB 1 — الطلب
+══════════════════════════════════════ -->
 <div class="tab active" id="tab-order">
   <div class="hdr">
-    <img src="Logo.jpg" alt="Logo" class="app-logo" style="width: 75px; height: 75px;" onerror="this.style.display='none'">
-    <h1 style="margin:0; color:var(--navy); font-size:1.4rem; font-weight: 800;">خدمات الشاطر الطلابية</h1>
+    <img src="Logo.jpg" alt="Logo" class="app-logo" style="width:75px;height:75px;"
+         onerror="this.style.display='none'">
+    <h1 style="margin:0;color:var(--navy);font-size:1.4rem;font-weight:800;">خدمات الشاطر الطلابية</h1>
   </div>
-  
+
   <div class="card" style="margin-top:5px;">
     <div class="upload" onclick="document.getElementById('fileinp').click()">
       <span class="upload-icon">📁</span>
-      <span style="font-size:1.2rem; font-weight: 700;">اضغط هنا لإضافة الملفات</span>
-      <p style="font-size:0.85rem; margin:8px 0 0; color: var(--teal); font-weight: 500;">PDF, Word, Excel, PowerPoint, صور</p>
+      <span style="font-size:1.2rem;font-weight:700;">اضغط هنا لإضافة الملفات</span>
+      <p style="font-size:.85rem;margin:8px 0 0;color:var(--teal);font-weight:500;">PDF, Word, Excel, PowerPoint, صور</p>
     </div>
     <div class="iosbox">
       <b style="color:#b45309;">⚠️ تنبيه لمستخدمي الآيفون</b>
-      <ol style="color:#78350f; font-size:0.85rem; line-height:1.8; margin:8px 0 0; padding-right:20px; font-weight: 500;">
+      <ol style="color:#78350f;font-size:.85rem;line-height:1.8;margin:8px 0 0;padding-right:20px;font-weight:500;">
         <li>افتح الملف في واتساب أو تيليجرام</li>
         <li>اضغط <b>"مشاركة"</b> ← <b>"حفظ في الملفات"</b></li>
         <li>عد للتطبيق واختر <b>"تصفح (Browse)"</b></li>
@@ -254,18 +419,19 @@ input:checked + .togs:before { transform: translateX(-24px); }
     <input type="file" id="fileinp" multiple style="display:none">
   </div>
 
-  <div id="flist" class="card" style="display:none;"></div>
-  
+  <!-- File List — تأكيد بصري للملفات -->
+  <div id="flist" style="display:none;"></div>
+
   <div id="opts" style="display:none;">
     <div class="card">
-      <p style="margin:0 0 10px; color: var(--navy); font-weight: 700;">نوع الطباعة:</p>
+      <p style="margin:0 0 10px;color:var(--navy);font-weight:700;">نوع الطباعة:</p>
       <div class="bgrp">
         <button id="cbtn" class="obtn on" onclick="setC('c')">🌈 ملون</button>
         <button id="nbtn" class="obtn off" onclick="setC('n')">⚪ أسود</button>
       </div>
-      <div class="inote" id="inote">⚠️ ملاحظة: الصور تُطبع وجه واحد دائماً للحفاظ على جودتها</div>
+      <div class="inote" id="inote">⚠️ الصور تُطبع وجه واحد دائماً للحفاظ على جودتها</div>
       <div id="sidebox">
-        <p style="margin:20px 0 10px; color: var(--navy); font-weight: 700;">طريقة الطباعة:</p>
+        <p style="margin:20px 0 10px;color:var(--navy);font-weight:700;">طريقة الطباعة:</p>
         <div class="bgrp">
           <button id="s1btn" class="obtn on" onclick="setS('1')">📄 وجه واحد</button>
           <button id="s2btn" class="obtn off" onclick="setS('2')">📖 وجهين</button>
@@ -273,15 +439,15 @@ input:checked + .togs:before { transform: translateX(-24px); }
       </div>
     </div>
 
-    <div class="card" id="ptscard" style="display:none; border: 2px solid var(--teal); background: var(--light-teal);">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div class="card" id="ptscard" style="display:none;border:2px solid var(--teal);background:var(--light-teal);">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
         <div>
-          <b style="color: var(--navy); font-size: 1.05rem;">💎 استخدام نقاط الولاء</b>
-          <p style="margin:4px 0 0; font-size:0.85rem; color:var(--teal); font-weight: 700;" id="ptslbl"></p>
+          <b style="color:var(--navy);font-size:1.05rem;">💎 استخدام نقاط الولاء</b>
+          <p style="margin:4px 0 0;font-size:.85rem;color:var(--teal);font-weight:700;" id="ptslbl"></p>
         </div>
         <label class="togw"><input type="checkbox" id="ptstog" onchange="calcUI()"><span class="togs"></span></label>
       </div>
-      <p id="ptssavelbl" style="margin:10px 0 0; color:var(--green); font-size:0.9rem; font-weight: 800; display:none; background: #dcfce7; padding: 8px; border-radius: 8px; text-align: center;"></p>
+      <p id="ptssavelbl" style="margin:10px 0 0;color:var(--green);font-size:.9rem;font-weight:800;display:none;background:#dcfce7;padding:8px;border-radius:8px;text-align:center;"></p>
     </div>
 
     <div class="inv">
@@ -294,98 +460,149 @@ input:checked + .togs:before { transform: translateX(-24px); }
       <input type="text" id="uName"   placeholder="✍️ الاسم الكامل">
       <input type="tel"  id="uPhone"  placeholder="📞 رقم الهاتف (11 رقم)" maxlength="11">
       <input type="text" id="uRegion" placeholder="🏠 المنطقة / الحي">
-      <button id="locbtn" class="bmain" style="background:#64748b; color:#fff; margin-bottom:15px; box-shadow: 0 4px 10px rgba(100,116,139,0.2);" onclick="getLoc()">📍 تحديد موقعي على الخريطة</button>
-      
+      <button id="locbtn" class="bmain" style="background:#64748b;color:#fff;margin-bottom:15px;box-shadow:0 4px 10px rgba(100,116,139,.2);" onclick="getLoc()">📍 تحديد موقعي على الخريطة</button>
       <div class="pcon" id="pcon"><div class="pbar" id="pbar"></div></div>
-      <p id="statustxt" style="text-align:center; font-size:0.85rem; color:var(--navy); font-weight: 700; display:none; margin:8px 0;"></p>
-      
+      <p id="statustxt" style="text-align:center;font-size:.85rem;color:var(--navy);font-weight:700;display:none;margin:8px 0;"></p>
       <button id="sendbtn" class="bmain btn-action" onclick="sendOrder()">🚀 تأكيد وإرسال الطلب</button>
     </div>
   </div>
 </div>
 
-<!-- TAB 2: طلباتي -->
+<!-- ══════════════════════════════════════
+     TAB 2 — طلباتي
+══════════════════════════════════════ -->
 <div class="tab" id="tab-orders">
-  <h2 style="color:var(--navy); margin:0 0 20px; font-weight: 800;">📋 طلباتي</h2>
-  <div id="ordersbox"><div style="text-align:center; padding:60px 20px; color:#94a3b8;"><div style="font-size:4rem; margin-bottom: 10px; opacity: 0.5;">📦</div><p style="font-weight: 500;">لا توجد طلبات بعد</p></div></div>
+  <h2 style="color:var(--navy);margin:0 0 20px;font-weight:800;">📋 طلباتي</h2>
+  <div id="ordersbox">
+    <div style="text-align:center;padding:60px 20px;color:#94a3b8;">
+      <div style="font-size:4rem;margin-bottom:10px;opacity:.5;">📦</div>
+      <p style="font-weight:500;">لا توجد طلبات بعد</p>
+    </div>
+  </div>
 </div>
 
-<!-- TAB 3: النقاط -->
+<!-- ══════════════════════════════════════
+     TAB 3 — النقاط
+══════════════════════════════════════ -->
 <div class="tab" id="tab-points">
-  <h2 style="color:var(--navy); margin:0 0 20px; font-weight: 800;">🏆 نقاط الولاء</h2>
+  <h2 style="color:var(--navy);margin:0 0 20px;font-weight:800;">🏆 نقاط الولاء</h2>
   <div class="ptshero">
-    <p style="margin:0 0 5px; opacity:0.9; font-size:0.95rem; font-weight: 500;">رصيد نقاطك الحالي</p>
+    <p style="margin:0 0 5px;opacity:.9;font-size:.95rem;font-weight:500;">رصيد نقاطك الحالي</p>
     <div class="ptsnum" id="ptsnum">0</div>
     <div id="tierdisp"></div>
     <div class="ptspw"><div class="ptspf" id="ptsbar" style="width:0%"></div></div>
-    <p style="margin:0; font-size:0.85rem; opacity:0.85; font-weight: 500;" id="ptsnext"></p>
+    <p style="margin:0;font-size:.85rem;opacity:.85;font-weight:500;" id="ptsnext"></p>
   </div>
-  
   <div class="card">
-    <h3 style="margin:0 0 15px; color: var(--navy); font-weight: 800;">🎁 استبدال النقاط بخصم</h3>
-    <div class="rcard">
-      <div><b style="font-size: 1.05rem; color: var(--navy);">خصم 500 د.ع</b><p style="margin:4px 0 0; font-size:0.85rem; color:var(--teal); font-weight: 700;">بـ 100 نقطة</p></div>
-      <button class="rbtn" id="rb100" onclick="redeemPts(100,500)">استبدال</button>
-    </div>
-    <div class="rcard">
-      <div><b style="font-size: 1.05rem; color: var(--navy);">خصم 1,500 د.ع</b><p style="margin:4px 0 0; font-size:0.85rem; color:var(--teal); font-weight: 700;">بـ 300 نقطة</p></div>
-      <button class="rbtn" id="rb300" onclick="redeemPts(300,1500)">استبدال</button>
-    </div>
-    <div class="rcard">
-      <div><b style="font-size: 1.05rem; color: var(--navy);">خصم 3,500 د.ع</b><p style="margin:4px 0 0; font-size:0.85rem; color:var(--teal); font-weight: 700;">بـ 700 نقطة</p></div>
-      <button class="rbtn" id="rb700" onclick="redeemPts(700,3500)">استبدال</button>
-    </div>
-    <div id="redeembanner" style="display:none; background:#f0fdf4; border:1px solid #86efac; border-radius:12px; padding:12px; margin-top:15px; font-size:0.9rem; font-weight: 700; color:#166534; text-align:center;"></div>
+    <h3 style="margin:0 0 15px;color:var(--navy);font-weight:800;">🎁 استبدال النقاط بخصم</h3>
+    <div class="rcard"><div><b style="font-size:1.05rem;color:var(--navy);">خصم 500 د.ع</b><p style="margin:4px 0 0;font-size:.85rem;color:var(--teal);font-weight:700;">بـ 100 نقطة</p></div><button class="rbtn" id="rb100" onclick="redeemPts(100,500)">استبدال</button></div>
+    <div class="rcard"><div><b style="font-size:1.05rem;color:var(--navy);">خصم 1,500 د.ع</b><p style="margin:4px 0 0;font-size:.85rem;color:var(--teal);font-weight:700;">بـ 300 نقطة</p></div><button class="rbtn" id="rb300" onclick="redeemPts(300,1500)">استبدال</button></div>
+    <div class="rcard"><div><b style="font-size:1.05rem;color:var(--navy);">خصم 3,500 د.ع</b><p style="margin:4px 0 0;font-size:.85rem;color:var(--teal);font-weight:700;">بـ 700 نقطة</p></div><button class="rbtn" id="rb700" onclick="redeemPts(700,3500)">استبدال</button></div>
+    <div id="redeembanner" style="display:none;background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:12px;margin-top:15px;font-size:.9rem;font-weight:700;color:#166534;text-align:center;"></div>
   </div>
-  
   <div class="card">
-    <h3 style="margin:0 0 15px; color: var(--navy); font-weight: 800;">📊 كيف تكسب النقاط؟</h3>
-    <div style="line-height:2.4; color:var(--text-muted); font-size:0.95rem; font-weight: 500;">
-      <div style="background: #f8fafc; padding: 10px 15px; border-radius: 12px; margin-bottom: 10px;">💳 كل <b>1,000 د.ع</b> تنفقها = <b style="color:var(--orange);">10 نقاط</b></div>
-      <div>🥉 <b style="color: #d97706;">برونز</b> (0–199): مستوى أساسي</div>
-      <div>🥈 <b style="color: #64748b;">فضي</b> (200–499): أولوية في التجهيز</div>
-      <div>🥇 <b style="color: #d97706;">ذهبي</b> (500+): <b style="color:var(--orange); background: #fff7ed; padding: 2px 8px; border-radius: 6px;">خصم 5% تلقائي</b> على كل طلباتي</div>
+    <h3 style="margin:0 0 15px;color:var(--navy);font-weight:800;">📊 كيف تكسب النقاط؟</h3>
+    <div style="line-height:2.4;color:var(--text-muted);font-size:.95rem;font-weight:500;">
+      <div style="background:var(--input-bg);padding:10px 15px;border-radius:12px;margin-bottom:10px;">💳 كل <b>1,000 د.ع</b> تنفقها = <b style="color:var(--orange);">10 نقاط</b></div>
+      <div>🥉 <b style="color:#d97706;">برونز</b> (0–199): مستوى أساسي</div>
+      <div>🥈 <b style="color:#64748b;">فضي</b> (200–499): أولوية في التجهيز</div>
+      <div>🥇 <b style="color:#d97706;">ذهبي</b> (500+): <b style="color:var(--orange);background:#fff7ed;padding:2px 8px;border-radius:6px;">خصم 5% تلقائي</b></div>
     </div>
   </div>
-  
   <div class="card">
-    <h3 style="margin:0 0 15px; color: var(--navy); font-weight: 800;">📜 سجل النقاط</h3>
-    <div id="ptshist"><p style="color:#94a3b8; font-size:0.9rem; text-align: center; padding: 10px;">لا يوجد سجل بعد</p></div>
+    <h3 style="margin:0 0 15px;color:var(--navy);font-weight:800;">📜 سجل النقاط</h3>
+    <div id="ptshist"><p style="color:#94a3b8;font-size:.9rem;text-align:center;padding:10px;">لا يوجد سجل بعد</p></div>
   </div>
 </div>
 
-<!-- التنقل السفلي -->
+<!-- ══════════════════════════════════════
+     BOTTOM NAV
+══════════════════════════════════════ -->
 <nav class="bnav">
   <button class="nbtn active" id="nav-order"  onclick="goTab('order')"><span class="ni">🖨️</span><span>الرئيسية</span></button>
-  <button class="nbtn"        id="nav-orders" onclick="goTab('orders')" style="position:relative;"><span class="ni">📋</span><span>طلباتي</span><span id="ordbadge" style="display:none; background:var(--orange); color:#fff; border-radius:10px; font-size:0.65rem; font-weight: bold; padding:2px 6px; position:absolute; top:4px; margin-right:-15px; box-shadow: 0 2px 5px rgba(232,107,36,0.4);"></span></button>
+  <button class="nbtn"        id="nav-orders" onclick="goTab('orders')" style="position:relative;">
+    <span class="ni">📋</span><span>طلباتي</span>
+    <span id="ordbadge" style="display:none;background:var(--orange);color:#fff;border-radius:10px;font-size:.65rem;font-weight:bold;padding:2px 6px;position:absolute;top:4px;margin-right:-15px;box-shadow:0 2px 5px rgba(232,107,36,.4);"></span>
+  </button>
   <button class="nbtn"        id="nav-points" onclick="goTab('points')"><span class="ni">🏆</span><span>المكافآت</span></button>
+  <!-- Dark Mode Toggle -->
+  <button class="nbtn" id="dm-toggle" onclick="toggleDark()" title="الوضع الليلي">
+    <span class="ni" id="dm-icon">🌙</span>
+    <span id="dm-label">ليلي</span>
+  </button>
 </nav>
 
 <!-- ══════════════════════════════════════
-     نفس الكود البرمجي (المنطق) لم يتغير
+     JAVASCRIPT
 ══════════════════════════════════════ -->
 <script>
+// ═══════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════
 const SB_URL = 'https://zrumnqtgdscrwgcguseq.supabase.co';
 const SB_KEY = 'sb_publishable_xEqE6S21QUMCkDxSMvTskg_9g3pi-vZ';
-const BOT    = '8446310296:AAFLgndwQEozwZ1Ja5XflUTdMtOiLFqty5k';
+const BOT    = '8507186698:AAHXCtsLn8j88A2QgiXSmNFbnEfpn1nCYew';
 const ADMIN  = '7618746133';
 
-const sb = window.supabase.createClient(SB_URL, SB_KEY);
-const tg = window.Telegram?.WebApp; tg?.ready();
+const sb  = window.supabase.createClient(SB_URL, SB_KEY);
+const tg  = window.Telegram?.WebApp; tg?.ready();
 const tgU = tg?.initDataUnsafe?.user;
 const userId = tgU?.id ? String(tgU.id) : 'guest_' + Date.now();
 
 let files=[], color='c', side='1', locUrl='', pendingR=null;
-let uDoc={loyalty_points:0,first_order_done:false,total_orders:0,total_spent:0};
+let uDoc = {loyalty_points:0,first_order_done:false,total_orders:0,total_spent:0};
 
+// ═══════════════════════════════════════
+//  DARK MODE
+// ═══════════════════════════════════════
+function applyTheme(dark) {
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  document.getElementById('dm-icon').innerText  = dark ? '☀️' : '🌙';
+  document.getElementById('dm-label').innerText = dark ? 'نهاري' : 'ليلي';
+}
+function toggleDark() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  localStorage.setItem('shater-dark', !isDark);
+  applyTheme(!isDark);
+}
+// Load saved preference
+applyTheme(localStorage.getItem('shater-dark') === 'true');
+
+// ═══════════════════════════════════════
+//  ONBOARDING
+// ═══════════════════════════════════════
+let obIdx = 0;
+const obTotal = 3;
+
+function obNext() {
+  obIdx++;
+  if (obIdx >= obTotal) { finishOnboarding(); return; }
+  document.getElementById('ob-slides').style.transform = `translateX(${obIdx * 100}%)`;
+  document.querySelectorAll('.ob-dot').forEach((d,i) => d.classList.toggle('active', i === obIdx));
+  document.getElementById('ob-next-btn').innerText = obIdx === obTotal-1 ? 'ابدأ الآن! 🚀' : 'التالي ←';
+}
+
+function finishOnboarding() {
+  document.getElementById('onboarding').style.display = 'none';
+  localStorage.setItem('shater-ob', '1');
+  if (!uDoc.first_order_done) document.getElementById('wmodal').style.display = 'flex';
+}
+
+// Show onboarding only once
+if (localStorage.getItem('shater-ob') === '1') {
+  document.getElementById('onboarding').style.display = 'none';
+}
+
+// ═══════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════
 async function init() {
   try {
     const {data} = await sb.from('users').select('*').eq('id', userId).maybeSingle();
-    if (data) {
-      uDoc = data;
-    } else {
+    if (data) { uDoc = data; }
+    else {
       uDoc = {id:userId, name:tgU?.first_name||'', username:tgU?.username||'',
-        loyalty_points:0, total_orders:0, total_spent:0, first_order_done:false};
+              loyalty_points:0, total_orders:0, total_spent:0, first_order_done:false};
       await sb.from('users').insert(uDoc);
     }
   } catch(e) {}
@@ -394,6 +611,9 @@ async function init() {
   startRT();
 }
 
+// ═══════════════════════════════════════
+//  REAL-TIME
+// ═══════════════════════════════════════
 function startRT() {
   try {
     sb.channel('public-orders')
@@ -402,20 +622,18 @@ function startRT() {
           if (p.new.user_id !== userId && p.new.telegram_id !== userId) return;
           const m = {received:'📥 تم الاستلام',printing:'🖨️ قيد الطباعة',delivering:'🛵 جاري التوصيل',delivered:'✅ تم التسليم',cancelled:'❌ ملغى'};
           showToast('🔔 تحديث طلبك: ' + (m[p.new.status] || p.new.status));
-          
-          if (document.getElementById('tab-orders').classList.contains('active')) {
-             loadOrders();
-          }
+          if (document.getElementById('tab-orders').classList.contains('active')) loadOrders();
           const detTitle = document.getElementById('det-title').innerText;
-          if (document.getElementById('det-ov').classList.contains('open') && detTitle.includes(p.new.id)) {
-             showDet(p.new.id);
-          }
-          if (p.new.status === 'delivered') init(); 
+          if (document.getElementById('det-ov').classList.contains('open') && detTitle.includes(p.new.id)) showDet(p.new.id);
+          if (p.new.status === 'delivered') init();
         })
       .subscribe();
   } catch(e) {}
 }
 
+// ═══════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════
 function goTab(t) {
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.nbtn').forEach(x=>x.classList.remove('active'));
@@ -424,6 +642,18 @@ function goTab(t) {
   if (t==='orders') loadOrders();
   if (t==='points') loadPtsTab();
 }
+
+// ═══════════════════════════════════════
+//  FILE INPUT — تأكيد بصري محسّن
+// ═══════════════════════════════════════
+const FILE_ICONS = {
+  pdf:'📕', doc:'📘', docx:'📘', xls:'📗', xlsx:'📗',
+  ppt:'📙', pptx:'📙', jpg:'🖼️', jpeg:'🖼️', png:'🖼️', webp:'🖼️'
+};
+const FILE_COLORS = {
+  pdf:'fi-pdf', doc:'fi-word', docx:'fi-word', xls:'fi-xl', xlsx:'fi-xl',
+  ppt:'fi-ppt', pptx:'fi-ppt', jpg:'fi-img', jpeg:'fi-img', png:'fi-img', webp:'fi-img'
+};
 
 document.getElementById('fileinp').onchange = async e => {
   const ok=['.pdf','.docx','.doc','.xlsx','.xls','.pptx','.ppt','.jpg','.jpeg','.png','.webp'];
@@ -461,9 +691,23 @@ document.getElementById('fileinp').onchange = async e => {
   calcUI(); e.target.value = '';
 };
 
+function getFileExt(name) { return name.toLowerCase().split('.').pop() || 'other'; }
+function getFileSize(f) {
+  const b = f.file.size;
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(1) + ' MB';
+}
+
+// ═══════════════════════════════════════
+//  PRINT CONFIG
+// ═══════════════════════════════════════
 function setC(v) { color=v; document.getElementById('cbtn').className=v==='c'?'obtn on':'obtn off'; document.getElementById('nbtn').className=v==='n'?'obtn on':'obtn off'; calcUI(); }
 function setS(v) { side=v; document.getElementById('s1btn').className=v==='1'?'obtn on':'obtn off'; document.getElementById('s2btn').className=v==='2'?'obtn on':'obtn off'; calcUI(); }
 
+// ═══════════════════════════════════════
+//  LOCATION
+// ═══════════════════════════════════════
 function getLoc() {
   navigator.geolocation.getCurrentPosition(
     p => { locUrl=`https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`; const b=document.getElementById('locbtn'); b.innerText='✅ تم حفظ الموقع الجغرافي بنجاح'; b.style.background='var(--green)'; hideErr(); },
@@ -471,20 +715,54 @@ function getLoc() {
   );
 }
 
+// ═══════════════════════════════════════
+//  PRICING
+// ═══════════════════════════════════════
 function calcPrice(sh, im) {
   const t=sh+im; if(!t) return 0; if(t<=5) return 1000;
   if(color==='c') { if(t<=25) return t*150; if(t<=40) return t*130; if(t<=70) return t*120; return t*100; }
   return t*(side==='1'?90:75);
 }
 
+// ═══════════════════════════════════════
+//  UI UPDATE
+// ═══════════════════════════════════════
 function calcUI() {
   let sh=0, im=0, dp=0, hasD=false, hasI=false;
-  const fl = document.getElementById('flist'); fl.innerHTML = '';
-  files.forEach((f,i) => {
-    if(f.isImg) { hasI=true; im+=f.c; }
-    else { hasD=true; dp+=f.p*f.c; const u=f.type==='PowerPoint'?Math.ceil(f.p/2):f.p; sh+=(side==='2'?Math.ceil(u/2):u)*f.c; }
-    fl.innerHTML += `<div class="fi"><span style="font-size:0.9rem;font-weight:700;color:var(--navy);max-width:55%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">📄 ${f.name} <span style="color:var(--teal); font-size:0.8rem;">(${f.p}ص)</span></span><div style="display:flex;align-items:center;gap:4px;"><button class="bcnt" onclick="adjC(${i},-1)">−</button><span style="padding:0 10px;font-weight:800;font-size:1.1rem;color:var(--orange);">${f.c}</span><button class="bcnt" onclick="adjC(${i},1)">+</button><span onclick="rmF(${i})" style="color:var(--red);margin-right:12px;cursor:pointer;font-size:0.85rem;font-weight:700;background:#fef2f2;padding:6px 10px;border-radius:8px;">حذف</span></div></div>`;
-  });
+  const fl = document.getElementById('flist');
+  fl.innerHTML = '';
+
+  if (files.length > 0) {
+    // Header
+    fl.innerHTML = `<div class="card" style="margin-bottom:0;">
+      <p style="margin:0 0 12px;color:var(--navy);font-weight:800;font-size:.95rem;">📂 الملفات المرفقة (${files.length})</p>`;
+
+    files.forEach((f,i) => {
+      if(f.isImg) { hasI=true; im+=f.c; }
+      else { hasD=true; dp+=f.p*f.c; const u=f.type==='PowerPoint'?Math.ceil(f.p/2):f.p; sh+=(side==='2'?Math.ceil(u/2):u)*f.c; }
+      const ext   = getFileExt(f.name);
+      const icon  = FILE_ICONS[ext]  || '📄';
+      const clr   = FILE_COLORS[ext] || 'fi-other';
+      const size  = getFileSize(f);
+      fl.innerHTML += `
+        <div class="file-card">
+          <div class="file-icon-box ${clr}">${icon}</div>
+          <div class="file-info">
+            <div class="file-name" title="${f.name}">${f.name}</div>
+            <div class="file-meta">${size} &nbsp;•&nbsp; ${f.p} صفحة</div>
+            <span class="file-badge">${f.type}</span>
+          </div>
+          <div class="file-controls">
+            <button class="bcnt" onclick="adjC(${i},-1)">−</button>
+            <span class="file-qty">${f.c}</span>
+            <button class="bcnt" onclick="adjC(${i},1)">+</button>
+            <button class="del-btn" onclick="rmF(${i})">حذف</button>
+          </div>
+        </div>`;
+    });
+    fl.innerHTML += '</div>';
+  }
+
   document.getElementById('sidebox').style.display = hasD ? 'block' : 'none';
   document.getElementById('inote').style.display   = hasI ? 'block' : 'none';
   document.getElementById('flist').style.display   = files.length ? 'block' : 'none';
@@ -492,11 +770,11 @@ function calcUI() {
 
   const pp = calcPrice(sh, im);
   const isFO = !uDoc.first_order_done;
-  const df = files.length===0 ? 0 : (pp>=10000||isFO ? 0 : 1000);
-  const isG = (uDoc.loyalty_points||0) >= 500;
-  const td = isG ? Math.round(pp*.05) : 0;
+  const df   = files.length===0 ? 0 : (pp>=10000||isFO ? 0 : 1000);
+  const isG  = (uDoc.loyalty_points||0) >= 500;
+  const td   = isG ? Math.round(pp*.05) : 0;
   const useP = document.getElementById('ptstog')?.checked && pendingR;
-  const pd = useP ? pendingR.disc : 0;
+  const pd   = useP ? pendingR.disc : 0;
 
   const pc = document.getElementById('ptscard');
   if (pendingR && files.length) {
@@ -512,11 +790,11 @@ function calcUI() {
   document.getElementById('invdet').innerHTML = `
     <div class="il"><span>إجمالي الصفحات:</span><span style="font-weight:bold;">${dp}</span></div>
     <div class="il"><span>الصور:</span><span style="font-weight:bold;">${im}</span></div>
-    <div class="il" style="border-top:1px solid rgba(255,255,255,0.2);padding-top:10px;margin-top:5px;"><span>سعر الطباعة الأساسي:</span><span style="font-weight:bold;">${pp.toLocaleString()} د.ع</span></div>
-    ${td>0?`<div class="il"><span>🥇 خصم العضوية الذهبية (5%):</span><span style="color:#4eff4e;font-weight:bold;">−${td.toLocaleString()} د.ع</span></div>`:''}
-    ${pd>0&&useP?`<div class="il"><span>💎 خصم استبدال النقاط:</span><span style="color:#4eff4e;font-weight:bold;">−${pd.toLocaleString()} د.ع</span></div>`:''}
+    <div class="il" style="border-top:1px solid rgba(255,255,255,.2);padding-top:10px;margin-top:5px;"><span>سعر الطباعة الأساسي:</span><span style="font-weight:bold;">${pp.toLocaleString()} د.ع</span></div>
+    ${td>0?`<div class="il"><span>🥇 خصم الذهبية (5%):</span><span style="color:#4eff4e;font-weight:bold;">−${td.toLocaleString()} د.ع</span></div>`:''}
+    ${pd>0&&useP?`<div class="il"><span>💎 خصم النقاط:</span><span style="color:#4eff4e;font-weight:bold;">−${pd.toLocaleString()} د.ع</span></div>`:''}
     <div class="il"><span>أجور التوصيل:</span><span style="font-weight:bold;">${dtxt}</span></div>
-    <div class="il" style="background:rgba(0,0,0,0.2);padding:10px;border-radius:10px;margin-top:10px;"><span>💎 نقاط ستكسبها (بعد الاستلام):</span><span style="color:var(--gold);font-weight:bold;font-size:1.1rem;">+${pe}</span></div>`;
+    <div class="il" style="background:rgba(0,0,0,.2);padding:10px;border-radius:10px;margin-top:10px;"><span>💎 نقاط ستكسبها:</span><span style="color:var(--gold);font-weight:bold;font-size:1.1rem;">+${pe}</span></div>`;
   document.getElementById('totlbl').innerText = `المجموع النهائي: ${tot.toLocaleString()} د.ع`;
   window._ord = {pp,df,td,pd,tot,pe,isFO};
 }
@@ -524,250 +802,297 @@ function calcUI() {
 window.adjC = (i,d) => { files[i].c=Math.max(1,files[i].c+d); calcUI(); };
 window.rmF  = i => { files.splice(i,1); calcUI(); };
 
+// ═══════════════════════════════════════
+//  REDEEM POINTS
+// ═══════════════════════════════════════
 function redeemPts(pts, disc) {
-  if ((uDoc.loyalty_points||0) < pts) { alert('عذراً، نقاطك غير كافية لهذا الخصم!'); return; }
+  if ((uDoc.loyalty_points||0) < pts) { alert('عذراً، نقاطك غير كافية!'); return; }
   pendingR = {pts, disc};
   const b = document.getElementById('redeembanner');
   b.style.display = 'block';
-  b.innerHTML = `✅ خصم بقيمة <b style="font-size:1.1rem;">${disc.toLocaleString()} د.ع</b> جاهز! قم بتفعيل الخيار في صفحة الطلب للاستفادة منه.`;
+  b.innerHTML = `✅ خصم بقيمة <b style="font-size:1.1rem;">${disc.toLocaleString()} د.ع</b> جاهز! قم بتفعيل الخيار في صفحة الطلب.`;
   goTab('order'); calcUI();
 }
 
+// ═══════════════════════════════════════
+//  SEND ORDER
+// ═══════════════════════════════════════
 async function sendOrder() {
   const name   = document.getElementById('uName').value.trim();
   const phone  = document.getElementById('uPhone').value.trim();
   const region = document.getElementById('uRegion').value.trim();
 
-  if (!name)                               return showErr('❌ يرجى كتابة الاسم الكريم');
-  if (phone.length!==11 || isNaN(+phone)) return showErr('❌ رقم الهاتف يجب أن يكون 11 رقماً (أرقام فقط)');
-  if (!region)                             return showErr('❌ يرجى إدخال اسم المنطقة للتمكن من التوصيل');
-  if (!locUrl)                             return showErr('❌ يرجى تحديد موقعك على الخريطة لتسهيل التوصيل');
-  if (!files.length)                       return showErr('❌ يرجى رفع ملف واحد على الأقل للطباعة');
+  if (!name)                              return showErr('❌ يرجى كتابة الاسم');
+  if (phone.length!==11 || isNaN(+phone)) return showErr('❌ رقم الهاتف يجب أن يكون 11 رقمًا');
+  if (!region)                             return showErr('❌ يرجى إدخال اسم المنطقة');
+  if (!locUrl)                             return showErr('❌ يرجى تحديد موقعك على الخريطة');
+  if (!files.length)                       return showErr('❌ يرجى رفع ملف واحد على الأقل');
   hideErr();
 
   const btn = document.getElementById('sendbtn');
-  btn.disabled = true; btn.innerHTML = 'جاري الإرسال... <span style="display:inline-block;animation:pulseGlow 1s infinite;">🚀</span>';
+  btn.disabled = true; btn.innerText = 'جاري الإرسال... 🚀';
   document.getElementById('pcon').style.display = 'block';
   const stxt = document.getElementById('statustxt'); stxt.style.display = 'block';
 
   try {
-    const oid  = 'SH-' + Math.floor(1000 + Math.random() * 9000);
-    const {pp, df, td, pd, tot, pe, isFO} = window._ord || {};
+    const oid = 'SH-' + Math.floor(1000+Math.random()*9000);
+    const {pp,df,td,pd,tot,pe,isFO} = window._ord || {};
     const useP = document.getElementById('ptstog')?.checked && pendingR;
     const pu   = useP ? pendingR.pts : 0;
 
-    stxt.innerText = 'جاري ضغط وتجهيز الملفات...';
-    document.getElementById('pbar').style.width = '10%';
-    const zip    = new JSZip();
+    stxt.innerText = 'جاري تجهيز وضغط الملفات...';
+    document.getElementById('pbar').style.width = '20%';
+    const zip = new JSZip();
     const folder = zip.folder('order-' + oid);
-    const meta   = [];
+    const meta = [];
     for (const f of files) {
       const buf = await f.file.arrayBuffer();
-      for (let c = 1; c <= f.c; c++) {
-        folder.file(f.c > 1 ? `(${c}) ${f.name}` : f.name, buf);
-      }
-      meta.push({name: f.name, pages: f.p, copies: f.c, type: f.type});
+      for (let c=1; c<=f.c; c++) folder.file(f.c>1?`(${c}) ${f.name}`:f.name, buf);
+      meta.push({name:f.name, pages:f.p, copies:f.c, type:f.type});
     }
-    stxt.innerText = 'أوشكنا على الانتهاء من تجهيز الملفات...';
-    const zipBlob = await zip.generateAsync({type:'blob', compression:'DEFLATE'}, m => {
-      document.getElementById('pbar').style.width = (10 + m.percent * 0.4) + '%';
+    const zipBlob = await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}}, m => {
+      document.getElementById('pbar').style.width = (20+m.percent*.4)+'%';
     });
 
-    stxt.innerText = 'جاري رفع الملفات إلى السيرفر الآمن...';
-    const zpath = 'orders/' + oid + '/files-' + oid + '.zip';
-    let finalZipUrl = '';
+    stxt.innerText = 'جاري رفع الملفات إلى السيرفر...';
+    const zpath = `orders/${oid}/files_${oid}.zip`;
+    const {error: uploadError} = await sb.storage.from('order-files').upload(zpath, zipBlob, {cacheControl:'3600',upsert:true});
+    if (uploadError) throw new Error('فشل الرفع: تأكد من إعدادات الـ Storage');
 
-    const {data: upData, error: upErr} = await sb.storage
-      .from('order-files')
-      .upload(zpath, zipBlob, {contentType: 'application/zip', upsert: true});
-
-    if (upErr) {
-      throw new Error('فشل رفع الملفات، يرجى المحاولة مرة أخرى.');
-    } else {
-      const {data: urlData} = sb.storage.from('order-files').getPublicUrl(zpath);
-      finalZipUrl = urlData?.publicUrl || '';
-    }
-
-    document.getElementById('pbar').style.width = '70%';
-
-    stxt.innerText = 'جاري حفظ الطلب في النظام...';
-    const order = {
-      id:    oid,
-      user_id:     userId,
-      telegram_id: userId,
-      name, phone, region,
-      loc_url:   locUrl,
-      files:     meta,
-      zip_url:   finalZipUrl, 
-      color, side,
-      print_price:          pp  || 0,
-      delivery_fee:         df  || 0,
-      tier_discount:        td  || 0,
-      pts_discount:         pd  || 0,
-      pts_used:             pu,
-      total:                tot || 0,
-      loyalty_points_earned: pe || 0,
-      is_first_order:        !!isFO,
-      status:         'received',
-      status_history: [{status: 'received', time: new Date().toISOString()}]
-    };
-
-    const {error: insErr} = await sb.from('orders').insert(order);
-    if (insErr) throw insErr;
-
+    const {data: urlData} = sb.storage.from('order-files').getPublicUrl(zpath);
+    const zipUrl = urlData?.publicUrl || '';
     document.getElementById('pbar').style.width = '80%';
 
-    const np = Math.max(0, (uDoc.loyalty_points || 0) - pu);
+    stxt.innerText = 'جاري تسجيل الطلب...';
+    const order = {
+      id:oid, user_id:userId, telegram_id:userId,
+      name, phone, region, loc_url:locUrl,
+      files:meta, zip_url:zipUrl,
+      color, side,
+      print_price:pp||0, delivery_fee:df||0,
+      tier_discount:td||0, pts_discount:pd||0,
+      pts_used:pu, total:tot||0,
+      loyalty_points_earned:pe||0,
+      is_first_order:!!isFO,
+      status:'received',
+      status_history:[{status:'received',time:new Date().toISOString()}]
+    };
+    const {error: dbError} = await sb.from('orders').insert(order);
+    if (dbError) throw dbError;
+
+    const np = Math.max(0, (uDoc.loyalty_points||0)+(pe||0)-pu);
     await sb.from('users').update({
-      loyalty_points:  np,
-      total_orders:    (uDoc.total_orders  || 0) + 1,
-      first_order_done: true,
-      name, phone
+      loyalty_points:np, total_orders:(uDoc.total_orders||0)+1,
+      total_spent:(uDoc.total_spent||0)+(tot||0),
+      first_order_done:true, name, phone
     }).eq('id', userId);
-    uDoc.loyalty_points  = np;
-    uDoc.first_order_done = true;
-
-    document.getElementById('pbar').style.width = '90%';
-
-    const flist = meta.map(f => `📄 ${f.name} — ${f.pages}ص × ${f.copies}نسخة`).join('\n');
-    const adminMsg =
-      `🆕 طلب جديد #${oid}\n` +
-      (isFO ? '🚚 توصيل مجاني — أول طلب\n' : '') +
-      `👤 ${name}\n📞 ${phone}\n🏠 ${region}\n` +
-      `🎨 ${color==='c'?'ملون':'أسود'} — ${side==='1'?'وجه واحد':'وجهين'}\n` +
-      `💰 ${(tot||0).toLocaleString()} د.ع\n📍 ${locUrl}\n\n` +
-      `📋 الملفات (${meta.length}):\n${flist}\n\n` +
-      `📦 رابط التحميل:\n${finalZipUrl || '⚠️ فشل رفع الملفات'}`;
-
-    await tgMsg(ADMIN, adminMsg);
-
-    const custId = tgU?.id ? String(tgU.id) : null;
-    if (custId) {
-      const custMsg =
-        `✅ تم استلام طلبك #${oid} بنجاح!\n\n` +
-        `💰 المجموع: ${(tot||0).toLocaleString()} د.ع\n` +
-        `💎 ستكسب ${pe || 0} نقطة (عند التسليم)!\n\n` +
-        `⏳ جاري مراجعة طلبك — ستصلك رسالة فور بدء الطباعة.`;
-      await tgMsg(custId, custMsg);
-    }
+    uDoc.loyalty_points=np; uDoc.first_order_done=true;
 
     document.getElementById('pbar').style.width = '100%';
-    pendingR = null;
+
+    const flist = meta.map(f=>`📄 ${f.name} (${f.pages}ص × ${f.copies}ن)`).join('\n');
+    const adminMsg =
+      `🆕 طلب جديد #${oid}\n👤 ${name}\n📞 ${phone}\n🏠 ${region}\n` +
+      `🎨 ${color==='c'?'ملون':'أسود'} - ${side==='1'?'وجه واحد':'وجهين'}\n` +
+      `💰 ${(tot||0).toLocaleString()} د.ع\n📍 ${locUrl}\n\n📋 الملفات:\n${flist}\n\n📦 رابط التحميل:\n${zipUrl}`;
+    await tgMsg(ADMIN, adminMsg);
+    if (tgU?.id) await tgMsg(String(tgU.id), `✅ تم استلام طلبك #${oid} بنجاح!\n💎 ستكسب ${pe||0} نقطة عند التسليم.\n\nسنُخطرك بكل تحديث 🔔`);
+
+    pendingR=null;
     refreshPtsUI();
-
-    document.getElementById('tab-order').innerHTML = `
-      <div style="text-align:center;padding:50px 20px;animation:fadeInUp 0.5s ease;">
-        <div style="font-size:5rem;margin-bottom:15px;filter:drop-shadow(0 4px 15px rgba(16,185,129,0.3));">✅</div>
-        <h2 style="color:var(--navy);margin:0 0 8px;font-weight:800;">تم إرسال طلبك بنجاح!</h2>
-        <p style="color:var(--text-muted);margin:0 0 25px;font-size:1rem;">رقم الطلب: <b style="color:var(--orange);font-size:1.2rem;">#${oid}</b></p>
-
-        <div style="background:linear-gradient(135deg, #f0fdf4, #dcfce7); border:1px solid #86efac; border-radius:18px; padding:20px; margin-bottom:20px; box-shadow: 0 4px 15px rgba(22, 101, 52, 0.05);">
-          <div style="font-size:2rem;margin-bottom:8px;">💎</div>
-          <b style="color:#166534;font-size:1.1rem;display:block;margin-bottom:5px;">ستكسب ${pe || 0} نقطة إضافية!</b>
-          <p style="margin:0;font-size:0.85rem;color:#15803d;font-weight:500;">تُضاف لرصيدك تلقائياً عند تسليم الطلب.</p>
-        </div>
-
-        <div style="background:var(--light-teal); border:1px solid rgba(90, 179, 196, 0.3); border-radius:18px; padding:18px; margin-bottom:25px; font-size:0.9rem; color:var(--navy); line-height:2; text-align:right; font-weight:500;">
-          <div style="display:flex;align-items:center;gap:8px;"><span>📱</span> تم إرسال إشعار تأكيد على تيليجرام</div>
-          <div style="display:flex;align-items:center;gap:8px;"><span>🔔</span> ستصلك رسالة فور تحديث حالة الطلب</div>
-          <div style="display:flex;align-items:center;gap:8px;"><span>🖨️</span> سنبدأ الطباعة والتجهيز في أقرب وقت</div>
-        </div>
-
-        <button onclick="goTab('orders')" class="bmain btn-action" style="margin-bottom:12px;">📋 تتبع مسار طلبك</button>
-        <button onclick="location.reload()" class="bmain" style="background:#f1f5f9; color:var(--navy);">🆕 إنشاء طلب جديد</button>
-      </div>`;
+    showSuccessUI(oid, pe||0, np);
 
   } catch(e) {
-    showErr('❌ حدث خطأ: ' + e.message);
-    btn.disabled = false;
-    btn.innerHTML = 'تأكيد وإرسال الطلب ✅';
-    stxt.style.display = 'none';
+    console.error(e);
+    showErr('❌ حدث خطأ أثناء الإرسال: ' + e.message);
+    btn.disabled=false; btn.innerText='🚀 تأكيد وإرسال الطلب';
+    stxt.style.display='none';
   }
 }
 
+// ═══════════════════════════════════════
+//  SUCCESS SCREEN
+// ═══════════════════════════════════════
+function showSuccessUI(oid, pe, np) {
+  document.getElementById('tab-order').innerHTML = `
+    <div style="text-align:center;padding:50px 20px;animation:fadeInUp .5s ease;">
+      <div style="font-size:5rem;margin-bottom:10px;animation:pop .5s ease;">✅</div>
+      <h2 style="color:var(--navy);margin:0 0 6px;font-weight:800;">تم إرسال طلبك بنجاح!</h2>
+      <p style="color:var(--text-muted);margin:0 0 25px;">رقم الطلب: <b style="color:var(--orange);font-size:1.1rem;">#${oid}</b></p>
+
+      <div style="background:linear-gradient(135deg,var(--navy),var(--teal));color:#fff;border-radius:20px;padding:22px;margin-bottom:20px;box-shadow:0 8px 20px rgba(13,59,102,.2);">
+        <div style="font-size:2.5rem;margin-bottom:8px;">💎</div>
+        <b style="font-size:1.05rem;">ستكسب ${pe} نقطة ولاء عند التسليم!</b>
+        <p style="margin:6px 0 0;opacity:.85;font-size:.9rem;">رصيدك الحالي: ${np} نقطة</p>
+      </div>
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:20px;text-align:right;">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);">
+          <span style="font-size:1.4rem;">📥</span>
+          <div><b style="color:var(--green);">تم الاستلام</b><div style="font-size:.8rem;color:var(--text-muted);">طلبك وصل لينا ✓</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);opacity:.5;">
+          <span style="font-size:1.4rem;">🖨️</span><div><b>قيد الطباعة</b></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);opacity:.5;">
+          <span style="font-size:1.4rem;">🛵</span><div><b>جاري التوصيل</b></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 0;opacity:.5;">
+          <span style="font-size:1.4rem;">✅</span><div><b>تم التسليم</b></div>
+        </div>
+      </div>
+
+      <p style="font-size:.88rem;color:var(--text-muted);margin:0 0 20px;">📱 ستصلك إشعارات تيليجرام عند كل تحديث</p>
+
+      <button onclick="goTab('orders')" class="bmain btn-action" style="margin-bottom:10px;">📋 تتبع طلبي</button>
+      <button onclick="location.reload()" class="bmain" style="background:var(--card);color:var(--text-muted);border:1.5px solid var(--border);">🆕 طلب جديد</button>
+    </div>`;
+}
+
+// ═══════════════════════════════════════
+//  TELEGRAM
+// ═══════════════════════════════════════
 async function tgMsg(cid, txt) {
   try {
     const res = await fetch(`https://api.telegram.org/bot${BOT}/sendMessage`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({chat_id: cid, text: txt, disable_web_page_preview: true})
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({chat_id:cid, text:txt, disable_web_page_preview:true})
     });
     return (await res.json()).ok;
   } catch(e) { return false; }
 }
 
+// ═══════════════════════════════════════
+//  ORDERS LIST — مع مؤشر تقدم مصغّر
+// ═══════════════════════════════════════
 async function loadOrders() {
   const box = document.getElementById('ordersbox');
-  box.innerHTML = '<div style="text-align:center;padding:40px;color:var(--teal);"><div class="upload-icon" style="animation: pulseGlow 1.5s infinite; border-radius:50%; width:50px; height:50px; margin:0 auto 10px; display:flex; align-items:center; justify-content:center;">⏳</div><b style="font-size:1.1rem;">جاري تحميل طلباتك...</b></div>';
+  box.innerHTML = '<div style="text-align:center;padding:40px;color:var(--teal);"><b style="font-size:1.1rem;">جاري تحميل طلباتك...</b></div>';
+
   const SM = {
-    received:  {l:'تم الاستلام',  c:'s-r',i:'📥'},
-    printing:  {l:'قيد الطباعة', c:'s-p',i:'🖨️'},
-    delivering:{l:'جاري التوصيل',c:'s-d',i:'🛵'},
-    delivered: {l:'تم التسليم',  c:'s-v',i:'✅'},
-    cancelled: {l:'ملغى',        c:'s-c',i:'❌'}
+    received:  {l:'تم الاستلام',  c:'s-r',i:'📥', idx:0},
+    printing:  {l:'قيد الطباعة', c:'s-p',i:'🖨️', idx:1},
+    delivering:{l:'جاري التوصيل',c:'s-d',i:'🛵', idx:2},
+    delivered: {l:'تم التسليم',  c:'s-v',i:'✅', idx:3},
+    cancelled: {l:'ملغى',        c:'s-c',i:'❌', idx:-1}
   };
+
   const {data, error} = await sb.from('orders').select('*').eq('user_id', userId).order('created_at',{ascending:false}).limit(30);
   if (error || !data?.length) {
-    box.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text-muted);"><div style="font-size:4.5rem;margin-bottom:15px;opacity:0.3;">📦</div><h3 style="color:var(--navy);margin:0 0 10px;">لا توجد طلبات بعد</h3><p style="font-size:0.9rem;margin:0 0 20px;">ابدأ بإرسال ملفاتك وسنقوم بطباعتها لك.</p><button onclick="goTab(\'order\')" class="bmain btn-action" style="max-width:200px;margin:0 auto;">أنشئ أول طلب ✨</button></div>';
+    box.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text-muted);"><div style="font-size:4.5rem;margin-bottom:15px;opacity:.3;">📦</div><h3 style="color:var(--navy);margin:0 0 10px;">لا توجد طلبات بعد</h3><p style="font-size:.9rem;margin:0 0 20px;">ابدأ بإرسال ملفاتك وسنقوم بطباعتها لك.</p><button onclick="goTab(\'order\')" class="bmain btn-action" style="max-width:200px;margin:0 auto;">أنشئ أول طلب ✨</button></div>';
     return;
   }
-  let ac = 0;
+
+  let ac=0;
+  const steps4 = ['received','printing','delivering','delivered'];
+  const stepLabels = ['استلام','طباعة','توصيل','تسليم'];
+
   box.innerHTML = data.map(o => {
     const s = SM[o.status]||SM.received;
     if (['received','printing','delivering'].includes(o.status)) ac++;
     const dt = new Date(o.created_at).toLocaleDateString('ar-IQ');
+
+    // Mini progress dots
+    let miniProg = '';
+    if (o.status !== 'cancelled') {
+      miniProg = `<div class="mini-progress">` +
+        steps4.map((st,i) => {
+          const cls = i < s.idx ? 'done' : i === s.idx ? 'cur' : '';
+          return `<div class="mp-dot ${cls}"></div>`;
+        }).join('') +
+        `</div><div style="display:flex;justify-content:space-between;margin-top:3px;">` +
+        stepLabels.map((lb,i) => `<span class="mp-label" style="flex:1;${i===s.idx?'color:var(--orange);':''}">${lb}</span>`).join('') +
+        `</div>`;
+    } else {
+      miniProg = `<div style="margin-top:10px;font-size:.82rem;color:var(--red);font-weight:700;">❌ تم إلغاء هذا الطلب</div>`;
+    }
+
+    let ptsStatus = 'قيد الانتظار ⏳';
+    if (o.status==='delivered')  ptsStatus = '<span style="color:var(--green);">تمت الإضافة ✅</span>';
+    if (o.status==='cancelled')  ptsStatus = '<span style="color:var(--red);">ملغاة ❌</span>';
+
     return `<div class="ocard" onclick="showDet('${o.id}')">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <b style="color:var(--navy);font-size:1.1rem;">#${o.id}</b>
         <span class="sbadge ${s.c}">${s.i} ${s.l}</span>
       </div>
-      <div style="background:#f8fafc; padding:10px; border-radius:10px; display:flex; justify-content:space-between; font-size:0.85rem; color:var(--text-muted); font-weight:500;">
+      <div style="background:var(--input-bg);padding:10px;border-radius:10px;display:flex;justify-content:space-between;font-size:.85rem;color:var(--text-muted);font-weight:500;">
         <span>📅 ${dt}</span>
         <span>📋 ${o.files?.length||0} ملف</span>
         <b style="color:var(--navy);">${(o.total||0).toLocaleString()} د.ع</b>
       </div>
-      <div style="font-size:0.85rem; color:var(--orange); margin-top:10px; font-weight:700; display:flex; align-items:center; gap:5px;">
-        <span>💎</span> +${o.loyalty_points_earned||0} نقطة ولاء (قيد الانتظار)
-      </div>
+      ${miniProg}
+      <div style="font-size:.85rem;color:var(--orange);margin-top:10px;font-weight:700;">💎 +${o.loyalty_points_earned||0} نقطة (${ptsStatus})</div>
     </div>`;
   }).join('');
-  
-  const b=document.getElementById('ordbadge');
+
+  const b = document.getElementById('ordbadge');
   if (ac>0) { b.innerText=ac; b.style.display='inline'; } else { b.style.display='none'; }
 }
 
+// ═══════════════════════════════════════
+//  ORDER DETAIL — مع تايم لاين كامل
+// ═══════════════════════════════════════
 async function showDet(oid) {
   document.getElementById('det-ov').classList.add('open');
   document.getElementById('det-body').innerHTML = '<div style="text-align:center;padding:40px;color:var(--teal);"><b style="font-size:1.1rem;">جاري جلب التفاصيل...</b></div>';
-  const steps = [{k:'received',l:'استلام الطلب',i:'📥'},{k:'printing',l:'جاري الطباعة',i:'🖨️'},{k:'delivering',l:'في الطريق إليك',i:'🛵'},{k:'delivered',l:'تم التسليم',i:'✅'}];
+
+  const steps = [
+    {k:'received',  l:'استلام الطلب',    i:'📥'},
+    {k:'printing',  l:'جاري الطباعة',    i:'🖨️'},
+    {k:'delivering',l:'في الطريق إليك', i:'🛵'},
+    {k:'delivered', l:'تم التسليم',      i:'✅'}
+  ];
+
   const {data:o} = await sb.from('orders').select('*').eq('id', oid).maybeSingle();
-  if (!o) { document.getElementById('det-body').innerHTML='<p style="color:var(--red);text-align:center;font-weight:bold;padding:20px;">⚠️ عذراً، لم يتم العثور على الطلب</p>'; return; }
-  
+  if (!o) { document.getElementById('det-body').innerHTML='<p style="color:var(--red);text-align:center;font-weight:bold;padding:20px;">⚠️ لم يتم العثور على الطلب</p>'; return; }
+
   document.getElementById('det-title').innerText = 'طلب #' + o.id;
   const ci = steps.findIndex(s=>s.k===o.status);
-  let tl = '<div style="background:#fff; padding:15px 10px; border-radius:18px; margin-bottom:20px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid #f1f5f9;">';
+  let tl = '<div style="background:var(--card);padding:18px;border-radius:18px;margin-bottom:20px;box-shadow:0 4px 15px rgba(0,0,0,.03);border:1px solid var(--border);">';
   steps.forEach((s,i) => {
     const done=i<ci, cur=i===ci, cl=done?'tld':cur?'tlcur':'tlpen';
     const h = o.status_history?.find(x=>x.status===s.k);
-    const ts = h ? new Date(h.time).toLocaleString('ar-IQ', {hour: '2-digit', minute:'2-digit', month:'short', day:'numeric'}) : '';
-    tl += `<div class="tlstep"><div style="display:flex;flex-direction:column;align-items:center;"><div class="tlc ${cl}">${done?'✓':s.i}</div>${i<steps.length-1?`<div class="tlcon ${done?'done':''}"></div>`:''}</div><div style="padding-top:6px;"><b style="color:${cur?'var(--navy)':'var(--text-muted)'};font-size:${cur?'1.05rem':'0.95rem'}">${s.l}</b>${ts?`<div style="font-size:0.8rem;color:#94a3b8;margin-top:2px;">${ts}</div>`:''}</div></div>`;
+    const ts = h ? new Date(h.time).toLocaleString('ar-IQ',{hour:'2-digit',minute:'2-digit',month:'short',day:'numeric'}) : '';
+    tl += `<div class="tlstep"><div style="display:flex;flex-direction:column;align-items:center;"><div class="tlc ${cl}">${done?'✓':s.i}</div>${i<steps.length-1?`<div class="tlcon ${done?'done':''}"></div>`:''}</div><div style="padding-top:6px;"><b style="color:${cur?'var(--navy)':'var(--text-muted)'};font-size:${cur?'1.05rem':'.95rem'}">${s.l}</b>${ts?`<div style="font-size:.8rem;color:#94a3b8;margin-top:2px;">${ts}</div>`:''}</div></div>`;
   });
   tl += '</div>';
 
+  // Cancel box with contact links
+  let cancelBox = '';
+  if (['received','printing','delivering'].includes(o.status)) {
+    cancelBox = `
+    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:16px;padding:15px;margin-bottom:20px;text-align:center;">
+      <b style="color:#991b1b;font-size:.95rem;display:block;margin-bottom:10px;">هل ترغب في تعديل أو إلغاء الطلب؟</b>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <a href="tel:07752564099" style="display:block;background:#ef4444;color:#fff;text-decoration:none;padding:10px;border-radius:12px;font-weight:bold;font-size:.9rem;box-shadow:0 4px 10px rgba(239,68,68,.3);">📞 اتصل بنا (07752564099)</a>
+        <div style="display:flex;gap:8px;">
+          <a href="https://wa.me/9647752564099" target="_blank" style="flex:1;background:#25D366;color:#fff;text-decoration:none;padding:10px;border-radius:12px;font-weight:bold;font-size:.9rem;display:flex;align-items:center;justify-content:center;gap:5px;">💬 واتساب</a>
+          <a href="https://t.me/+9647752564099" target="_blank" style="flex:1;background:#0088cc;color:#fff;text-decoration:none;padding:10px;border-radius:12px;font-weight:bold;font-size:.9rem;display:flex;align-items:center;justify-content:center;gap:5px;">✈️ تيليجرام</a>
+        </div>
+      </div>
+    </div>`;
+  }
+
   document.getElementById('det-body').innerHTML = `
     ${tl}
-    <div style="background:var(--light-teal); border: 1px solid rgba(90, 179, 196, 0.2); border-radius:16px; padding:18px; margin-bottom:20px;">
-      <div class="il" style="color:var(--navy);"><span style="font-weight:500;">إعدادات الطباعة:</span><b style="background:#fff;padding:4px 12px;border-radius:8px;box-shadow:0 2px 5px rgba(0,0,0,0.05);">${o.color==='c'?'ملون':'أسود'} • ${o.side==='1'?'وجه واحد':'وجهين'}</b></div>
+    ${cancelBox}
+    <div style="background:var(--light-teal);border:1px solid rgba(90,179,196,.2);border-radius:16px;padding:18px;margin-bottom:20px;">
+      <div class="il" style="color:var(--navy);"><span style="font-weight:500;">إعدادات الطباعة:</span><b style="background:var(--card);padding:4px 12px;border-radius:8px;box-shadow:0 2px 5px rgba(0,0,0,.05);">${o.color==='c'?'ملون':'أسود'} • ${o.side==='1'?'وجه واحد':'وجهين'}</b></div>
       <div class="il" style="color:var(--navy);margin-top:15px;"><span style="font-weight:500;">المبلغ الإجمالي:</span><b style="font-size:1.2rem;color:var(--orange);">${(o.total||0).toLocaleString()} د.ع</b></div>
       <div class="il" style="color:var(--green);margin-top:15px;"><span style="font-weight:500;">💎 نقاط ستكسبها:</span><b style="background:#dcfce7;padding:4px 12px;border-radius:8px;">+${o.loyalty_points_earned||0} نقطة</b></div>
     </div>
-    <h4 style="margin:0 0 12px; color:var(--navy); font-weight:800; display:flex; align-items:center; gap:8px;"><span style="font-size:1.2rem;">📁</span> الملفات המرفقة (${o.files?.length||0})</h4>
-    <div style="background:#fff; border-radius:16px; padding:8px 15px; border:1px solid #f1f5f9; box-shadow:0 2px 10px rgba(0,0,0,0.02);">
-      ${o.files?.map(f=>`<div style="padding:12px 0; border-bottom:1px solid #f1f5f9; font-size:0.9rem; color:var(--text-main); display:flex; justify-content:space-between; align-items:center;"><span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:65%; font-weight:500;">📄 ${f.name}</span><span style="color:var(--text-muted); font-size:0.85rem; background:#f8fafc; padding:4px 8px; border-radius:6px;">${f.pages}ص × <b style="color:var(--navy);">${f.copies}</b>ن</span></div>`).join('')||''}
+    <h4 style="margin:0 0 12px;color:var(--navy);font-weight:800;display:flex;align-items:center;gap:8px;"><span style="font-size:1.2rem;">📁</span> الملفات المرفقة (${o.files?.length||0})</h4>
+    <div style="background:var(--card);border-radius:16px;padding:8px 15px;border:1px solid var(--border);">
+      ${o.files?.map(f=>`<div style="padding:12px 0;border-bottom:1px solid var(--border);font-size:.9rem;color:var(--text-main);display:flex;justify-content:space-between;align-items:center;"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:65%;font-weight:500;">📄 ${f.name}</span><span style="color:var(--text-muted);font-size:.85rem;background:var(--input-bg);padding:4px 8px;border-radius:6px;">${f.pages}ص × <b style="color:var(--navy);">${f.copies}</b>ن</span></div>`).join('')||''}
     </div>`;
 }
+
 function closeDet() { document.getElementById('det-ov').classList.remove('open'); }
 
+// ═══════════════════════════════════════
+//  POINTS UI
+// ═══════════════════════════════════════
 function refreshPtsUI() {
   const p = uDoc?.loyalty_points||0;
   document.getElementById('ptsnum').innerText = p.toLocaleString();
@@ -790,18 +1115,25 @@ async function loadPtsTab() {
     let h='';
     (ords||[]).forEach(o=>{
       const d=new Date(o.created_at).toLocaleDateString('ar-IQ');
-      if(o.loyalty_points_earned>0) h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f1f5f9;"><div><b style="font-size:0.95rem;color:var(--navy);">طلب #${o.id}</b><div style="font-size:0.8rem;color:var(--text-muted);margin-top:3px;">${d}</div></div><span style="background:#dcfce7;color:#166534;font-weight:800;padding:5px 12px;border-radius:10px;font-size:0.9rem;">+${o.loyalty_points_earned} نقطة</span></div>`;
-      if(o.pts_used>0) h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f1f5f9;"><div><b style="font-size:0.95rem;color:var(--navy);">استبدال مكافأة</b><div style="font-size:0.8rem;color:var(--text-muted);margin-top:3px;">طلب #${o.id} • ${d}</div></div><span style="background:#fee2e2;color:#991b1b;font-weight:800;padding:5px 12px;border-radius:10px;font-size:0.9rem;">−${o.pts_used} نقطة</span></div>`;
+      if(o.loyalty_points_earned>0) h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);"><div><b style="font-size:.95rem;color:var(--navy);">طلب #${o.id}</b><div style="font-size:.8rem;color:var(--text-muted);margin-top:3px;">${d}</div></div><span style="background:#dcfce7;color:#166534;font-weight:800;padding:5px 12px;border-radius:10px;font-size:.9rem;">+${o.loyalty_points_earned} نقطة</span></div>`;
+      if(o.pts_used>0) h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);"><div><b style="font-size:.95rem;color:var(--navy);">استبدال مكافأة</b><div style="font-size:.8rem;color:var(--text-muted);margin-top:3px;">طلب #${o.id} • ${d}</div></div><span style="background:#fee2e2;color:#991b1b;font-weight:800;padding:5px 12px;border-radius:10px;font-size:.9rem;">−${o.pts_used} نقطة</span></div>`;
     });
-    document.getElementById('ptshist').innerHTML = h||'<p style="color:#94a3b8;font-size:0.9rem;text-align:center;padding:10px;">لا يوجد سجل بعد. اكمل أول طلب لتبدأ بجمع النقاط!</p>';
+    document.getElementById('ptshist').innerHTML = h||'<p style="color:#94a3b8;font-size:.9rem;text-align:center;padding:10px;">لا يوجد سجل بعد. أكمل أول طلب لتبدأ بجمع النقاط!</p>';
   } catch{}
 }
 
+// ═══════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════
 function showErr(m){const e=document.getElementById('errbox');e.innerText=m;e.style.display='block';}
 function hideErr(){document.getElementById('errbox').style.display='none';}
 function showToast(m){const t=document.getElementById('toast');t.innerText=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',4000);}
 
+// ═══════════════════════════════════════
+//  START
+// ═══════════════════════════════════════
 init();
 </script>
 </body>
 </html>
+
