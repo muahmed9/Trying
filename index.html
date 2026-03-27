@@ -25,10 +25,40 @@
   --blue:var(--navy);
 }
 [data-theme="dark"] {
+  --navy:#60b4f0;
+  --teal:#5ab3c4;
+  --orange:#ff8c42;
+  --green:#34d399;
+  --red:#f87171;
   --bg:#0f172a; --card:#1e293b; --text-main:#e2e8f0; --text-muted:#94a3b8;
-  --light-teal:rgba(90,179,196,0.1); --border:rgba(255,255,255,0.08);
-  --input-bg:#1e293b; --inv-bg:#0a1628; --shadow:rgba(0,0,0,0.3);
+  --light-teal:rgba(90,179,196,0.12); --border:rgba(255,255,255,0.09);
+  --input-bg:#273549; --inv-bg:#0a1628; --shadow:rgba(0,0,0,0.35);
 }
+/* ── Dark mode component fixes ── */
+[data-theme="dark"] .ob-title          { color:var(--teal); }
+[data-theme="dark"] .upload            { color:var(--teal); background:rgba(90,179,196,.1); }
+[data-theme="dark"] .iosbox            { background:#1c2a3a; border-color:rgba(253,230,138,.3); }
+[data-theme="dark"] .iosbox b          { color:#fcd34d; }
+[data-theme="dark"] .iosbox ol         { color:#cbd5e1; }
+[data-theme="dark"] .obtn              { border-color:#334155; background:#1e293b; color:#94a3b8; }
+[data-theme="dark"] .obtn.on           { background:#2563eb !important; color:#fff !important; border-color:#2563eb !important; }
+[data-theme="dark"] .del-btn           { background:#3b1f1f; color:#f87171; }
+[data-theme="dark"] .bcnt              { color:var(--teal); }
+[data-theme="dark"] .rbtn:disabled     { background:#334155; color:#64748b; }
+[data-theme="dark"] input[type=text],
+[data-theme="dark"] input[type=tel]    { border-color:#334155; color:#e2e8f0; background:#273549; }
+[data-theme="dark"] .mpseg             { background:#334155; }
+[data-theme="dark"] .tlpendin          { background:#334155; color:#64748b; }
+[data-theme="dark"] .tlcon             { background:#334155; }
+[data-theme="dark"] .bnav              { background:rgba(15,23,42,.97); border-top:1px solid rgba(255,255,255,.07); }
+[data-theme="dark"] #toast             { background:#2563eb; }
+[data-theme="dark"] .s-r  { background:rgba(37,99,235,.2);  color:#93c5fd; }
+[data-theme="dark"] .s-p  { background:rgba(161,98,7,.25);  color:#fde047; }
+[data-theme="dark"] .s-d  { background:rgba(194,65,12,.2);  color:#fdba74; }
+[data-theme="dark"] .s-v  { background:rgba(22,101,52,.2);  color:#86efac; border-color:rgba(134,239,172,.25); }
+[data-theme="dark"] .s-c  { background:rgba(153,27,27,.2);  color:#fca5a5; }
+[data-theme="dark"] .mpseg.done        { background:var(--green); }
+[data-theme="dark"] .mpseg.cur         { background:var(--orange); }
 
 /* ═══════════════════════════════
    BASE
@@ -190,9 +220,6 @@ input:checked+.togs:before { transform:translateX(-24px); }
 .inote  { color:var(--orange); font-size:.85rem; font-weight:700; margin:12px 0; display:none; border:1px solid rgba(232,107,36,.3); padding:12px; border-radius:12px; background:rgba(232,107,36,.05); text-align:center; }
 .errmsg { background:#fef2f2; color:var(--red); padding:12px; border-radius:12px; font-size:.9rem; font-weight:700; margin-bottom:12px; text-align:center; display:none; border:1px solid #fecaca; }
 .iosbox { background:#fffbeb; border:1.5px solid #fde68a; border-radius:14px; padding:15px; margin-top:15px; }
-[data-theme="dark"] .iosbox { background:#2d2010; border-color:#92400e; }
-[data-theme="dark"] .iosbox b { color:#fbbf24; }
-[data-theme="dark"] .iosbox ol { color:#fcd34d; }
 
 /* ═══════════════════════════════
    ORDER CARDS & MINI PROGRESS
@@ -211,8 +238,7 @@ input:checked+.togs:before { transform:translateX(-24px); }
 .mpseg.cur  { background:var(--orange); animation:pulseGlow 2s infinite; }
 .mplabels { display:flex; justify-content:space-between; margin-top:4px; }
 .mplbl { flex:1; font-size:.68rem; color:var(--text-muted); text-align:center; font-weight:700; }
-.mplbl.cur  { color:var(--orange); }
-.mplbl.done { color:var(--green); }
+.mplbl.cur { color:var(--orange); }
 
 /* ═══════════════════════════════
    ORDER DETAIL TIMELINE
@@ -445,7 +471,6 @@ input:checked+.togs:before { transform:translateX(-24px); }
     <h3 style="margin:0 0 12px;color:var(--navy);font-weight:800;">📊 كيف تكسب النقاط؟</h3>
     <div style="line-height:2.3;color:var(--text-muted);font-size:.93rem;font-weight:500;">
       <div style="background:var(--input-bg);padding:10px 14px;border-radius:12px;margin-bottom:10px;">💳 كل <b>1,000 د.ع</b> (سعر الاستنساخ) = <b style="color:var(--orange);">10 نقاط</b></div>
-      <div style="font-size:.82rem;color:var(--text-muted);margin-bottom:8px;">⚠️ النقاط لا تُحسب إذا كان هناك خصم مطبّق، وتُضاف فقط بعد التسليم</div>
       <div>🥉 <b>برونز</b> 0–199: مستوى أساسي</div>
       <div>🥈 <b>فضي</b> 200–999: أولوية في التجهيز</div>
       <div>🥇 <b>ذهبي</b> 1000+: <b style="color:var(--orange);">خصم 5% تلقائي</b></div>
@@ -488,7 +513,6 @@ const tgU = tg?.initDataUnsafe?.user;
 const userId = tgU?.id ? String(tgU.id) : 'guest_' + Date.now();
 
 let files=[], color='c', side='1', locUrl='', pendingR=null;
-let _activeOid = null;
 let uDoc = {loyalty_points:0, first_order_done:false, total_orders:0, total_spent:0};
 
 // ══ DARK MODE ══════════════════════════════════
@@ -560,9 +584,7 @@ function startRT() {
         p => {
           if (p.new.user_id !== userId && p.new.telegram_id !== userId) return;
           const m = {received:'📥 تم الاستلام',printing:'🖨️ قيد الطباعة',delivering:'🛵 جاري التوصيل',delivered:'✅ تم التسليم',cancelled:'❌ ملغى'};
-          showToast('🔔 ' + (m[p.new.status] || p.new.status));
-          // Update success screen timeline if this is the active order
-          if (_activeOid && p.new.id === _activeOid) updateSuccessTL(p.new.status, p.new.status_history);
+          showToast('🔔 تحديث: ' + (m[p.new.status] || p.new.status));
           if (document.getElementById('tab-orders').classList.contains('active')) loadOrders();
           if (document.getElementById('det-ov').classList.contains('open') &&
               document.getElementById('det-title').innerText.includes(p.new.id)) showDet(p.new.id);
@@ -570,46 +592,6 @@ function startRT() {
         })
       .subscribe();
   } catch(e) {}
-}
-
-function updateSuccessTL(status, history) {
-  const box = document.getElementById('success-tl-box');
-  if (!box) return;
-  const steps = [
-    {k:'received',  l:'تم الاستلام',   i:'📥'},
-    {k:'printing',  l:'جاري الطباعة',  i:'🖨️'},
-    {k:'delivering',l:'في الطريق',     i:'🛵'},
-    {k:'delivered', l:'تم التسليم',    i:'✅'}
-  ];
-  const ci = steps.findIndex(s => s.k === status);
-  const isDone = status === 'delivered';
-  const isCancelled = status === 'cancelled';
-  if (isCancelled) {
-    box.innerHTML = '<div style="text-align:center;color:var(--red);font-weight:800;padding:10px;">❌ تم إلغاء الطلب</div>';
-    return;
-  }
-  box.innerHTML = steps.map((s, i) => {
-    const done  = i < ci || isDone;
-    const cur   = i === ci && !isDone;
-    const bg    = done ? 'var(--green)' : cur ? 'var(--orange)' : '#e2e8f0';
-    const fc    = (done||cur) ? '#fff' : '#94a3b8';
-    const anim  = cur ? 'animation:pulseGlow 2s infinite;' : '';
-    const icon  = done ? '✓' : s.i;
-    const h     = history?.find(x => x.status === s.k);
-    const ts    = h ? new Date(h.time).toLocaleTimeString('ar-IQ',{hour:'2-digit',minute:'2-digit'}) : '';
-    const lc    = (done||cur) ? 'var(--navy)' : 'var(--text-muted)';
-    const sep   = i < steps.length-1 ? `<div style="width:2px;height:20px;background:${done?'var(--green)':'#e2e8f0'};margin:2px 0 2px 17px;border-radius:2px;"></div>` : '';
-    return `<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:2px;">
-      <div style="display:flex;flex-direction:column;align-items:center;">
-        <div style="width:32px;height:32px;border-radius:50%;background:${bg};color:${fc};display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:800;flex-shrink:0;${anim}">${icon}</div>
-        ${sep}
-      </div>
-      <div style="padding-top:4px;">
-        <b style="color:${lc};font-size:${cur?'1rem':'.88rem'};display:block;">${s.l}</b>
-        ${ts?`<span style="font-size:.72rem;color:#94a3b8;">${ts}</span>`:''}
-      </div>
-    </div>`;
-  }).join('');
 }
 
 // ══ TABS ════════════════════════════════════════
@@ -729,12 +711,6 @@ function setS(v) {
   side = v;
   document.getElementById('s1btn').className = v==='1' ? 'obtn on' : 'obtn off';
   document.getElementById('s2btn').className = v==='2' ? 'obtn on' : 'obtn off';
-  // Update side-badge labels on existing file cards immediately
-  document.querySelectorAll('.side-badge').forEach(el => {
-    el.innerText = v==='1' ? '📄 وجه واحد' : '📖 وجهين';
-    el.style.background = v==='2' ? 'rgba(232,107,36,.13)' : 'rgba(16,185,129,.13)';
-    el.style.color = v==='2' ? 'var(--orange)' : 'var(--green)';
-  });
   calcUI();
 }
 
@@ -751,11 +727,18 @@ function getLoc() {
   );
 }
 
-// ══ PRICE CALCULATION ════════════════════════════
+// ══ PRICE CALCULATION — rounded to nearest 250 IQD ══
+function roundTo250(n) { return Math.round(n / 250) * 250; }
 function calcPrice(sh, im) {
-  const t = sh + im; if (!t) return 0; if (t <= 5) return 1000;
-  if (color === 'c') { if(t<=25) return t*150; if(t<=40) return t*130; if(t<=70) return t*120; return t*100; }
-  return t * (side === '1' ? 90 : 75);
+  const t = sh + im; if (!t) return 0;
+  if (t <= 5) return roundTo250(1000);
+  let raw;
+  if (color === 'c') {
+    if(t<=25) raw=t*150; else if(t<=40) raw=t*130; else if(t<=70) raw=t*120; else raw=t*100;
+  } else {
+    raw = t * (side === '1' ? 90 : 75);
+  }
+  return roundTo250(raw);
 }
 
 // ══ UI UPDATE ════════════════════════════════════
@@ -771,6 +754,7 @@ function calcUI() {
       else { hasD=true; dp+=f.p*f.c; const u=f.type==='PowerPoint'?Math.ceil(f.p/2):f.p; sh+=(side==='2'?Math.ceil(u/2):u)*f.c; }
       const ti  = FILE_TYPE_INFO[f.ext] || {icon:'📄',bg:'#f1f5f9',label:'ملف'};
       const bwCls = color === 'n' ? 'bw' : '';
+      const sideMeta = f.isImg ? 'وجه واحد' : (side === '2' ? 'وجهين' : 'وجه واحد');
       let previewHtml;
       if (f.preview && f.previewType === 'img') {
         previewHtml = `<img src="${f.preview}" alt="preview">`;
@@ -786,8 +770,7 @@ function calcUI() {
           <div class="fcard-info">
             <div>
               <div class="fcard-name" title="${f.name}">${f.name}</div>
-              <div class="fcard-meta">${f.size} &nbsp;•&nbsp; ${f.p} صفحة</div>
-              <span class="side-badge" style="font-size:.65rem;font-weight:800;padding:2px 7px;border-radius:7px;display:inline-block;margin-top:3px;background:${side==='2'?'rgba(232,107,36,.13)':'rgba(16,185,129,.13)'};color:${side==='2'?'var(--orange)':'var(--green)'};">${side==='1'?'📄 وجه واحد':'📖 وجهين'}</span>
+              <div class="fcard-meta">${f.size} &nbsp;•&nbsp; ${f.p} صفحة &nbsp;•&nbsp; <span style="color:var(--teal);font-weight:700;">${sideMeta}</span></div>
             </div>
             <div class="fcard-controls">
               <button class="bcnt" onclick="adjC(${i},-1)">−</button>
@@ -816,7 +799,8 @@ function calcUI() {
   const pd   = useP ? pendingR.disc : 0;
 
   const pc = document.getElementById('ptscard');
-  if (pendingR && files.length) {
+  // Only show points redemption card when no gold (tier) discount is already applied
+  if (pendingR && files.length && td === 0) {
     pc.style.display = 'block';
     document.getElementById('ptslbl').innerText = `رصيدك ${uDoc.loyalty_points||0} نقطة — خصم: ${pendingR.disc.toLocaleString()} د.ع`;
     const sl = document.getElementById('ptssavelbl');
@@ -961,55 +945,151 @@ async function sendOrder() {
   }
 }
 
-// ══ SUCCESS SCREEN ════════════════════════════════
-function showSuccessUI(oid, pe, np) {
-  _activeOid = oid; // enable live updates on this screen
-  document.getElementById('tab-order').innerHTML = `
-    <div style="padding:40px 18px 20px;animation:fadeInUp .5s ease;">
-      <div style="text-align:center;margin-bottom:18px;">
-        <div style="font-size:4.5rem;margin-bottom:6px;">✅</div>
-        <h2 style="color:var(--navy);margin:0 0 4px;font-weight:800;">تم إرسال طلبك!</h2>
-        <p style="color:var(--text-muted);margin:0;">رقم الطلب: <b style="color:var(--orange);">#${oid}</b></p>
+// ══ SUCCESS SCREEN — live status ═════════════════
+let _successOid = null;
+let _successPe  = 0;
+let _successNp  = 0;
+
+const STATUS_STEPS = [
+  { k:'received',   icon:'📥', label:'تم الاستلام'    },
+  { k:'printing',   icon:'🖨️', label:'قيد الطباعة'   },
+  { k:'delivering', icon:'🛵', label:'جاري التوصيل'  },
+  { k:'delivered',  icon:'✅', label:'تم التسليم'    },
+];
+
+function _buildSuccessHTML(currentStatus) {
+  const si = STATUS_STEPS.findIndex(s => s.k === currentStatus);
+  const isCancelled = currentStatus === 'cancelled';
+
+  const stepsHTML = STATUS_STEPS.map((s, i) => {
+    const isDone = i < si || (currentStatus === 'delivered' && i === si);
+    const isCur  = i === si && !isCancelled && currentStatus !== 'delivered';
+    const opacity = (isDone || isCur || i === si) ? '1' : '0.38';
+    let labelColor = 'var(--text-muted)';
+    let iconFilter = '';
+    if (isDone) { labelColor = 'var(--green)'; }
+    else if (isCur) { labelColor = 'var(--orange)'; }
+    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;
+              border-bottom:${i < 3 ? '1px solid var(--border)' : 'none'};
+              opacity:${opacity};transition:opacity .4s;">
+      <span style="font-size:1.4rem;min-width:32px;text-align:center;">${isDone ? '✅' : s.icon}</span>
+      <b style="color:${labelColor};font-size:.97rem;">${s.label}</b>
+    </div>`;
+  }).join('');
+
+  const bannerText = isCancelled ? '❌ تم إلغاء الطلب'
+    : currentStatus === 'delivered' ? '✅ تم التسليم بنجاح!'
+    : currentStatus === 'delivering' ? '🛵 المندوب في الطريق إليك!'
+    : currentStatus === 'printing'   ? '🖨️ جاري طباعة ملفاتك...'
+    : '📥 تم استلام طلبك';
+  const bannerBg = isCancelled ? 'rgba(239,68,68,.12)' : 'rgba(90,179,196,.12)';
+  const bannerBorder = isCancelled ? '#fca5a5' : 'rgba(90,179,196,.35)';
+  const bannerColor  = isCancelled ? 'var(--red)' : 'var(--teal)';
+
+  return `
+    <div style="text-align:center;padding:50px 20px;animation:fadeInUp .5s ease;">
+      <div style="font-size:5rem;margin-bottom:10px;">${isCancelled ? '❌' : '✅'}</div>
+      <h2 style="color:var(--navy);margin:0 0 6px;font-weight:800;">تم إرسال طلبك بنجاح!</h2>
+      <p style="color:var(--text-muted);margin:0 0 18px;">رقم الطلب: <b style="color:var(--orange);font-size:1.1rem;">#${_successOid}</b></p>
+
+      <!-- Live status banner -->
+      <div id="suc-banner" style="background:${bannerBg};border:1.5px solid ${bannerBorder};
+           color:${bannerColor};border-radius:14px;padding:13px 18px;margin-bottom:16px;
+           font-size:1.05rem;font-weight:800;transition:all .4s;">
+        ${bannerText}
       </div>
 
-      ${pe > 0 ? `<div style="background:linear-gradient(135deg,var(--navy),var(--teal));color:#fff;border-radius:16px;padding:15px 18px;margin-bottom:15px;text-align:center;">
-        <div style="font-size:1.6rem;margin-bottom:4px;">💎</div>
-        <b>ستكسب ${pe} نقطة عند التسليم!</b>
-        <p style="margin:4px 0 0;opacity:.8;font-size:.85rem;">رصيدك: ${np} نقطة</p>
-      </div>` : ''}
+      <!-- Telegram note -->
+      <p style="font-size:.85rem;color:var(--teal);font-weight:700;margin:0 0 16px;
+         background:rgba(90,179,196,.1);padding:9px 14px;border-radius:12px;border:1px solid rgba(90,179,196,.25);">
+        📱 ستصلك إشعارات على تيليجرام عند تحديث الطلب
+      </p>
 
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-          <b style="color:var(--navy);font-size:.9rem;">📡 حالة الطلب</b>
-          <span style="font-size:.72rem;color:var(--teal);font-weight:700;background:rgba(90,179,196,.12);padding:3px 9px;border-radius:8px;">تتحدث تلقائياً</span>
-        </div>
-        <div id="success-tl-box">
-          <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:2px;">
-            <div style="display:flex;flex-direction:column;align-items:center;">
-              <div style="width:32px;height:32px;border-radius:50%;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:800;animation:pulseGlow 2s infinite;">📥</div>
-              <div style="width:2px;height:20px;background:#e2e8f0;margin:2px 0 2px 17px;border-radius:2px;"></div>
-            </div>
-            <div style="padding-top:4px;"><b style="color:var(--navy);display:block;">تم الاستلام</b><span style="font-size:.72rem;color:#94a3b8;">طلبك وصل لينا</span></div>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;padding:4px 0;opacity:.4;">
-            <div style="width:32px;height:32px;border-radius:50%;background:#e2e8f0;color:#94a3b8;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;">🖨️</div>
-            <b style="color:var(--text-muted);font-size:.88rem;">جاري الطباعة</b>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;padding:4px 0;opacity:.4;">
-            <div style="width:32px;height:32px;border-radius:50%;background:#e2e8f0;color:#94a3b8;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;">🛵</div>
-            <b style="color:var(--text-muted);font-size:.88rem;">في الطريق إليك</b>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;padding:4px 0;opacity:.4;">
-            <div style="width:32px;height:32px;border-radius:50%;background:#e2e8f0;color:#94a3b8;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;">✅</div>
-            <b style="color:var(--text-muted);font-size:.88rem;">تم التسليم</b>
-          </div>
-        </div>
+      <!-- Points -->
+      <div style="background:linear-gradient(135deg,#0d3b66,var(--teal));color:#fff;border-radius:20px;padding:20px;margin-bottom:16px;box-shadow:0 8px 20px rgba(13,59,102,.2);">
+        <div style="font-size:2.2rem;margin-bottom:6px;">💎</div>
+        ${_successPe > 0
+          ? `<b style="font-size:1rem;">ستكسب ${_successPe} نقطة ولاء عند التسليم!</b>
+             <p style="margin:6px 0 0;opacity:.8;font-size:.88rem;">رصيدك الحالي: ${_successNp} نقطة</p>`
+          : `<b style="font-size:.95rem;">رصيدك الحالي: ${_successNp} نقطة</b>`
+        }
       </div>
 
-      <p style="font-size:.85rem;color:var(--text-muted);text-align:center;margin:0 0 18px;">📱 إشعارات تيليجرام عند كل تحديث</p>
-      <button onclick="goTab('orders')" class="bmain btn-action" style="margin-bottom:10px;">📋 تتبع طلباتي</button>
+      <!-- Steps -->
+      <div id="suc-steps" style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:18px;text-align:right;">
+        ${stepsHTML}
+      </div>
+
+      <button onclick="goTab('orders')" class="bmain btn-action" style="margin-bottom:10px;">📋 تتبع طلبي</button>
       <button onclick="location.reload()" class="bmain" style="background:var(--card);color:var(--text-muted);border:1.5px solid var(--border);">🆕 طلب جديد</button>
     </div>`;
+}
+
+function _refreshSuccessScreen(newStatus) {
+  const tab = document.getElementById('tab-order');
+  if (!tab || !tab.querySelector('#suc-banner')) return; // not on success screen
+  tab.querySelector('div[style*="fadeInUp"]').innerHTML = _buildSuccessHTML(newStatus).match(/<div style="text-align:center([\s\S]*)/)?.[0] || '';
+}
+
+function showSuccessUI(oid, pe, np) {
+  _successOid = oid;
+  _successPe  = pe;
+  _successNp  = np;
+  document.getElementById('tab-order').innerHTML = _buildSuccessHTML('received');
+  // Subscribe to live updates for this specific order
+  try {
+    sb.channel('suc-' + oid)
+      .on('postgres_changes',
+        { event:'UPDATE', schema:'public', table:'orders', filter:`id=eq.${oid}` },
+        p => {
+          if (!p.new) return;
+          // Update banner + steps live
+          const banner = document.getElementById('suc-banner');
+          const steps  = document.getElementById('suc-steps');
+          if (!banner) return;
+          const status = p.new.status;
+          const bannerText = status === 'cancelled'  ? '❌ تم إلغاء الطلب'
+            : status === 'delivered'  ? '✅ تم التسليم بنجاح!'
+            : status === 'delivering' ? '🛵 المندوب في الطريق إليك!'
+            : status === 'printing'   ? '🖨️ جاري طباعة ملفاتك...'
+            : '📥 تم استلام طلبك';
+          banner.innerText = bannerText;
+          if (status === 'cancelled') {
+            banner.style.background = 'rgba(239,68,68,.12)';
+            banner.style.borderColor = '#fca5a5';
+            banner.style.color = 'var(--red)';
+          } else if (status === 'delivered') {
+            banner.style.background = 'rgba(16,185,129,.12)';
+            banner.style.borderColor = '#86efac';
+            banner.style.color = 'var(--green)';
+          } else {
+            banner.style.background = 'rgba(232,107,36,.1)';
+            banner.style.borderColor = 'rgba(232,107,36,.4)';
+            banner.style.color = 'var(--orange)';
+          }
+          // Rebuild steps
+          if (steps) {
+            const si = STATUS_STEPS.findIndex(s => s.k === status);
+            steps.innerHTML = STATUS_STEPS.map((s, i) => {
+              const isDone = i < si || (status === 'delivered' && i === si);
+              const isCur  = i === si && status !== 'delivered' && status !== 'cancelled';
+              const opacity = (isDone || isCur || i === si) ? '1' : '0.38';
+              let labelColor = 'var(--text-muted)';
+              if (isDone) labelColor = 'var(--green)';
+              else if (isCur) labelColor = 'var(--orange)';
+              return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;
+                border-bottom:${i < 3 ? '1px solid var(--border)' : 'none'};
+                opacity:${opacity};transition:opacity .4s;">
+                <span style="font-size:1.4rem;min-width:32px;text-align:center;">${isDone ? '✅' : s.icon}</span>
+                <b style="color:${labelColor};font-size:.97rem;">${s.label}</b>
+              </div>`;
+            }).join('');
+          }
+          showToast('🔔 تحديث طلبك: ' + bannerText);
+          if (status === 'delivered') init();
+        })
+      .subscribe();
+  } catch(e) {}
 }
 
 // ══ TELEGRAM ════════════════════════════════════
@@ -1048,19 +1128,16 @@ async function loadOrders() {
     if (o.status==='delivered') ptsNote = '<span style="color:var(--green);">تمت الإضافة ✅</span>';
     if (o.status==='cancelled') ptsNote = '<span style="color:var(--red);">ملغاة ❌</span>';
 
-    // Mini progress bar — delivered=all green stable, current=orange pulse, done=green stable
+    // Mini progress bar — only current step animates, completed are stable
     let mpHtml = '';
     if (o.status !== 'cancelled') {
       mpHtml = `<div class="mpbar">` +
         [0,1,2,3].map(i => {
-          // For delivered: all steps are stable green
-          const cls = o.status === 'delivered' ? 'done'
-                    : i < s.idx ? 'done'
-                    : i === s.idx ? 'cur' : '';
+          const cls = i < s.idx ? 'done' : i === s.idx ? 'cur' : '';
           return `<div class="mpseg ${cls}"></div>`;
         }).join('') +
         `</div><div class="mplabels">` +
-        segs.map((lb,i) => `<span class="mplbl ${o.status!=='delivered'&&i===s.idx?'cur':o.status==='delivered'?'done':''}">${lb}</span>`).join('') +
+        segs.map((lb,i) => `<span class="mplbl ${i===s.idx?'cur':''}">${lb}</span>`).join('') +
         `</div>`;
     } else {
       mpHtml = `<div style="margin-top:10px;font-size:.82rem;color:var(--red);font-weight:700;">❌ تم إلغاء هذا الطلب</div>`;
@@ -1197,5 +1274,6 @@ init();
 </script>
 </body>
 </html>
+
 
 
