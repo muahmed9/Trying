@@ -26,35 +26,9 @@
 }
 [data-theme="dark"] {
   --bg:#0f172a; --card:#1e293b; --text-main:#e2e8f0; --text-muted:#94a3b8;
-  --light-teal:rgba(56,189,248,0.1); --border:rgba(255,255,255,0.09);
-  --input-bg:#0f172a; --inv-bg:#0a1f38; --shadow:rgba(0,0,0,0.4);
-  /* navy→bright-blue so text IS readable on dark backgrounds */
-  --navy:#60a5fa;
-  /* teal→sky-blue for better contrast */
-  --teal:#38bdf8;
-  /* keep orange & green unchanged */
+  --light-teal:rgba(90,179,196,0.1); --border:rgba(255,255,255,0.08);
+  --input-bg:#1e293b; --inv-bg:#0a1628; --shadow:rgba(0,0,0,0.3);
 }
-/* ── Elements that use navy as a BACKGROUND must stay dark ── */
-[data-theme="dark"] .obtn.on {
-  background:#1d4ed8 !important;
-  border-color:#1d4ed8 !important;
-  box-shadow:0 4px 12px rgba(29,78,216,.3) !important;
-}
-[data-theme="dark"] .ptshero {
-  background:linear-gradient(135deg,#0c2d55,#0e5a7a) !important;
-}
-[data-theme="dark"] .inv { background:#0a1f38 !important; }
-[data-theme="dark"] #toast { background:#1e3a5f; }
-/* ── Fix cards & inputs in dark ── */
-[data-theme="dark"] .bcnt { background:rgba(56,189,248,.15); color:#38bdf8; }
-[data-theme="dark"] .del-btn { background:rgba(239,68,68,.15); }
-[data-theme="dark"] .rbtn { background:#0e7490; }
-[data-theme="dark"] .fcard-badge { background:rgba(56,189,248,.15); color:#38bdf8; }
-[data-theme="dark"] .iosbox { background:rgba(120,85,30,.18); border-color:#854d0e66; }
-[data-theme="dark"] .addr-item:hover { background:rgba(56,189,248,.1); }
-/* ── Upload zone in dark ── */
-[data-theme="dark"] .upload { border-color:#38bdf8; color:#38bdf8; }
-/* ── nav active uses teal (already) ── */
 
 /* ═══════════════════════════════
    BASE
@@ -216,6 +190,9 @@ input:checked+.togs:before { transform:translateX(-24px); }
 .inote  { color:var(--orange); font-size:.85rem; font-weight:700; margin:12px 0; display:none; border:1px solid rgba(232,107,36,.3); padding:12px; border-radius:12px; background:rgba(232,107,36,.05); text-align:center; }
 .errmsg { background:#fef2f2; color:var(--red); padding:12px; border-radius:12px; font-size:.9rem; font-weight:700; margin-bottom:12px; text-align:center; display:none; border:1px solid #fecaca; }
 .iosbox { background:#fffbeb; border:1.5px solid #fde68a; border-radius:14px; padding:15px; margin-top:15px; }
+[data-theme="dark"] .iosbox { background:#2d2010; border-color:#92400e; }
+[data-theme="dark"] .iosbox b { color:#fbbf24; }
+[data-theme="dark"] .iosbox ol { color:#fcd34d; }
 
 /* ═══════════════════════════════
    ORDER CARDS & MINI PROGRESS
@@ -234,7 +211,8 @@ input:checked+.togs:before { transform:translateX(-24px); }
 .mpseg.cur  { background:var(--orange); animation:pulseGlow 2s infinite; }
 .mplabels { display:flex; justify-content:space-between; margin-top:4px; }
 .mplbl { flex:1; font-size:.68rem; color:var(--text-muted); text-align:center; font-weight:700; }
-.mplbl.cur { color:var(--orange); }
+.mplbl.cur  { color:var(--orange); }
+.mplbl.done { color:var(--green); }
 
 /* ═══════════════════════════════
    ORDER DETAIL TIMELINE
@@ -455,7 +433,6 @@ input:checked+.togs:before { transform:translateX(-24px); }
     <div id="tierdisp"></div>
     <div class="ptspw"><div class="ptspf" id="ptsbar" style="width:0%"></div></div>
     <p style="margin:0;font-size:.85rem;opacity:.85;font-weight:500;" id="ptsnext"></p>
-    <p style="margin:8px 0 0;font-size:.8rem;opacity:.9;font-weight:700;" id="pts-mot"></p>
   </div>
   <div class="card">
     <h3 style="margin:0 0 15px;color:var(--navy);font-weight:800;">🎁 استبدال النقاط</h3>
@@ -511,7 +488,7 @@ const tgU = tg?.initDataUnsafe?.user;
 const userId = tgU?.id ? String(tgU.id) : 'guest_' + Date.now();
 
 let files=[], color='c', side='1', locUrl='', pendingR=null;
-let _activeOid = null; // tracks last-sent order for live success screen
+let _activeOid = null;
 let uDoc = {loyalty_points:0, first_order_done:false, total_orders:0, total_spent:0};
 
 // ══ DARK MODE ══════════════════════════════════
@@ -582,12 +559,10 @@ function startRT() {
       .on('postgres_changes', {event:'UPDATE', schema:'public', table:'orders'},
         p => {
           if (p.new.user_id !== userId && p.new.telegram_id !== userId) return;
-          const SM2 = {received:'📥 تم الاستلام',printing:'🖨️ قيد الطباعة',delivering:'🛵 جاري التوصيل',delivered:'✅ تم التسليم',cancelled:'❌ ملغى'};
-          showToast('🔔 ' + (SM2[p.new.status] || p.new.status));
-          // Live-update the success screen if showing this order
-          if (_activeOid && p.new.id === _activeOid) {
-            updateSuccessTL(p.new.status, p.new.status_history);
-          }
+          const m = {received:'📥 تم الاستلام',printing:'🖨️ قيد الطباعة',delivering:'🛵 جاري التوصيل',delivered:'✅ تم التسليم',cancelled:'❌ ملغى'};
+          showToast('🔔 ' + (m[p.new.status] || p.new.status));
+          // Update success screen timeline if this is the active order
+          if (_activeOid && p.new.id === _activeOid) updateSuccessTL(p.new.status, p.new.status_history);
           if (document.getElementById('tab-orders').classList.contains('active')) loadOrders();
           if (document.getElementById('det-ov').classList.contains('open') &&
               document.getElementById('det-title').innerText.includes(p.new.id)) showDet(p.new.id);
@@ -597,8 +572,7 @@ function startRT() {
   } catch(e) {}
 }
 
-// Updates the timeline inside the success screen when admin changes status
-function updateSuccessTL(newStatus, history) {
+function updateSuccessTL(status, history) {
   const box = document.getElementById('success-tl-box');
   if (!box) return;
   const steps = [
@@ -607,19 +581,33 @@ function updateSuccessTL(newStatus, history) {
     {k:'delivering',l:'في الطريق',     i:'🛵'},
     {k:'delivered', l:'تم التسليم',    i:'✅'}
   ];
-  const ci = steps.findIndex(s => s.k === newStatus);
-  const isDone = newStatus === 'delivered';
+  const ci = steps.findIndex(s => s.k === status);
+  const isDone = status === 'delivered';
+  const isCancelled = status === 'cancelled';
+  if (isCancelled) {
+    box.innerHTML = '<div style="text-align:center;color:var(--red);font-weight:800;padding:10px;">❌ تم إلغاء الطلب</div>';
+    return;
+  }
   box.innerHTML = steps.map((s, i) => {
-    const done = i < ci, cur = i === ci, fin = cur && isDone;
-    const bg  = (done||fin) ? 'var(--green)' : cur ? 'var(--orange)' : '#e2e8f0';
-    const fc  = (done||fin||cur) ? '#fff' : '#94a3b8';
-    const anim = cur && !fin ? 'animation:pulseGlow 2s infinite;' : '';
-    const icon = (done||fin) ? '✓' : s.i;
-    const h  = history?.find(x => x.status === s.k);
-    const ts = h ? new Date(h.time).toLocaleString('ar-IQ',{hour:'2-digit',minute:'2-digit'}) : '';
-    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
-      <div style="width:34px;height:34px;border-radius:50%;background:${bg};color:${fc};display:flex;align-items:center;justify-content:center;font-size:.95rem;font-weight:800;flex-shrink:0;${anim}">${icon}</div>
-      <div><b style="color:${cur?'var(--navy)':'var(--text-muted)'};display:block;">${s.l}</b>${ts?`<span style="font-size:.73rem;color:#94a3b8;">${ts}</span>`:''}</div>
+    const done  = i < ci || isDone;
+    const cur   = i === ci && !isDone;
+    const bg    = done ? 'var(--green)' : cur ? 'var(--orange)' : '#e2e8f0';
+    const fc    = (done||cur) ? '#fff' : '#94a3b8';
+    const anim  = cur ? 'animation:pulseGlow 2s infinite;' : '';
+    const icon  = done ? '✓' : s.i;
+    const h     = history?.find(x => x.status === s.k);
+    const ts    = h ? new Date(h.time).toLocaleTimeString('ar-IQ',{hour:'2-digit',minute:'2-digit'}) : '';
+    const lc    = (done||cur) ? 'var(--navy)' : 'var(--text-muted)';
+    const sep   = i < steps.length-1 ? `<div style="width:2px;height:20px;background:${done?'var(--green)':'#e2e8f0'};margin:2px 0 2px 17px;border-radius:2px;"></div>` : '';
+    return `<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:2px;">
+      <div style="display:flex;flex-direction:column;align-items:center;">
+        <div style="width:32px;height:32px;border-radius:50%;background:${bg};color:${fc};display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:800;flex-shrink:0;${anim}">${icon}</div>
+        ${sep}
+      </div>
+      <div style="padding-top:4px;">
+        <b style="color:${lc};font-size:${cur?'1rem':'.88rem'};display:block;">${s.l}</b>
+        ${ts?`<span style="font-size:.72rem;color:#94a3b8;">${ts}</span>`:''}
+      </div>
     </div>`;
   }).join('');
 }
@@ -741,14 +729,11 @@ function setS(v) {
   side = v;
   document.getElementById('s1btn').className = v==='1' ? 'obtn on' : 'obtn off';
   document.getElementById('s2btn').className = v==='2' ? 'obtn on' : 'obtn off';
-  // Update side badges immediately on all existing file cards
-  const sideTxt = v==='1' ? '📄 وجه واحد' : '📖 وجهين';
-  const sideBg  = v==='1' ? 'rgba(16,185,129,.13)' : 'rgba(232,107,36,.13)';
-  const sideClr = v==='1' ? 'var(--green)' : 'var(--orange)';
+  // Update side-badge labels on existing file cards immediately
   document.querySelectorAll('.side-badge').forEach(el => {
-    el.innerText = sideTxt;
-    el.style.background = sideBg;
-    el.style.color = sideClr;
+    el.innerText = v==='1' ? '📄 وجه واحد' : '📖 وجهين';
+    el.style.background = v==='2' ? 'rgba(232,107,36,.13)' : 'rgba(16,185,129,.13)';
+    el.style.color = v==='2' ? 'var(--orange)' : 'var(--green)';
   });
   calcUI();
 }
@@ -802,7 +787,7 @@ function calcUI() {
             <div>
               <div class="fcard-name" title="${f.name}">${f.name}</div>
               <div class="fcard-meta">${f.size} &nbsp;•&nbsp; ${f.p} صفحة</div>
-              <span class="side-badge" style="font-size:.66rem;font-weight:800;padding:2px 7px;border-radius:7px;display:inline-block;margin-top:3px;background:${side==='2'?'rgba(232,107,36,.13)':'rgba(16,185,129,.13)'};color:${side==='2'?'var(--orange)':'var(--green)'};">${side==='1'?'📄 وجه واحد':'📖 وجهين'}</span>
+              <span class="side-badge" style="font-size:.65rem;font-weight:800;padding:2px 7px;border-radius:7px;display:inline-block;margin-top:3px;background:${side==='2'?'rgba(232,107,36,.13)':'rgba(16,185,129,.13)'};color:${side==='2'?'var(--orange)':'var(--green)'};">${side==='1'?'📄 وجه واحد':'📖 وجهين'}</span>
             </div>
             <div class="fcard-controls">
               <button class="bcnt" onclick="adjC(${i},-1)">−</button>
@@ -908,7 +893,7 @@ async function sendOrder() {
       for (let c=1; c<=f.c; c++) folder.file(f.c>1?`(${c}) ${f.name}`:f.name, buf);
       meta.push({name:f.name, pages:f.p, copies:f.c, type:f.type});
     }
-    const zipBlob = await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:1}},
+    const zipBlob = await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}},
       m => { document.getElementById('pbar').style.width = (15 + m.percent*.4) + '%'; });
 
     stxt.innerText = 'جاري رفع الملفات...';
@@ -978,43 +963,45 @@ async function sendOrder() {
 
 // ══ SUCCESS SCREEN ════════════════════════════════
 function showSuccessUI(oid, pe, np) {
-  _activeOid = oid; // enable live real-time updates on this screen
+  _activeOid = oid; // enable live updates on this screen
   document.getElementById('tab-order').innerHTML = `
-    <div style="padding:45px 15px 20px;animation:fadeInUp .5s ease;">
-      <div style="text-align:center;margin-bottom:20px;">
-        <div style="font-size:4.5rem;">✅</div>
-        <h2 style="color:var(--navy);margin:6px 0 4px;font-weight:800;">تم إرسال طلبك!</h2>
+    <div style="padding:40px 18px 20px;animation:fadeInUp .5s ease;">
+      <div style="text-align:center;margin-bottom:18px;">
+        <div style="font-size:4.5rem;margin-bottom:6px;">✅</div>
+        <h2 style="color:var(--navy);margin:0 0 4px;font-weight:800;">تم إرسال طلبك!</h2>
         <p style="color:var(--text-muted);margin:0;">رقم الطلب: <b style="color:var(--orange);">#${oid}</b></p>
       </div>
 
-      ${pe > 0 ? `
-      <div style="background:linear-gradient(135deg,#0c2d55,#0e5a7a);color:#fff;border-radius:16px;padding:15px;margin-bottom:15px;text-align:center;">
-        <div style="font-size:1.8rem;margin-bottom:4px;">💎</div>
+      ${pe > 0 ? `<div style="background:linear-gradient(135deg,var(--navy),var(--teal));color:#fff;border-radius:16px;padding:15px 18px;margin-bottom:15px;text-align:center;">
+        <div style="font-size:1.6rem;margin-bottom:4px;">💎</div>
         <b>ستكسب ${pe} نقطة عند التسليم!</b>
         <p style="margin:4px 0 0;opacity:.8;font-size:.85rem;">رصيدك: ${np} نقطة</p>
       </div>` : ''}
 
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:16px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-          <span style="font-size:.85rem;font-weight:800;color:var(--navy);">📡 حالة طلبك</span>
-          <span style="font-size:.72rem;color:var(--teal);font-weight:700;">(تتحدث تلقائياً)</span>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <b style="color:var(--navy);font-size:.9rem;">📡 حالة الطلب</b>
+          <span style="font-size:.72rem;color:var(--teal);font-weight:700;background:rgba(90,179,196,.12);padding:3px 9px;border-radius:8px;">تتحدث تلقائياً</span>
         </div>
         <div id="success-tl-box">
-          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
-            <div style="width:34px;height:34px;border-radius:50%;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;animation:pulseGlow 2s infinite;flex-shrink:0;">📥</div>
-            <div><b style="color:var(--navy);display:block;">تم الاستلام</b><span style="font-size:.73rem;color:var(--text-muted);">طلبك وصل لينا</span></div>
+          <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:2px;">
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:800;animation:pulseGlow 2s infinite;">📥</div>
+              <div style="width:2px;height:20px;background:#e2e8f0;margin:2px 0 2px 17px;border-radius:2px;"></div>
+            </div>
+            <div style="padding-top:4px;"><b style="color:var(--navy);display:block;">تم الاستلام</b><span style="font-size:.72rem;color:#94a3b8;">طلبك وصل لينا</span></div>
           </div>
-          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);opacity:.4;">
-            <div style="width:34px;height:34px;border-radius:50%;background:#e2e8f0;color:#94a3b8;display:flex;align-items:center;justify-content:center;flex-shrink:0;">🖨️</div>
-            <div><b>قيد الطباعة</b></div>
+          <div style="display:flex;align-items:center;gap:12px;padding:4px 0;opacity:.4;">
+            <div style="width:32px;height:32px;border-radius:50%;background:#e2e8f0;color:#94a3b8;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;">🖨️</div>
+            <b style="color:var(--text-muted);font-size:.88rem;">جاري الطباعة</b>
           </div>
-          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);opacity:.4;">
-            <div style="width:34px;height:34px;border-radius:50%;background:#e2e8f0;color:#94a3b8;display:flex;align-items:center;justify-content:center;flex-shrink:0;">🛵</div>
-            <div><b>في الطريق إليك</b></div>
+          <div style="display:flex;align-items:center;gap:12px;padding:4px 0;opacity:.4;">
+            <div style="width:32px;height:32px;border-radius:50%;background:#e2e8f0;color:#94a3b8;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;">🛵</div>
+            <b style="color:var(--text-muted);font-size:.88rem;">في الطريق إليك</b>
           </div>
-          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;opacity:.4;">
-            <div style="width:34px;height:34px;border-radius:50%;background:#e2e8f0;color:#94a3b8;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✅</div>
-            <div><b>تم التسليم</b></div>
+          <div style="display:flex;align-items:center;gap:12px;padding:4px 0;opacity:.4;">
+            <div style="width:32px;height:32px;border-radius:50%;background:#e2e8f0;color:#94a3b8;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;">✅</div>
+            <b style="color:var(--text-muted);font-size:.88rem;">تم التسليم</b>
           </div>
         </div>
       </div>
@@ -1061,16 +1048,19 @@ async function loadOrders() {
     if (o.status==='delivered') ptsNote = '<span style="color:var(--green);">تمت الإضافة ✅</span>';
     if (o.status==='cancelled') ptsNote = '<span style="color:var(--red);">ملغاة ❌</span>';
 
-    // Mini progress bar — only current step animates, completed are stable
+    // Mini progress bar — delivered=all green stable, current=orange pulse, done=green stable
     let mpHtml = '';
     if (o.status !== 'cancelled') {
       mpHtml = `<div class="mpbar">` +
         [0,1,2,3].map(i => {
-          const cls = i < s.idx ? 'done' : i === s.idx ? 'cur' : '';
+          // For delivered: all steps are stable green
+          const cls = o.status === 'delivered' ? 'done'
+                    : i < s.idx ? 'done'
+                    : i === s.idx ? 'cur' : '';
           return `<div class="mpseg ${cls}"></div>`;
         }).join('') +
         `</div><div class="mplabels">` +
-        segs.map((lb,i) => `<span class="mplbl ${i===s.idx?'cur':''}">${lb}</span>`).join('') +
+        segs.map((lb,i) => `<span class="mplbl ${o.status!=='delivered'&&i===s.idx?'cur':o.status==='delivered'?'done':''}">${lb}</span>`).join('') +
         `</div>`;
     } else {
       mpHtml = `<div style="margin-top:10px;font-size:.82rem;color:var(--red);font-weight:700;">❌ تم إلغاء هذا الطلب</div>`;
@@ -1165,43 +1155,16 @@ function closeDet() { document.getElementById('det-ov').classList.remove('open')
 function refreshPtsUI() {
   const p = uDoc?.loyalty_points || 0;
   document.getElementById('ptsnum').innerText = p.toLocaleString();
-  let tier, cls, next, pct, motivate;
-
-  if (p >= 1000) {
-    tier='🥇 عضو ذهبي'; cls='tgold'; pct=100;
-    next='أنت تستحق خصم 5% دائم على كل طلبات! 🎉';
-    motivate = '💛 شكراً لولائك — أنت من أفضل زبائننا!';
-  } else if (p >= 700) {
-    tier='🥈 المستوى الفضي'; cls='tsilv'; pct=((p-200)/800)*100;
-    next=`${1000-p} نقطة فقط للذهبي 🔥`;
-    motivate = '🚀 أنت قريب جداً من الذهبي — طلب آخر يكفي!';
-  } else if (p >= 200) {
-    tier='🥈 المستوى الفضي'; cls='tsilv'; pct=((p-200)/800)*100;
-    next=`${1000-p} نقطة للمستوى الذهبي ✨`;
-    motivate = '💪 استمر! كل طلب يقربك من الذهبي';
-  } else if (p >= 50) {
-    tier='🥉 مستوى برونزي'; cls='tbron'; pct=(p/200)*100;
-    next=`${200-p} نقطة للفضي`;
-    motivate = '🎯 ابدأ تجمع النقاط — كل طلب يحتسب!';
-  } else {
-    tier='🥉 مستوى برونزي'; cls='tbron'; pct=(p/200)*100;
-    next=`${200-p} نقطة للمستوى الفضي`;
-    motivate = '🌟 أرسل أول طلب واكسب نقاطك!';
-  }
-
+  let tier, cls, next, pct;
+  // Gold at 1000
+  if (p >= 1000)     { tier='🥇 المستوى الذهبي'; cls='tgold'; next='أنت في أعلى مستوى! خصم 5% دائم 🎉'; pct=100; }
+  else if (p >= 200) { tier='🥈 المستوى الفضي';  cls='tsilv'; next=`${1000-p} نقطة للذهبي`;            pct=((p-200)/800)*100; }
+  else               { tier='🥉 المستوى البرونزي';cls='tbron'; next=`${200-p} نقطة للفضي`;              pct=(p/200)*100; }
   document.getElementById('tierdisp').innerHTML = `<div class="tierbadge ${cls}">${tier}</div>`;
   document.getElementById('ptsnext').innerText  = next;
   document.getElementById('ptsbar').style.width = pct + '%';
-
-  // motivational message
-  const motEl = document.getElementById('pts-mot');
-  if (motEl) motEl.innerText = motivate;
-
-  [['rb100',100],['rb300',300],['rb700',700]].forEach(([id,cost]) => {
-    const b = document.getElementById(id);
-    if (!b) return;
-    b.disabled = p < cost;
-    if (p < cost) b.title = `تحتاج ${cost-p} نقطة إضافية`;
+  [['rb100',100],['rb300',300],['rb700',700]].forEach(([id,c]) => {
+    const b = document.getElementById(id); if(b) b.disabled = p < c;
   });
 }
 
@@ -1234,3 +1197,5 @@ init();
 </script>
 </body>
 </html>
+
+
