@@ -581,32 +581,42 @@ async function init() {
 function startRT() {
   try {
     sb.channel('orders-user-' + userId)
-      .on('postgres_changes', {event:'UPDATE', schema:'public', table:'orders'},
+      .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `user_id=eq.${userId}` // فلترة من السيرفر لضمان جلب التحديثات الصحيحة
+        },
         p => {
-          if (p.new.user_id !== userId && p.new.telegram_id !== userId) return;
-          const m = {received:'📥 تم الاستلام',printing:'🖨️ قيد الطباعة',delivering:'🛵 جاري التوصيل',delivered:'✅ تم التسليم',cancelled:'❌ ملغى'};
-          showToast('🔔 ' + (m[p.new.status] || p.new.status));
+          if (!p.new || !p.new.status) return;
 
-          // ① دائماً حدّث قائمة الطلبات (سواء كان التبويب مفعّلاً أم لا)
+          const st = p.new.status;
+          const m = {received:'📥 تم الاستلام',printing:'🖨️ قيد الطباعة',delivering:'🛵 جاري التوصيل',delivered:'✅ تم التسليم',cancelled:'❌ ملغى'};
+          showToast('🔔 ' + (m[st] || st));
+
+          // ① دائماً حدّث قائمة الطلبات
           loadOrders();
 
           // ② حدّث شاشة النجاح إذا كانت تعرض هذا الطلب
           if (_successOid && p.new.id === _successOid) {
-            _updateSuccessScreen(p.new.status, p.new.status_history);
+            // تحديث الشاشة بالحالة الجديدة
+            _updateSuccessScreen(st, p.new.status_history || []);
           }
 
           // ③ حدّث تفاصيل الطلب إذا كانت مفتوحة
           if (document.getElementById('det-ov').classList.contains('open') &&
-              document.getElementById('det-title').innerText.includes(p.new.id)) showDet(p.new.id);
+              document.getElementById('det-title').innerText.includes(p.new.id)) {
+              showDet(p.new.id);
+          }
 
-          if (p.new.status === 'delivered') init();
+          if (st === 'delivered') init();
         })
       .subscribe();
   } catch(e) {}
 }
 
 // ══ UPDATE SUCCESS SCREEN ═════════════════════════
-// تُستدعى من startRT وأيضاً من قناة الطلب المحددة
+// تُستدعى من startRT
 function _updateSuccessScreen(status, history) {
   const banner = document.getElementById('suc-banner');
   const steps  = document.getElementById('suc-steps');
@@ -1030,7 +1040,7 @@ function _buildSuccessHTML(currentStatus) {
   const isCancelled = currentStatus === 'cancelled';
 
   const stepsHTML = STATUS_STEPS.map((s, i) => {
-    const isDone = i < si || (currentStatus === 'delivered' && i === si);
+    const isDone = isDelivered || (!isCancelled && i < si);
     const isCur  = i === si && !isCancelled && currentStatus !== 'delivered';
     const opacity = (isDone || isCur || i === si) ? '1' : '0.38';
     let labelColor = 'var(--text-muted)';
@@ -1116,19 +1126,6 @@ function showSuccessUI(oid, pe, np) {
   _successPe  = pe;
   _successNp  = np;
   document.getElementById('tab-order').innerHTML = _buildSuccessHTML('received');
-  // startRT already handles all live updates via _updateSuccessScreen
-  // This per-order channel is a fallback (more reliable with row filter)
-  try {
-    sb.channel('suc-' + oid)
-      .on('postgres_changes',
-        { event:'UPDATE', schema:'public', table:'orders', filter:`id=eq.${oid}` },
-        p => {
-          if (!p.new) return;
-          _updateSuccessScreen(p.new.status, p.new.status_history);
-          if (p.new.status === 'delivered') init();
-        })
-      .subscribe();
-  } catch(e) {}
 }
 
 // ══ TELEGRAM ════════════════════════════════════
@@ -1320,7 +1317,5 @@ init();
 </script>
 </body>
 </html>
-
-
 
 
