@@ -955,7 +955,7 @@ async function sendOrder() {
     const flist = meta.map(f=>`📄 ${f.name} (${f.pages}ص × ${f.copies}ن)`).join('\n');
     await tgMsg(ADMIN,
       `🆕 طلب جديد #${oid}${isExpress?' ⚡عاجل':''}\n${isFO?'🚚 توصيل مجاني — أول طلب\n':''}` +
-      `👤 ${name}\n📞 ${phone}\n🏠 ${region}\n🕐 ${delivTime==='now'?'الآن':delivTime}\n` +
+      `👤 ${name}\n📞 ${phone}\n🏠 ${region}\n` +
       `🎨 ${color==='c'?'ملون':'أسود'} — ${side==='1'?'وجه':'وجهين'}\n` +
       `💰 ${(tot||0).toLocaleString()} د.ع\n📍 ${locUrl}\n` +
       (appliedCoupon ? `🎟️ كوبون: ${appliedCoupon.code}\n` : '') +
