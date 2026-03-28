@@ -680,6 +680,10 @@ function goTab(t) {
   document.getElementById('nav-' + t).classList.add('active');
   if (t === 'orders') loadOrders();
   if (t === 'points') loadPtsTab();
+  // عند العودة للرئيسية أعد تحميل حالة الطلب الحالي
+  if (t === 'order' && _successOid) {
+    _refreshSuccessFromServer(_successOid);
+  }
 }
 
 // ══ SAVED ADDRESSES ══════════════════════════════
@@ -1037,7 +1041,8 @@ const STATUS_STEPS = [
 
 function _buildSuccessHTML(currentStatus) {
   const si = STATUS_STEPS.findIndex(s => s.k === currentStatus);
-  const isCancelled = currentStatus === 'cancelled';
+  const isCancelled  = currentStatus === 'cancelled';
+  const isDelivered  = currentStatus === 'delivered';
 
   const stepsHTML = STATUS_STEPS.map((s, i) => {
     const isDone = isDelivered || (!isCancelled && i < si);
@@ -1118,7 +1123,17 @@ function _buildSuccessHTML(currentStatus) {
 function _refreshSuccessScreen(newStatus) {
   const tab = document.getElementById('tab-order');
   if (!tab || !tab.querySelector('#suc-banner')) return; // not on success screen
-  tab.querySelector('div[style*="fadeInUp"]').innerHTML = _buildSuccessHTML(newStatus).match(/<div style="text-align:center([\s\S]*)/)?.[0] || '';
+  _updateSuccessScreen(newStatus);
+}
+
+// جلب آخر حالة من السيرفر وتحديث شاشة النجاح
+async function _refreshSuccessFromServer(oid) {
+  try {
+    const {data:o} = await sb.from('orders').select('status,status_history').eq('id', oid).maybeSingle();
+    if (o && o.status) {
+      _updateSuccessScreen(o.status, o.status_history || []);
+    }
+  } catch {}
 }
 
 function showSuccessUI(oid, pe, np) {
@@ -1317,5 +1332,3 @@ init();
 </script>
 </body>
 </html>
-
-
