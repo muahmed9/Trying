@@ -482,16 +482,58 @@ let lastOrderTime = 0;
 const ORDER_COOLDOWN = 60000; // 1 minute between orders
 
 // ══ SOUND NOTIFICATION ═══════════════════════════
-function playNotifSound() {
+// AudioContext مشترك لتجنب إنشاء context جديد في كل مرة
+const _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function _playNote(freq, startTime, duration, volume = 0.3) {
+  if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  const osc  = _audioCtx.createOscillator();
+  const gain = _audioCtx.createGain();
+  osc.connect(gain); gain.connect(_audioCtx.destination);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(freq, startTime);
+  gain.gain.setValueAtTime(volume, startTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+  osc.start(startTime);
+  osc.stop(startTime + duration);
+}
+
+function playStatusSound(status) {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.frequency.value = 880; osc.type = 'sine';
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-    osc.start(); osc.stop(ctx.currentTime + 0.5);
+    if (_audioCtx.state === 'suspended') _audioCtx.resume();
+    const t = _audioCtx.currentTime;
+    switch (status) {
+      case 'received':
+        // نغمة هادئة صاعدة — تأكيد الاستلام
+        _playNote(220, t,        0.2, 0.25);
+        _playNote(440, t + 0.22, 0.35, 0.3);
+        break;
+      case 'printing':
+        // نغمتان متتاليتان — بدء الطباعة
+        _playNote(440, t,        0.18, 0.3);
+        _playNote(550, t + 0.22, 0.22, 0.3);
+        break;
+      case 'delivering':
+        // ثلاث نبضات سريعة تصاعدية — المندوب في الطريق
+        _playNote(440, t,        0.13, 0.28);
+        _playNote(550, t + 0.17, 0.13, 0.28);
+        _playNote(660, t + 0.34, 0.18, 0.3);
+        break;
+      case 'delivered':
+        // لحن احتفالي أربع نغمات — تم التسليم 🎉
+        _playNote(523,  t,        0.16, 0.35);
+        _playNote(659,  t + 0.19, 0.16, 0.35);
+        _playNote(784,  t + 0.38, 0.16, 0.35);
+        _playNote(1047, t + 0.57, 0.28, 0.4);
+        break;
+      case 'cancelled':
+        // نغمتان هابطتان — إلغاء
+        _playNote(440, t,        0.32, 0.28);
+        _playNote(330, t + 0.38, 0.38, 0.25);
+        break;
+      default:
+        _playNote(880, t, 0.4, 0.25);
+    }
   } catch(e) {}
 }
 
@@ -565,7 +607,7 @@ function startRT() {
           } else {
             showToast('🔔 ' + (m[st] || st));
           }
-          playNotifSound();
+          playStatusSound(st);
 
           // ① حدّث قائمة الطلبات
           loadOrders();
@@ -655,6 +697,18 @@ function toggleExpressStyle() {
 }
 
 // ══ COUPON SYSTEM ════════════════════════════════
+function setCouponMsg(type, text) {
+  const styles = {
+    error:   { background:'#fef2f2', color:'#991b1b', border:'1px solid #fecaca' },
+    success: { background:'#f0fdf4', color:'#166534', border:'1px solid #86efac' },
+    warn:    { background:'#fef2f2', color:'#991b1b', border:'1px solid #fecaca' }
+  };
+  const s = styles[type] || styles.error;
+  const msg = document.getElementById('coupon-msg');
+  Object.assign(msg.style, { display:'block', ...s });
+  msg.innerText = text;
+}
+
 async function applyCoupon() {
   const code = document.getElementById('couponInput').value.trim();
   const msg = document.getElementById('coupon-msg');
@@ -662,19 +716,15 @@ async function applyCoupon() {
   try {
     const {data, error} = await sb.from('coupons').select('*').eq('code', code).eq('active', true).maybeSingle();
     if (error || !data) {
-      msg.style.display = 'block'; msg.style.background = '#fef2f2'; msg.style.color = '#991b1b'; msg.style.border = '1px solid #fecaca';
-      msg.innerText = '❌ كود الخصم غير صالح'; appliedCoupon = null;
+      setCouponMsg('error', '❌ كود الخصم غير صالح'); appliedCoupon = null;
     } else if (data.max_uses > 0 && data.used_count >= data.max_uses) {
-      msg.style.display = 'block'; msg.style.background = '#fef2f2'; msg.style.color = '#991b1b'; msg.style.border = '1px solid #fecaca';
-      msg.innerText = '❌ تم استنفاد هذا الكوبون'; appliedCoupon = null;
+      setCouponMsg('warn', '❌ تم استنفاد هذا الكوبون'); appliedCoupon = null;
     } else {
       appliedCoupon = data;
-      msg.style.display = 'block'; msg.style.background = '#f0fdf4'; msg.style.color = '#166534'; msg.style.border = '1px solid #86efac';
-      msg.innerText = `✅ تم تطبيق الكوبون — خصم ${data.discount_type === 'percent' ? data.discount_value + '%' : data.discount_value.toLocaleString() + ' د.ع'}`;
+      setCouponMsg('success', `✅ تم تطبيق الكوبون — خصم ${data.discount_type === 'percent' ? data.discount_value + '%' : data.discount_value.toLocaleString() + ' د.ع'}`);
     }
   } catch(e) {
-    msg.style.display = 'block'; msg.style.background = '#fef2f2'; msg.style.color = '#991b1b';
-    msg.innerText = '❌ خطأ في التحقق من الكوبون'; appliedCoupon = null;
+    setCouponMsg('error', '❌ خطأ في التحقق من الكوبون'); appliedCoupon = null;
   }
   calcUI();
 }
@@ -717,6 +767,7 @@ function fmtSize(b) { if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixe
 document.getElementById('fileinp').onchange = async e => {
   const okExts = ['.pdf','.docx','.doc','.xlsx','.xls','.pptx','.ppt','.jpg','.jpeg','.png','.webp'];
   for (const f of e.target.files) {
+    if (f.size > 50 * 1024 * 1024) { showToast('❌ ' + f.name + ' يتجاوز 50MB'); continue; }
     const nm = f.name.toLowerCase(), ext = nm.substring(nm.lastIndexOf('.'));
     if (!okExts.includes(ext) && !f.type.startsWith('image/')) continue;
     const raw_ext = ext.replace('.','');
@@ -882,13 +933,16 @@ async function sendOrder() {
   }
   hideErr();
 
+  // تحديث الحساب قبل قراءة البيانات
+  calcUI();
+
   const btn = document.getElementById('sendbtn');
   btn.disabled = true; btn.innerText = 'جاري الإرسال... 🚀';
   document.getElementById('pcon').style.display = 'block';
   const stxt = document.getElementById('statustxt'); stxt.style.display = 'block';
 
   try {
-    const oid = 'SH-' + Math.floor(1000 + Math.random() * 9000);
+    const oid = 'SH-' + Date.now().toString(36).toUpperCase();
     const {pp, df, td, pd, couponDisc, expressFee, tot, pe, isFO} = window._ord || {};
     const useP = document.getElementById('ptstog')?.checked && pendingR;
     const pu   = useP ? pendingR.pts : 0;
@@ -1318,10 +1372,9 @@ async function reOrder(oid) {
   const {data:o} = await sb.from('orders').select('*').eq('id', oid).maybeSingle();
   if (!o) return;
   closeDet();
-  // Reset the order form
-  location.reload();
-  // After reload, pre-fill data from localStorage
+  // حفظ البيانات أولاً ثم إعادة التحميل
   localStorage.setItem('sh-reorder', JSON.stringify({name:o.name, phone:o.phone, region:o.region, color:o.color, side:o.side}));
+  location.reload();
 }
 // Check for reorder data on load
 (function() {
