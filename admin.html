@@ -1072,8 +1072,11 @@ function pickReason(el, txt) {
 async function confirmCancel() {
   const reason = document.getElementById('custom-reason').value.trim();
   if (!reason) { alert('يرجى تحديد سبب الإلغاء أو كتابته'); return; }
-  closeCancelModal();
-  await chStatus(pendingCancelId, 'cancelled', reason);
+  
+  // -- التعديل تم هنا --
+  const idToCancel = pendingCancelId; // حفظ المعرف قبل الإغلاق
+  closeCancelModal();                 // إغلاق النافذة (والذي يفرغ pendingCancelId)
+  await chStatus(idToCancel, 'cancelled', reason); // الإرسال باستخدام المعرف المحفوظ
 }
 
 // ══════════════════════════════════
