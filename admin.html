@@ -149,15 +149,9 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
     <h2 style="color:var(--navy);margin-bottom:6px;font-weight:800;">لوحة التحكم</h2>
     <p style="color:var(--text-muted);margin-bottom:24px;font-size:.92rem;">خدمات الشاطر الطلابية</p>
 
-    <!-- Role selection -->
-    <div class="role-tabs" id="role-tabs">
-      <button class="rtab active" onclick="selectRole('admin',this)">🏢 مدير</button>
-      <button class="rtab" onclick="selectRole('operator',this)">🖨️ موظف استنساخ</button>
-      <button class="rtab" onclick="selectRole('driver',this)">🛵 مندوب توصيل</button>
-    </div>
-
     <div class="errbox" id="loginerr"></div>
-    <input type="password" id="adm-pass" placeholder="🔑 كلمة المرور">
+    <input type="text" id="adm-user" placeholder="👤 اسم المستخدم" autocomplete="username">
+    <input type="password" id="adm-pass" placeholder="🔑 كلمة المرور" autocomplete="current-password">
     <button class="bmain" style="background:var(--navy);color:#fff;" onclick="doLogin()">تسجيل الدخول</button>
   </div>
 </div>
@@ -231,20 +225,22 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
 
       <!-- Change built-in passwords -->
       <div style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.03);margin-bottom:18px;">
-        <h4 style="margin:0 0 14px;color:var(--navy);font-weight:800;">🔑 تغيير كلمة مرور</h4>
+        <h4 style="margin:0 0 14px;color:var(--navy);font-weight:800;">🔑 تغيير بيانات الدخول</h4>
         <select id="change-role-sel" style="margin-bottom:12px;">
           <option value="operator">موظف استنساخ</option>
           <option value="driver">مندوب توصيل</option>
           <option value="admin">المدير (أنت)</option>
         </select>
-        <input type="password" id="new-pass" placeholder="كلمة المرور الجديدة">
-        <button class="bmain" style="background:var(--teal);color:#fff;" onclick="changePass()">حفظ كلمة المرور</button>
+        <input type="text" id="new-user" placeholder="👤 اسم المستخدم الجديد (اختياري)">
+        <input type="password" id="new-pass" placeholder="🔑 كلمة المرور الجديدة (اختياري)">
+        <button class="bmain" style="background:var(--teal);color:#fff;" onclick="changeCredentials()">حفظ التغييرات</button>
       </div>
 
       <!-- Create custom account -->
       <div style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.03);">
         <h4 style="margin:0 0 14px;color:var(--navy);font-weight:800;">➕ إضافة حساب موظف جديد</h4>
         <input type="text"     id="new-staff-name"  placeholder="✍️ اسم الموظف" style="margin-bottom:10px;">
+        <input type="text"     id="new-staff-user"  placeholder="👤 اسم المستخدم (للدخول)" style="margin-bottom:10px;">
         <input type="password" id="new-staff-pass"  placeholder="🔑 كلمة المرور">
         <p style="margin:0 0 8px;font-size:.88rem;color:var(--text-muted);font-weight:700;">صلاحياته:</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
@@ -275,17 +271,65 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
 
     <!-- Page: Employee Dashboard (manager only) -->
     <div class="admin-page" id="page-dash">
-      <h3 style="margin:0 0 18px;color:var(--navy);font-weight:800;">📊 داشبورد الموظفين</h3>
+      <h3 style="margin:0 0 14px;color:var(--navy);font-weight:800;">📊 داشبورد الموظفين</h3>
+      <!-- Date filter -->
+      <div style="background:var(--card);border-radius:14px;padding:14px;margin-bottom:16px;box-shadow:0 3px 10px rgba(0,0,0,.03);border:1px solid #edf0f4;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <div class="fbar" id="dash-period-bar" style="margin-bottom:0;flex:1;">
+            <button class="ftab active" onclick="setDashPeriod('today',this)">اليوم</button>
+            <button class="ftab" onclick="setDashPeriod('week',this)">هذا الأسبوع</button>
+            <button class="ftab" onclick="setDashPeriod('month',this)">هذا الشهر</button>
+            <button class="ftab" onclick="setDashPeriod('all',this)">الكل</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;align-items:center;">
+          <label style="font-size:.82rem;color:var(--text-muted);font-weight:700;">من:</label>
+          <input type="date" id="dash-from" onchange="renderStaffDashboard()" style="flex:1;padding:8px;font-size:.85rem;margin-bottom:0;">
+          <label style="font-size:.82rem;color:var(--text-muted);font-weight:700;">إلى:</label>
+          <input type="date" id="dash-to" onchange="renderStaffDashboard()" style="flex:1;padding:8px;font-size:.85rem;margin-bottom:0;">
+        </div>
+      </div>
       <div id="emp-dash">جاري التحميل...</div>
     </div>
 
     <!-- Page: Excel Reports (manager only) -->
     <div class="admin-page" id="page-reports">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
         <h3 style="margin:0;color:var(--navy);font-weight:800;">📥 تقارير Excel</h3>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button onclick="exportOrdersExcel()" style="background:var(--green);color:#fff;border:none;padding:10px 16px;border-radius:12px;font-weight:800;cursor:pointer;font-family:'Tajawal',sans-serif;font-size:.88rem;">⬇️ تصدير كل الطلبات</button>
-          <button onclick="exportAnalysisExcel()" style="background:var(--orange);color:#fff;border:none;padding:10px 16px;border-radius:12px;font-weight:800;cursor:pointer;font-family:'Tajawal',sans-serif;font-size:.88rem;">📊 تصدير التحليل الشامل</button>
+          <button onclick="exportOrdersExcel()" style="background:var(--green);color:#fff;border:none;padding:10px 16px;border-radius:12px;font-weight:800;cursor:pointer;font-family:'Tajawal',sans-serif;font-size:.88rem;">⬇️ تصدير الطلبات</button>
+          <button onclick="exportAnalysisExcel()" style="background:var(--orange);color:#fff;border:none;padding:10px 16px;border-radius:12px;font-weight:800;cursor:pointer;font-family:'Tajawal',sans-serif;font-size:.88rem;">📊 تصدير التحليل</button>
+        </div>
+      </div>
+
+      <!-- Date & Status filter -->
+      <div style="background:var(--card);border-radius:14px;padding:14px;margin-bottom:16px;box-shadow:0 3px 10px rgba(0,0,0,.03);border:1px solid #edf0f4;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
+          <div class="fbar" id="rp-period-bar" style="margin-bottom:0;flex:1;">
+            <button class="ftab active" onclick="setRpPeriod('all',this)">الكل</button>
+            <button class="ftab" onclick="setRpPeriod('today',this)">اليوم</button>
+            <button class="ftab" onclick="setRpPeriod('week',this)">هذا الأسبوع</button>
+            <button class="ftab" onclick="setRpPeriod('month',this)">هذا الشهر</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+          <label style="font-size:.82rem;color:var(--text-muted);font-weight:700;white-space:nowrap;">من:</label>
+          <input type="date" id="rp-from" onchange="renderReports()" style="flex:1;padding:8px;font-size:.85rem;margin-bottom:0;">
+          <label style="font-size:.82rem;color:var(--text-muted);font-weight:700;white-space:nowrap;">إلى:</label>
+          <input type="date" id="rp-to" onchange="renderReports()" style="flex:1;padding:8px;font-size:.85rem;margin-bottom:0;">
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <select id="rp-status-filter" onchange="renderReports()" style="flex:1;padding:8px;font-size:.85rem;margin-bottom:0;">
+            <option value="all">كل الحالات</option>
+            <option value="received">📥 مستلم</option>
+            <option value="printing">🖨️ قيد الطباعة</option>
+            <option value="delivering">🛵 في الطريق</option>
+            <option value="delivered">✅ تم التسليم</option>
+            <option value="cancelled">❌ ملغى</option>
+          </select>
+          <select id="rp-region-filter" onchange="renderReports()" style="flex:1;padding:8px;font-size:.85rem;margin-bottom:0;">
+            <option value="all">كل المناطق</option>
+          </select>
         </div>
       </div>
 
@@ -447,20 +491,19 @@ let allOrders = [], curFilter = 'all', rtCh = null, currentRole = '';
 // ══════════════════════════════════
 const ROLES = {
   admin: {
-    label:'مدير', badge:'rb-admin', defaultPass:'shater2024', emoji:'🏢', mgr:true,
+    label:'مدير', badge:'rb-admin', defaultUser:'admin', defaultPass:'shater2024', emoji:'🏢', mgr:true,
     can:  ['received→printing','printing→delivering','delivering→delivered','any→cancelled'],
-    sees: null   // null = all statuses
+    sees: null
   },
   operator: {
-    label:'موظف استنساخ', badge:'rb-oper', defaultPass:'copy2024', emoji:'🖨️', mgr:false,
-    // operator can also cancel (طلبات فيها مشكلة بالملفات مثلاً)
+    label:'موظف استنساخ', badge:'rb-oper', defaultUser:'operator', defaultPass:'copy2024', emoji:'🖨️', mgr:false,
     can:  ['received→printing','printing→delivering','received→cancelled','printing→cancelled'],
-    sees: ['received','printing','delivering','cancelled']  // active + completed by him
+    sees: ['received','printing','delivering','cancelled']
   },
   driver: {
-    label:'مندوب توصيل', badge:'rb-driver', defaultPass:'driver2024', emoji:'🛵', mgr:false,
+    label:'مندوب توصيل', badge:'rb-driver', defaultUser:'driver', defaultPass:'driver2024', emoji:'🛵', mgr:false,
     can:  ['delivering→delivered'],
-    sees: ['printing','delivering','delivered','cancelled']  // pickup-ready + his work
+    sees: ['printing','delivering','delivered','cancelled']
   }
 };
 
@@ -471,10 +514,11 @@ function getCustomAccounts() {
 function saveCustomAccounts(arr) { localStorage.setItem('custom-accounts', JSON.stringify(arr)); }
 
 function getPass(role) { return localStorage.getItem('sp-' + role) || ROLES[role]?.defaultPass || ''; }
+function getUser(role) { return localStorage.getItem('su-' + role) || ROLES[role]?.defaultUser || ''; }
 
-// Custom account login check
-function tryCustomLogin(pass) {
-  return getCustomAccounts().find(a => a.pass === pass);
+// Custom account login check — now matches by username
+function tryCustomLogin(user, pass) {
+  return getCustomAccounts().find(a => a.username === user && a.pass === pass);
 }
 function canDo(from, to) {
   // Check built-in role
@@ -508,7 +552,7 @@ function custMsg(id, status, reason='') {
     delivered:  `✅ تم تسليم طلبك #${id} بنجاح!\nشكراً لتعاملك مع الشاطر 🌟\nتمت إضافة نقاط الولاء لرصيدك 💎`
   };
   if (status === 'cancelled') {
-    return `❌ نعتذر منك، تم إلغاء طلبك #${id}.\n\nالسبب: ${reason}\n\nللاستفسار تواصل معنا.`;
+    return `❌ نعتذر منك، تم إلغاء طلبك #${id}.\n\n📋 السبب: ${reason}\n\n📞 للاستفسار أو إعادة الطلب تواصل معنا:\n📱 هاتف: 07752564099\n💬 واتساب: https://wa.me/9647752564099\n✈️ تيليجرام: https://t.me/+9647752564099`;
   }
   return msgs[status] || '';
 }
@@ -516,28 +560,31 @@ function custMsg(id, status, reason='') {
 // ══════════════════════════════════
 //  AUTH
 // ══════════════════════════════════
-let selectedRole = 'admin';
-function selectRole(role, el) {
-  selectedRole = role;
-  document.querySelectorAll('.rtab').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-}
-
 function doLogin() {
+  const user = document.getElementById('adm-user').value.trim();
   const pass = document.getElementById('adm-pass').value;
   const err  = document.getElementById('loginerr');
   err.style.display = 'none';
 
-  // 1. Try built-in roles
-  if (ROLES[selectedRole] && pass === getPass(selectedRole)) {
-    currentRole = selectedRole;
-    sessionStorage.setItem('adm-role', currentRole);
-    sessionStorage.removeItem('adm-custom');
-    enterDashboard();
+  if (!user || !pass) {
+    err.innerText = '❌ يرجى إدخال اسم المستخدم وكلمة المرور';
+    err.style.display = 'block';
     return;
   }
-  // 2. Try custom accounts (any tab selected — search by password)
-  const cust = tryCustomLogin(pass);
+
+  // 1. Try built-in roles — match by username + password
+  for (const [roleKey, roleData] of Object.entries(ROLES)) {
+    if (user === getUser(roleKey) && pass === getPass(roleKey)) {
+      currentRole = roleKey;
+      sessionStorage.setItem('adm-role', currentRole);
+      sessionStorage.removeItem('adm-custom');
+      enterDashboard();
+      return;
+    }
+  }
+
+  // 2. Try custom accounts — match by username + password
+  const cust = tryCustomLogin(user, pass);
   if (cust) {
     currentRole = '__custom__';
     currentCustomCan = cust.can;
@@ -547,7 +594,8 @@ function doLogin() {
     enterDashboard();
     return;
   }
-  err.innerText = '❌ كلمة المرور غير صحيحة';
+
+  err.innerText = '❌ اسم المستخدم أو كلمة المرور غير صحيحة';
   err.style.display = 'block';
 }
 
@@ -631,7 +679,10 @@ function renderStaffList() {
           <div><b style="color:var(--navy);">${r.emoji} ${r.label}</b>
             <span class="role-badge ${r.badge}" style="margin-right:6px;font-size:.72rem;">${key}</span>
           </div>
-          <span style="font-size:.8rem;color:var(--text-muted);">🔑 <b>${getPass(key)}</b></span>
+          <div style="font-size:.8rem;color:var(--text-muted);display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+            <span>👤 <b>${getUser(key)}</b></span>
+            <span>🔑 <b>${getPass(key)}</b></span>
+          </div>
         </div>
         <div style="margin-top:8px;font-size:.8rem;color:var(--text-muted);">
           <b>الصلاحيات:</b> ${r.can.map(c=>c.replace('→',' ← ')).join(' | ')}
@@ -648,7 +699,10 @@ function renderStaffList() {
         <div class="staff-card" style="border-right:3px solid var(--teal);">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
             <b style="color:var(--navy);">${a.emoji||'👤'} ${a.name}</b>
-            <span style="font-size:.8rem;color:var(--text-muted);">🔑 ${a.pass}</span>
+            <div style="font-size:.8rem;color:var(--text-muted);display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+              <span>👤 ${a.username||'—'}</span>
+              <span>🔑 ${a.pass}</span>
+            </div>
           </div>
           <div style="font-size:.78rem;color:var(--text-muted);margin-top:6px;">
             ${a.can.map(p=>p.replace('→',' ← ')).join(' | ')}
@@ -660,18 +714,27 @@ function renderStaffList() {
 
 function createCustomAccount() {
   const name = document.getElementById('new-staff-name').value.trim();
+  const username = document.getElementById('new-staff-user').value.trim();
   const pass = document.getElementById('new-staff-pass').value;
   const emoji = document.getElementById('new-staff-emoji').value;
-  if (!name || !pass || pass.length < 4) { alert('يرجى إدخال الاسم وكلمة مرور (4 أحرف+)'); return; }
+  if (!name || !username || !pass || pass.length < 4) { alert('يرجى إدخال الاسم واسم المستخدم وكلمة مرور (4 أحرف+)'); return; }
+  if (username.length < 3) { alert('اسم المستخدم يجب أن يكون 3 أحرف على الأقل'); return; }
+  // Check for duplicate username
+  const existing = getCustomAccounts();
+  if (existing.find(a => a.username === username)) { alert('اسم المستخدم مستخدم بالفعل!'); return; }
+  // Check against built-in roles
+  for (const [k] of Object.entries(ROLES)) {
+    if (getUser(k) === username) { alert('اسم المستخدم مستخدم بالفعل!'); return; }
+  }
   const perms = ['perm-rp','perm-pd','perm-dd','perm-canc']
     .map(id => document.getElementById(id))
     .filter(el => el?.checked)
     .map(el => el.value);
   if (!perms.length) { alert('يرجى اختيار صلاحية واحدة على الأقل'); return; }
-  const accounts = getCustomAccounts();
-  accounts.push({name, pass, emoji, can: perms, createdAt: new Date().toISOString()});
-  saveCustomAccounts(accounts);
+  existing.push({name, username, pass, emoji, can: perms, createdAt: new Date().toISOString()});
+  saveCustomAccounts(existing);
   document.getElementById('new-staff-name').value = '';
+  document.getElementById('new-staff-user').value = '';
   document.getElementById('new-staff-pass').value = '';
   ['perm-rp','perm-pd','perm-dd','perm-canc'].forEach(id => { const el=document.getElementById(id); if(el) el.checked=false; });
   renderStaffList();
@@ -687,29 +750,84 @@ function deleteCustomAccount(idx) {
   showToast('🗑️ تم حذف الحساب');
 }
 
-function changePass() {
+function changeCredentials() {
   const role    = document.getElementById('change-role-sel').value;
+  const newuser = document.getElementById('new-user').value.trim();
   const newpass = document.getElementById('new-pass').value.trim();
-  if (!newpass || newpass.length < 4) { alert('كلمة المرور يجب أن تكون 4 أحرف على الأقل'); return; }
-  localStorage.setItem('sp-' + role, newpass);
+  if (!newuser && !newpass) { alert('يرجى إدخال اسم مستخدم أو كلمة مرور جديدة'); return; }
+  if (newuser && newuser.length < 3) { alert('اسم المستخدم يجب أن يكون 3 أحرف على الأقل'); return; }
+  if (newpass && newpass.length < 4) { alert('كلمة المرور يجب أن تكون 4 أحرف على الأقل'); return; }
+  if (newuser) localStorage.setItem('su-' + role, newuser);
+  if (newpass) localStorage.setItem('sp-' + role, newpass);
+  document.getElementById('new-user').value = '';
   document.getElementById('new-pass').value = '';
   renderStaffList();
-  showToast('✅ تم تغيير كلمة مرور ' + (ROLES[role]?.label || role));
+  showToast('✅ تم تحديث بيانات ' + (ROLES[role]?.label || role));
+}
+
+// ── Date Filter Helpers ──
+function _getDateRange(prefix) {
+  const from = document.getElementById(prefix + '-from')?.value;
+  const to   = document.getElementById(prefix + '-to')?.value;
+  return {
+    from: from ? new Date(from + 'T00:00:00') : null,
+    to:   to   ? new Date(to + 'T23:59:59')   : null,
+  };
+}
+function _setPeriodDates(prefix, period) {
+  const now = new Date();
+  const fromEl = document.getElementById(prefix + '-from');
+  const toEl   = document.getElementById(prefix + '-to');
+  const fmt = d => d.toISOString().split('T')[0];
+  if (period === 'today') {
+    fromEl.value = fmt(now); toEl.value = fmt(now);
+  } else if (period === 'week') {
+    const d = new Date(now); d.setDate(d.getDate() - d.getDay());
+    fromEl.value = fmt(d); toEl.value = fmt(now);
+  } else if (period === 'month') {
+    const d = new Date(now.getFullYear(), now.getMonth(), 1);
+    fromEl.value = fmt(d); toEl.value = fmt(now);
+  } else { fromEl.value = ''; toEl.value = ''; }
+}
+function _filterByDate(orders, range) {
+  return orders.filter(o => {
+    const d = new Date(o.created_at);
+    if (range.from && d < range.from) return false;
+    if (range.to && d > range.to) return false;
+    return true;
+  });
+}
+
+function setDashPeriod(period, el) {
+  document.querySelectorAll('#dash-period-bar .ftab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  _setPeriodDates('dash', period);
+  renderStaffDashboard();
+}
+function setRpPeriod(period, el) {
+  document.querySelectorAll('#rp-period-bar .ftab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  _setPeriodDates('rp', period);
+  renderReports();
 }
 
 // ── Employee performance dashboard ──
 function renderStaffDashboard() {
   const box = document.getElementById('emp-dash');
   if (!box) return;
-  // Gather all actors from status_history
-  const actorMap = {}; // actorLabel → {done:[], timings:[]}
-  allOrders.forEach(o => {
+  const range = _getDateRange('dash');
+  const filtered = _filterByDate(allOrders, range);
+
+  const actorMap = {};
+  filtered.forEach(o => {
     const hist = o.status_history || [];
     hist.forEach((h, i) => {
       if (!h.by) return;
+      // If date range set, only count actions within range
+      if (range.from && new Date(h.time) < range.from) return;
+      if (range.to && new Date(h.time) > range.to) return;
       if (!actorMap[h.by]) actorMap[h.by] = {done:[], timings:[]};
       actorMap[h.by].done.push({orderId:o.id, status:h.status, time:h.time});
-      // Duration from previous step
       if (i > 0 && hist[i-1].time) {
         const dur = (new Date(h.time) - new Date(hist[i-1].time)) / 60000;
         if (dur > 0 && dur < 1440) actorMap[h.by].timings.push(dur);
@@ -720,11 +838,24 @@ function renderStaffDashboard() {
   const todayStart = new Date(); todayStart.setHours(0,0,0,0);
 
   if (!Object.keys(actorMap).length) {
-    box.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">لا توجد بيانات بعد — تحتاج لتسجيل أعمال من لوحة الطلبات</div>';
+    box.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted);">لا توجد بيانات${range.from?' في الفترة المحددة':''}</div>`;
     return;
   }
 
-  box.innerHTML = Object.entries(actorMap).map(([actor, data]) => {
+  // Summary stats at top
+  const totalActions = Object.values(actorMap).reduce((s,d) => s + d.done.length, 0);
+  const totalOrders = filtered.length;
+  const completedOrders = filtered.filter(o => o.status === 'delivered').length;
+  const revenue = filtered.filter(o => o.status === 'delivered').reduce((s,o) => s + (o.total||0), 0);
+
+  box.innerHTML = `
+    <div class="sgrid" style="margin-bottom:16px;">
+      <div class="scard"><div class="snum" style="color:var(--navy);">${totalOrders}</div><div class="slbl">الطلبات</div></div>
+      <div class="scard"><div class="snum" style="color:var(--green);">${completedOrders}</div><div class="slbl">مكتملة</div></div>
+      <div class="scard"><div class="snum" style="color:var(--orange);">${totalActions}</div><div class="slbl">إجراء</div></div>
+      <div class="scard"><div class="snum" style="color:var(--teal);">${(revenue/1000).toFixed(0)}K</div><div class="slbl">الإيرادات</div></div>
+    </div>` +
+  Object.entries(actorMap).map(([actor, data]) => {
     const todayTasks = data.done.filter(d => new Date(d.time) >= todayStart).length;
     const totalTasks = data.done.length;
     const avgMin = data.timings.length
@@ -734,15 +865,13 @@ function renderStaffDashboard() {
     return `
       <div style="background:var(--card);border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:0 3px 10px rgba(0,0,0,.04);border:1px solid #edf0f4;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-          <div>
-            <b style="color:var(--navy);font-size:1rem;">${actor}</b>
-          </div>
-          <span style="background:#dbeafe;color:#1e40af;padding:4px 12px;border-radius:20px;font-size:.78rem;font-weight:700;">${todayTasks} طلب اليوم</span>
+          <b style="color:var(--navy);font-size:1rem;">${esc(actor)}</b>
+          <span style="background:#dbeafe;color:#1e40af;padding:4px 12px;border-radius:20px;font-size:.78rem;font-weight:700;">${totalTasks} إجراء</span>
         </div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center;">
           <div style="background:#f8fafc;border-radius:12px;padding:12px;">
             <div style="font-size:1.6rem;font-weight:800;color:var(--navy);">${totalTasks}</div>
-            <div style="font-size:.73rem;color:var(--text-muted);">إجمالي المهام</div>
+            <div style="font-size:.73rem;color:var(--text-muted);">إجمالي</div>
           </div>
           <div style="background:#f8fafc;border-radius:12px;padding:12px;">
             <div style="font-size:1.6rem;font-weight:800;color:var(--green);">${todayTasks}</div>
@@ -785,7 +914,24 @@ const STATUS_AR = {
 };
 
 function renderReports() {
-  const orders = allOrders;
+  // Build region filter options dynamically
+  const regionSel = document.getElementById('rp-region-filter');
+  if (regionSel) {
+    const regions = [...new Set(allOrders.map(o => o.region).filter(Boolean))].sort();
+    const curVal = regionSel.value;
+    regionSel.innerHTML = '<option value="all">كل المناطق</option>' + regions.map(r => `<option value="${esc(r)}">${esc(r)}</option>`).join('');
+    regionSel.value = curVal || 'all';
+  }
+
+  // Apply filters
+  const range = _getDateRange('rp');
+  const statusF = document.getElementById('rp-status-filter')?.value || 'all';
+  const regionF = document.getElementById('rp-region-filter')?.value || 'all';
+
+  let orders = _filterByDate(allOrders, range);
+  if (statusF !== 'all') orders = orders.filter(o => o.status === statusF);
+  if (regionF !== 'all') orders = orders.filter(o => o.region === regionF);
+
   // Summary
   const done      = orders.filter(o => o.status === 'delivered').length;
   const pending   = orders.filter(o => ['received','printing','delivering'].includes(o.status)).length;
@@ -798,7 +944,7 @@ function renderReports() {
   // Orders table
   const obody = document.getElementById('rp-orders-body');
   if (!orders.length) {
-    obody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted);">لا توجد بيانات</td></tr>`;
+    obody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted);">لا توجد بيانات في الفترة المحددة</td></tr>`;
   } else {
     const rowStyle = (i) => i % 2 === 0 ? 'background:#f8fafc;' : '';
     obody.innerHTML = orders.map((o, i) => {
@@ -808,10 +954,10 @@ function renderReports() {
         delivered:'#166534', cancelled:'#991b1b'
       }[o.status] || '#64748b';
       return `<tr style="${rowStyle(i)}">
-        <td style="padding:9px 10px;font-weight:800;color:var(--navy);">${o.id}</td>
-        <td style="padding:9px 10px;">${o.name||''}</td>
-        <td style="padding:9px 10px;direction:ltr;text-align:right;">${o.phone||''}</td>
-        <td style="padding:9px 10px;">${o.region||''}</td>
+        <td style="padding:9px 10px;font-weight:800;color:var(--navy);">${esc(o.id)}</td>
+        <td style="padding:9px 10px;">${esc(o.name)||''}</td>
+        <td style="padding:9px 10px;direction:ltr;text-align:right;">${esc(o.phone)||''}</td>
+        <td style="padding:9px 10px;">${esc(o.region)||''}</td>
         <td style="padding:9px 10px;">
           <span style="background:${statusColor}22;color:${statusColor};padding:3px 10px;border-radius:20px;font-size:.78rem;font-weight:700;">
             ${STATUS_AR[o.status]||o.status}
@@ -843,14 +989,14 @@ function renderReports() {
   const sbody = document.getElementById('rp-staff-body');
   const staffEntries = Object.entries(staffStats);
   if (!staffEntries.length) {
-    sbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">لا توجد بيانات موظفين بعد</td></tr>`;
+    sbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">لا توجد بيانات</td></tr>`;
   } else {
     sbody.innerHTML = staffEntries.map(([name, s], i) => {
       const avg = s.count > 0 ? Math.round(s.totalMin / s.count) : 0;
       const last = s.lastAt ? new Date(s.lastAt).toLocaleDateString('ar-IQ') : '—';
       const rowStyle = i % 2 === 0 ? 'background:#f8fafc;' : '';
       return `<tr style="${rowStyle}">
-        <td style="padding:9px 10px;font-weight:800;">${name}</td>
+        <td style="padding:9px 10px;font-weight:800;">${esc(name)}</td>
         <td style="padding:9px 10px;color:var(--text-muted);">${s.role||'—'}</td>
         <td style="padding:9px 10px;text-align:center;font-weight:800;color:var(--green);">${s.completed}</td>
         <td style="padding:9px 10px;text-align:center;">${avg} د</td>
@@ -1431,6 +1577,3 @@ async function deleteCoupon(id) {
 </script>
 </body>
 </html>
-
-
-
