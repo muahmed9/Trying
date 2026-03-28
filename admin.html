@@ -189,6 +189,7 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
       <button class="atab" onclick="switchPage('stats',this)">📊 الإحصائيات</button>
       <button class="atab" id="tab-staff-btn" onclick="switchPage('staff',this)"  style="display:none;">👥 الموظفون</button>
       <button class="atab" id="tab-dash-btn"  onclick="switchPage('dash',this)"   style="display:none;">🏆 داشبورد</button>
+      <button class="atab" id="tab-reports-btn" onclick="switchPage('reports',this)" style="display:none;">📥 تقارير Excel</button>
     </div>
 
     <!-- Page: Orders -->
@@ -271,6 +272,85 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
     <div class="admin-page" id="page-dash">
       <h3 style="margin:0 0 18px;color:var(--navy);font-weight:800;">📊 داشبورد الموظفين</h3>
       <div id="emp-dash">جاري التحميل...</div>
+    </div>
+
+    <!-- Page: Excel Reports (manager only) -->
+    <div class="admin-page" id="page-reports">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+        <h3 style="margin:0;color:var(--navy);font-weight:800;">📥 تقارير Excel</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button onclick="exportOrdersExcel()" style="background:var(--green);color:#fff;border:none;padding:10px 16px;border-radius:12px;font-weight:800;cursor:pointer;font-family:'Tajawal',sans-serif;font-size:.88rem;">⬇️ تصدير كل الطلبات</button>
+          <button onclick="exportAnalysisExcel()" style="background:var(--orange);color:#fff;border:none;padding:10px 16px;border-radius:12px;font-weight:800;cursor:pointer;font-family:'Tajawal',sans-serif;font-size:.88rem;">📊 تصدير التحليل الشامل</button>
+        </div>
+      </div>
+
+      <!-- Summary -->
+      <div class="sgrid" style="margin-bottom:18px;">
+        <div class="scard"><div class="snum" id="rp-total"     style="color:var(--navy);">—</div><div class="slbl">إجمالي الطلبات</div></div>
+        <div class="scard"><div class="snum" id="rp-done"      style="color:var(--green);">—</div><div class="slbl">مكتملة</div></div>
+        <div class="scard"><div class="snum" id="rp-pending"   style="color:var(--orange);">—</div><div class="slbl">قيد التنفيذ</div></div>
+        <div class="scard"><div class="snum" id="rp-cancelled" style="color:var(--red);">—</div><div class="slbl">ملغاة</div></div>
+      </div>
+
+      <!-- All Orders Table -->
+      <div style="background:var(--card);border-radius:18px;padding:18px;margin-bottom:18px;box-shadow:0 4px 12px rgba(0,0,0,.04);overflow-x:auto;">
+        <h4 style="margin:0 0 14px;color:var(--navy);font-weight:800;">📋 جدول جميع الطلبات</h4>
+        <table id="rp-orders-table" style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:750px;">
+          <thead>
+            <tr style="background:var(--navy);color:#fff;text-align:right;">
+              <th style="padding:11px 10px;border-radius:0 8px 0 0;">رقم الطلب</th>
+              <th style="padding:11px 10px;">الاسم</th>
+              <th style="padding:11px 10px;">الهاتف</th>
+              <th style="padding:11px 10px;">المنطقة</th>
+              <th style="padding:11px 10px;">الحالة</th>
+              <th style="padding:11px 10px;">الطباعة</th>
+              <th style="padding:11px 10px;">عدد الملفات</th>
+              <th style="padding:11px 10px;">المجموع</th>
+              <th style="padding:11px 10px;border-radius:8px 0 0 0;">التاريخ</th>
+            </tr>
+          </thead>
+          <tbody id="rp-orders-body">
+            <tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted);">جاري التحميل...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Staff Analysis Table -->
+      <div style="background:var(--card);border-radius:18px;padding:18px;margin-bottom:18px;box-shadow:0 4px 12px rgba(0,0,0,.04);overflow-x:auto;">
+        <h4 style="margin:0 0 14px;color:var(--navy);font-weight:800;">👥 تحليل أداء الموظفين</h4>
+        <table id="rp-staff-table" style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:500px;">
+          <thead>
+            <tr style="background:var(--teal);color:#fff;text-align:right;">
+              <th style="padding:11px 10px;">الموظف</th>
+              <th style="padding:11px 10px;">الدور</th>
+              <th style="padding:11px 10px;">طلبات أنجزها</th>
+              <th style="padding:11px 10px;">متوسط الوقت (د)</th>
+              <th style="padding:11px 10px;">آخر نشاط</th>
+            </tr>
+          </thead>
+          <tbody id="rp-staff-body">
+            <tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-muted);">جاري التحميل...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Order Types Analysis -->
+      <div style="background:var(--card);border-radius:18px;padding:18px;box-shadow:0 4px 12px rgba(0,0,0,.04);overflow-x:auto;">
+        <h4 style="margin:0 0 14px;color:var(--navy);font-weight:800;">🎨 تحليل أنواع الطلبات</h4>
+        <table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:420px;">
+          <thead>
+            <tr style="background:var(--orange);color:#fff;text-align:right;">
+              <th style="padding:11px 10px;">النوع</th>
+              <th style="padding:11px 10px;">عدد الطلبات</th>
+              <th style="padding:11px 10px;">الإيرادات</th>
+              <th style="padding:11px 10px;">النسبة</th>
+            </tr>
+          </thead>
+          <tbody id="rp-type-body">
+            <tr><td colspan="4" style="text-align:center;padding:30px;color:var(--text-muted);">جاري التحميل...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
@@ -418,14 +498,13 @@ function enterDashboard() {
     document.getElementById('role-badge-top').innerText = `${r.emoji} ${r.label}`;
     if (r.mgr) {
       document.getElementById('tab-staff-btn').style.display = '';
-      document.getElementById('tab-dash-btn').style.display = '';
+      document.getElementById('tab-dash-btn').style.display  = '';
+      document.getElementById('tab-reports-btn').style.display = '';
     }
   }
   renderStaffList();
   startListening();
 }
-
-function doLogout() {
   sessionStorage.removeItem('adm-role');
   if (rtCh) sb.removeChannel(rtCh);
   location.reload();
@@ -460,6 +539,7 @@ function doLogout() {
     if (r.mgr) {
       document.getElementById('tab-staff-btn').style.display = '';
       document.getElementById('tab-dash-btn').style.display = '';
+      document.getElementById('tab-reports-btn').style.display = '';
     }
     renderStaffList();
     setTimeout(startListening, 80);
@@ -626,6 +706,253 @@ function switchPage(name, el) {
   if (name === 'stats') calcStats();
   if (name === 'dash') renderStaffDashboard();
   if (name === 'staff') renderStaffList();
+  if (name === 'reports') renderReports();
+}
+
+// ══════════════════════════════════
+//  REPORTS & EXCEL EXPORT
+// ══════════════════════════════════
+const STATUS_AR = {
+  received:'مستلم', printing:'قيد الطباعة', delivering:'في الطريق',
+  delivered:'تم التسليم', cancelled:'ملغى'
+};
+
+function renderReports() {
+  const orders = allOrders;
+  // Summary
+  const done      = orders.filter(o => o.status === 'delivered').length;
+  const pending   = orders.filter(o => ['received','printing','delivering'].includes(o.status)).length;
+  const cancelled = orders.filter(o => o.status === 'cancelled').length;
+  document.getElementById('rp-total').innerText     = orders.length;
+  document.getElementById('rp-done').innerText      = done;
+  document.getElementById('rp-pending').innerText   = pending;
+  document.getElementById('rp-cancelled').innerText = cancelled;
+
+  // Orders table
+  const obody = document.getElementById('rp-orders-body');
+  if (!orders.length) {
+    obody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted);">لا توجد بيانات</td></tr>`;
+  } else {
+    const rowStyle = (i) => i % 2 === 0 ? 'background:#f8fafc;' : '';
+    obody.innerHTML = orders.map((o, i) => {
+      const dt = new Date(o.created_at).toLocaleDateString('ar-IQ');
+      const statusColor = {
+        received:'#1e40af', printing:'#854d0e', delivering:'#e86b24',
+        delivered:'#166534', cancelled:'#991b1b'
+      }[o.status] || '#64748b';
+      return `<tr style="${rowStyle(i)}">
+        <td style="padding:9px 10px;font-weight:800;color:var(--navy);">${o.id}</td>
+        <td style="padding:9px 10px;">${o.name||''}</td>
+        <td style="padding:9px 10px;direction:ltr;text-align:right;">${o.phone||''}</td>
+        <td style="padding:9px 10px;">${o.region||''}</td>
+        <td style="padding:9px 10px;">
+          <span style="background:${statusColor}22;color:${statusColor};padding:3px 10px;border-radius:20px;font-size:.78rem;font-weight:700;">
+            ${STATUS_AR[o.status]||o.status}
+          </span>
+        </td>
+        <td style="padding:9px 10px;">${o.color==='c'?'🌈 ملون':'⚪ أسود'} · ${o.side==='1'?'وجه':'وجهين'}</td>
+        <td style="padding:9px 10px;text-align:center;">${o.files?.length||0}</td>
+        <td style="padding:9px 10px;font-weight:800;color:var(--orange);">${(o.total||0).toLocaleString()} د.ع</td>
+        <td style="padding:9px 10px;color:var(--text-muted);">${dt}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Staff analysis
+  const staffStats = {};
+  orders.forEach(o => {
+    if (!o.status_history) return;
+    o.status_history.forEach((h, idx) => {
+      if (!h.by) return;
+      const next = o.status_history[idx + 1];
+      const dur  = next ? (new Date(next.time) - new Date(h.time)) / 60000 : 0;
+      if (!staffStats[h.by]) staffStats[h.by] = { role: h.role||'', completed:0, totalMin:0, count:0, lastAt:'' };
+      staffStats[h.by].count++;
+      if (dur > 0) { staffStats[h.by].totalMin += dur; }
+      if (!staffStats[h.by].lastAt || h.time > staffStats[h.by].lastAt) staffStats[h.by].lastAt = h.time;
+      if (o.status === 'delivered') staffStats[h.by].completed++;
+    });
+  });
+  const sbody = document.getElementById('rp-staff-body');
+  const staffEntries = Object.entries(staffStats);
+  if (!staffEntries.length) {
+    sbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">لا توجد بيانات موظفين بعد</td></tr>`;
+  } else {
+    sbody.innerHTML = staffEntries.map(([name, s], i) => {
+      const avg = s.count > 0 ? Math.round(s.totalMin / s.count) : 0;
+      const last = s.lastAt ? new Date(s.lastAt).toLocaleDateString('ar-IQ') : '—';
+      const rowStyle = i % 2 === 0 ? 'background:#f8fafc;' : '';
+      return `<tr style="${rowStyle}">
+        <td style="padding:9px 10px;font-weight:800;">${name}</td>
+        <td style="padding:9px 10px;color:var(--text-muted);">${s.role||'—'}</td>
+        <td style="padding:9px 10px;text-align:center;font-weight:800;color:var(--green);">${s.completed}</td>
+        <td style="padding:9px 10px;text-align:center;">${avg} د</td>
+        <td style="padding:9px 10px;color:var(--text-muted);">${last}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Order types analysis
+  const typeGroups = {
+    'ملون · وجه':    { label:'🌈 ملون — وجه واحد',  count:0, rev:0 },
+    'ملون · وجهين':  { label:'🌈 ملون — وجهين',      count:0, rev:0 },
+    'أسود · وجه':    { label:'⚪ أسود — وجه واحد',   count:0, rev:0 },
+    'أسود · وجهين':  { label:'⚪ أسود — وجهين',      count:0, rev:0 },
+  };
+  orders.forEach(o => {
+    const k = `${o.color==='c'?'ملون':'أسود'} · ${o.side==='1'?'وجه':'وجهين'}`;
+    if (typeGroups[k]) { typeGroups[k].count++; typeGroups[k].rev += (o.total||0); }
+  });
+  const totalOrders = orders.length || 1;
+  const tbody = document.getElementById('rp-type-body');
+  tbody.innerHTML = Object.values(typeGroups).map((g, i) => {
+    const pct = ((g.count / totalOrders) * 100).toFixed(1);
+    const rowStyle = i % 2 === 0 ? 'background:#f8fafc;' : '';
+    return `<tr style="${rowStyle}">
+      <td style="padding:9px 10px;font-weight:700;">${g.label}</td>
+      <td style="padding:9px 10px;text-align:center;font-weight:800;">${g.count}</td>
+      <td style="padding:9px 10px;color:var(--orange);font-weight:800;">${g.rev.toLocaleString()} د.ع</td>
+      <td style="padding:9px 10px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="flex:1;background:#e2e8f0;height:6px;border-radius:3px;overflow:hidden;">
+            <div style="width:${pct}%;height:100%;background:var(--teal);border-radius:3px;"></div>
+          </div>
+          <span style="font-size:.78rem;font-weight:700;color:var(--text-muted);min-width:35px;">${pct}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Excel export helpers ──────────────────────────
+function _xlsEscape(v) {
+  if (v == null) return '';
+  return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function _buildXls(sheets) {
+  // sheets = [ { name, headers:[], rows:[[]] } ]
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+  xmlns:x="urn:schemas-microsoft-com:office:excel">
+<Styles>
+  <Style ss:ID="h"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#0d3b66" ss:Pattern="Solid"/><Alignment ss:Horizontal="Right"/></Style>
+  <Style ss:ID="e"><Alignment ss:Horizontal="Right"/></Style>
+  <Style ss:ID="s"><Interior ss:Color="#f8fafc" ss:Pattern="Solid"/><Alignment ss:Horizontal="Right"/></Style>
+</Styles>`;
+  sheets.forEach(sh => {
+    xml += `<Worksheet ss:Name="${_xlsEscape(sh.name)}"><Table>`;
+    xml += `<Row>` + sh.headers.map(h => `<Cell ss:StyleID="h"><Data ss:Type="String">${_xlsEscape(h)}</Data></Cell>`).join('') + `</Row>`;
+    sh.rows.forEach((row, ri) => {
+      const style = ri % 2 === 0 ? 'e' : 's';
+      xml += `<Row>` + row.map(cell => {
+        const isNum = typeof cell === 'number';
+        return `<Cell ss:StyleID="${style}"><Data ss:Type="${isNum?'Number':'String'}">${_xlsEscape(cell)}</Data></Cell>`;
+      }).join('') + `</Row>`;
+    });
+    xml += `</Table></Worksheet>`;
+  });
+  xml += `</Workbook>`;
+  return xml;
+}
+
+function _downloadXls(xml, filename) {
+  const blob = new Blob([xml], { type:'application/vnd.ms-excel;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+function exportOrdersExcel() {
+  const headers = ['رقم الطلب','الاسم','رقم الهاتف','المنطقة','الحالة','نوع الطباعة','طريقة الطباعة','عدد الملفات','سعر الطباعة','رسوم التوصيل','المجموع','النقاط المكتسبة','تاريخ الطلب'];
+  const rows = allOrders.map(o => [
+    o.id,
+    o.name||'',
+    o.phone||'',
+    o.region||'',
+    STATUS_AR[o.status]||o.status,
+    o.color==='c'?'ملون':'أسود وأبيض',
+    o.side==='1'?'وجه واحد':'وجهين',
+    o.files?.length||0,
+    o.print_price||0,
+    o.delivery_fee||0,
+    o.total||0,
+    o.loyalty_points_earned||0,
+    new Date(o.created_at).toLocaleDateString('ar-IQ')
+  ]);
+  const xml = _buildXls([{ name:'جميع الطلبات', headers, rows }]);
+  _downloadXls(xml, `الشاطر_طلبات_${new Date().toLocaleDateString('ar-IQ').replace(/\//g,'-')}.xls`);
+  showToast('✅ تم تصدير الطلبات بنجاح');
+}
+
+function exportAnalysisExcel() {
+  // Sheet 1: Orders
+  const ordHeaders = ['رقم الطلب','الاسم','الهاتف','المنطقة','الحالة','الطباعة','الملفات','المجموع','التاريخ'];
+  const ordRows = allOrders.map(o => [
+    o.id, o.name||'', o.phone||'', o.region||'',
+    STATUS_AR[o.status]||o.status,
+    `${o.color==='c'?'ملون':'أسود'} · ${o.side==='1'?'وجه':'وجهين'}`,
+    o.files?.length||0, o.total||0,
+    new Date(o.created_at).toLocaleDateString('ar-IQ')
+  ]);
+
+  // Sheet 2: Status summary
+  const statHeaders = ['الحالة','العدد','الإيرادات (د.ع)'];
+  const statuses = ['received','printing','delivering','delivered','cancelled'];
+  const statRows = statuses.map(st => {
+    const grp = allOrders.filter(o => o.status === st);
+    return [STATUS_AR[st]||st, grp.length, grp.reduce((s,o)=>s+(o.total||0),0)];
+  });
+
+  // Sheet 3: Staff
+  const staffStats = {};
+  allOrders.forEach(o => {
+    (o.status_history||[]).forEach((h, idx) => {
+      if (!h.by) return;
+      const next = o.status_history[idx+1];
+      const dur  = next ? (new Date(next.time)-new Date(h.time))/60000 : 0;
+      if (!staffStats[h.by]) staffStats[h.by] = { role:h.role||'', completed:0, totalMin:0, count:0, lastAt:'' };
+      staffStats[h.by].count++;
+      if (dur>0) staffStats[h.by].totalMin += dur;
+      if (!staffStats[h.by].lastAt||h.time>staffStats[h.by].lastAt) staffStats[h.by].lastAt=h.time;
+      if (o.status==='delivered') staffStats[h.by].completed++;
+    });
+  });
+  const staffHeaders = ['الموظف','الدور','طلبات مكتملة','إجمالي تعاملات','متوسط الوقت (دقيقة)','آخر نشاط'];
+  const staffRows = Object.entries(staffStats).map(([name,s]) => [
+    name, s.role||'—', s.completed, s.count,
+    s.count>0?Math.round(s.totalMin/s.count):0,
+    s.lastAt?new Date(s.lastAt).toLocaleDateString('ar-IQ'):'—'
+  ]);
+
+  // Sheet 4: Type analysis
+  const typeGroups = {
+    'ملون · وجه': {label:'ملون — وجه واحد',count:0,rev:0},
+    'ملون · وجهين':{label:'ملون — وجهين',count:0,rev:0},
+    'أسود · وجه': {label:'أسود — وجه واحد',count:0,rev:0},
+    'أسود · وجهين':{label:'أسود — وجهين',count:0,rev:0},
+  };
+  allOrders.forEach(o=>{
+    const k=`${o.color==='c'?'ملون':'أسود'} · ${o.side==='1'?'وجه':'وجهين'}`;
+    if(typeGroups[k]){typeGroups[k].count++;typeGroups[k].rev+=(o.total||0);}
+  });
+  const typeHeaders=['نوع الطباعة','عدد الطلبات','الإيرادات (د.ع)','النسبة %'];
+  const total = allOrders.length||1;
+  const typeRows = Object.values(typeGroups).map(g=>[
+    g.label, g.count, g.rev, Number(((g.count/total)*100).toFixed(1))
+  ]);
+
+  const xml = _buildXls([
+    { name:'جميع الطلبات',      headers:ordHeaders,   rows:ordRows },
+    { name:'ملخص الحالات',      headers:statHeaders,  rows:statRows },
+    { name:'أداء الموظفين',      headers:staffHeaders, rows:staffRows },
+    { name:'تحليل أنواع الطباعة',headers:typeHeaders,  rows:typeRows },
+  ]);
+  _downloadXls(xml, `الشاطر_تحليل_شامل_${new Date().toLocaleDateString('ar-IQ').replace(/\//g,'-')}.xls`);
+  showToast('✅ تم تصدير التحليل الشامل بنجاح');
 }
 
 // ══════════════════════════════════
@@ -897,3 +1224,4 @@ function showToast(m) {
 </script>
 </body>
 </html>
+
