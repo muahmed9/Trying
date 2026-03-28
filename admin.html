@@ -505,6 +505,7 @@ function enterDashboard() {
   renderStaffList();
   startListening();
 }
+function doLogout() {
   sessionStorage.removeItem('adm-role');
   if (rtCh) sb.removeChannel(rtCh);
   location.reload();
@@ -1224,4 +1225,5 @@ function showToast(m) {
 </script>
 </body>
 </html>
+
 
