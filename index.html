@@ -238,7 +238,8 @@ input:checked+.togs:before { transform:translateX(-24px); }
 .mpseg.cur  { background:var(--orange); animation:pulseGlow 2s infinite; }
 .mplabels { display:flex; justify-content:space-between; margin-top:4px; }
 .mplbl { flex:1; font-size:.68rem; color:var(--text-muted); text-align:center; font-weight:700; }
-.mplbl.cur { color:var(--orange); }
+.mplbl.cur  { color:var(--orange); }
+.mplbl.done { color:var(--green); font-weight:800; }
 
 /* ═══════════════════════════════
    ORDER DETAIL TIMELINE
@@ -584,14 +585,81 @@ function startRT() {
         p => {
           if (p.new.user_id !== userId && p.new.telegram_id !== userId) return;
           const m = {received:'📥 تم الاستلام',printing:'🖨️ قيد الطباعة',delivering:'🛵 جاري التوصيل',delivered:'✅ تم التسليم',cancelled:'❌ ملغى'};
-          showToast('🔔 تحديث: ' + (m[p.new.status] || p.new.status));
-          if (document.getElementById('tab-orders').classList.contains('active')) loadOrders();
+          showToast('🔔 ' + (m[p.new.status] || p.new.status));
+
+          // ① دائماً حدّث قائمة الطلبات (سواء كان التبويب مفعّلاً أم لا)
+          loadOrders();
+
+          // ② حدّث شاشة النجاح إذا كانت تعرض هذا الطلب
+          if (_successOid && p.new.id === _successOid) {
+            _updateSuccessScreen(p.new.status, p.new.status_history);
+          }
+
+          // ③ حدّث تفاصيل الطلب إذا كانت مفتوحة
           if (document.getElementById('det-ov').classList.contains('open') &&
               document.getElementById('det-title').innerText.includes(p.new.id)) showDet(p.new.id);
+
           if (p.new.status === 'delivered') init();
         })
       .subscribe();
   } catch(e) {}
+}
+
+// ══ UPDATE SUCCESS SCREEN ═════════════════════════
+// تُستدعى من startRT وأيضاً من قناة الطلب المحددة
+function _updateSuccessScreen(status, history) {
+  const banner = document.getElementById('suc-banner');
+  const steps  = document.getElementById('suc-steps');
+  const thx    = document.getElementById('suc-thx');
+  if (!banner) return; // success screen not mounted
+
+  // ── Banner ──
+  const bannerMap = {
+    cancelled:  { text:'❌ تم إلغاء الطلب',          bg:'rgba(239,68,68,.12)',   border:'#fca5a5',   color:'var(--red)'   },
+    delivered:  { text:'✅ تم التسليم بنجاح!',        bg:'rgba(16,185,129,.12)', border:'#86efac',   color:'var(--green)' },
+    delivering: { text:'🛵 المندوب في الطريق إليك!', bg:'rgba(232,107,36,.1)',  border:'rgba(232,107,36,.4)', color:'var(--orange)' },
+    printing:   { text:'🖨️ جاري طباعة ملفاتك...',    bg:'rgba(232,107,36,.1)',  border:'rgba(232,107,36,.4)', color:'var(--orange)' },
+    received:   { text:'📥 تم استلام طلبك',           bg:'rgba(90,179,196,.12)', border:'rgba(90,179,196,.35)', color:'var(--teal)' },
+  };
+  const bInfo = bannerMap[status] || bannerMap.received;
+  banner.innerText = bInfo.text;
+  banner.style.background   = bInfo.bg;
+  banner.style.borderColor  = bInfo.border;
+  banner.style.color        = bInfo.color;
+
+  // ── Steps ──
+  if (steps) {
+    const si = STATUS_STEPS.findIndex(s => s.k === status);
+    const isDelivered  = status === 'delivered';
+    const isCancelled  = status === 'cancelled';
+    steps.innerHTML = STATUS_STEPS.map((s, i) => {
+      const isDone = isDelivered || (!isCancelled && i < si);
+      // current step = orange pulse only if NOT delivered
+      const isCur  = !isDelivered && !isCancelled && i === si;
+      const opacity = (isDone || isCur || i <= si) ? '1' : '0.35';
+      const lc = isDone ? 'var(--green)' : isCur ? 'var(--orange)' : 'var(--text-muted)';
+      // Current step icon shows pulse; done shows ✅; pending shows original icon
+      const iconEl = isDone
+        ? `<span style="font-size:1.4rem;">✅</span>`
+        : isCur
+          ? `<span style="font-size:1.4rem;display:inline-block;animation:pulseGlow 2s infinite;">${s.icon}</span>`
+          : `<span style="font-size:1.4rem;">${s.icon}</span>`;
+      return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;
+        border-bottom:${i < 3 ? '1px solid var(--border)' : 'none'};
+        opacity:${opacity};transition:opacity .4s;">
+        ${iconEl}
+        <b style="color:${lc};font-size:.97rem;">${s.label}</b>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Thank-you section on delivery ──
+  if (status === 'delivered' && thx) {
+    thx.style.display = 'block';
+  }
+  if (status === 'cancelled' && thx) {
+    thx.style.display = 'none';
+  }
 }
 
 // ══ TABS ════════════════════════════════════════
@@ -1020,6 +1088,18 @@ function _buildSuccessHTML(currentStatus) {
         ${stepsHTML}
       </div>
 
+      <!-- شكر عند التسليم — مخفي حتى يتم التحديث -->
+      <div id="suc-thx" style="display:none;background:linear-gradient(135deg,#065f46,#10b981);color:#fff;border-radius:18px;padding:22px;margin-bottom:16px;text-align:center;animation:pop .4s ease;">
+        <div style="font-size:3rem;margin-bottom:8px;">🎉</div>
+        <h3 style="margin:0 0 6px;font-weight:800;font-size:1.1rem;">شكراً لتعاملك مع الشاطر!</h3>
+        <p style="margin:0 0 14px;opacity:.85;font-size:.9rem;">نتمنى أن تكون راضياً عن خدمتنا 💚</p>
+        <button onclick="location.reload()" class="bmain"
+          style="background:rgba(255,255,255,.2);color:#fff;border:1.5px solid rgba(255,255,255,.4);
+                 font-size:.95rem;padding:12px;border-radius:12px;">
+          🖨️ اطلب مرة أخرى
+        </button>
+      </div>
+
       <button onclick="goTab('orders')" class="bmain btn-action" style="margin-bottom:10px;">📋 تتبع طلبي</button>
       <button onclick="location.reload()" class="bmain" style="background:var(--card);color:var(--text-muted);border:1.5px solid var(--border);">🆕 طلب جديد</button>
     </div>`;
@@ -1036,57 +1116,16 @@ function showSuccessUI(oid, pe, np) {
   _successPe  = pe;
   _successNp  = np;
   document.getElementById('tab-order').innerHTML = _buildSuccessHTML('received');
-  // Subscribe to live updates for this specific order
+  // startRT already handles all live updates via _updateSuccessScreen
+  // This per-order channel is a fallback (more reliable with row filter)
   try {
     sb.channel('suc-' + oid)
       .on('postgres_changes',
         { event:'UPDATE', schema:'public', table:'orders', filter:`id=eq.${oid}` },
         p => {
           if (!p.new) return;
-          // Update banner + steps live
-          const banner = document.getElementById('suc-banner');
-          const steps  = document.getElementById('suc-steps');
-          if (!banner) return;
-          const status = p.new.status;
-          const bannerText = status === 'cancelled'  ? '❌ تم إلغاء الطلب'
-            : status === 'delivered'  ? '✅ تم التسليم بنجاح!'
-            : status === 'delivering' ? '🛵 المندوب في الطريق إليك!'
-            : status === 'printing'   ? '🖨️ جاري طباعة ملفاتك...'
-            : '📥 تم استلام طلبك';
-          banner.innerText = bannerText;
-          if (status === 'cancelled') {
-            banner.style.background = 'rgba(239,68,68,.12)';
-            banner.style.borderColor = '#fca5a5';
-            banner.style.color = 'var(--red)';
-          } else if (status === 'delivered') {
-            banner.style.background = 'rgba(16,185,129,.12)';
-            banner.style.borderColor = '#86efac';
-            banner.style.color = 'var(--green)';
-          } else {
-            banner.style.background = 'rgba(232,107,36,.1)';
-            banner.style.borderColor = 'rgba(232,107,36,.4)';
-            banner.style.color = 'var(--orange)';
-          }
-          // Rebuild steps
-          if (steps) {
-            const si = STATUS_STEPS.findIndex(s => s.k === status);
-            steps.innerHTML = STATUS_STEPS.map((s, i) => {
-              const isDone = i < si || (status === 'delivered' && i === si);
-              const isCur  = i === si && status !== 'delivered' && status !== 'cancelled';
-              const opacity = (isDone || isCur || i === si) ? '1' : '0.38';
-              let labelColor = 'var(--text-muted)';
-              if (isDone) labelColor = 'var(--green)';
-              else if (isCur) labelColor = 'var(--orange)';
-              return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;
-                border-bottom:${i < 3 ? '1px solid var(--border)' : 'none'};
-                opacity:${opacity};transition:opacity .4s;">
-                <span style="font-size:1.4rem;min-width:32px;text-align:center;">${isDone ? '✅' : s.icon}</span>
-                <b style="color:${labelColor};font-size:.97rem;">${s.label}</b>
-              </div>`;
-            }).join('');
-          }
-          showToast('🔔 تحديث طلبك: ' + bannerText);
-          if (status === 'delivered') init();
+          _updateSuccessScreen(p.new.status, p.new.status_history);
+          if (p.new.status === 'delivered') init();
         })
       .subscribe();
   } catch(e) {}
@@ -1128,16 +1167,23 @@ async function loadOrders() {
     if (o.status==='delivered') ptsNote = '<span style="color:var(--green);">تمت الإضافة ✅</span>';
     if (o.status==='cancelled') ptsNote = '<span style="color:var(--red);">ملغاة ❌</span>';
 
-    // Mini progress bar — only current step animates, completed are stable
+    // Mini progress bar — delivered=all green stable, current=orange pulse, done=green stable
     let mpHtml = '';
     if (o.status !== 'cancelled') {
       mpHtml = `<div class="mpbar">` +
         [0,1,2,3].map(i => {
-          const cls = i < s.idx ? 'done' : i === s.idx ? 'cur' : '';
+          // all green when delivered; done=green; current=orange pulse; pending=empty
+          const cls = o.status === 'delivered' ? 'done'
+                    : i < s.idx              ? 'done'
+                    : i === s.idx            ? 'cur' : '';
           return `<div class="mpseg ${cls}"></div>`;
         }).join('') +
         `</div><div class="mplabels">` +
-        segs.map((lb,i) => `<span class="mplbl ${i===s.idx?'cur':''}">${lb}</span>`).join('') +
+        segs.map((lb,i) => {
+          const lCls = o.status === 'delivered' ? 'done'
+                     : i === s.idx ? 'cur' : '';
+          return `<span class="mplbl ${lCls}">${lb}</span>`;
+        }).join('') +
         `</div>`;
     } else {
       mpHtml = `<div style="margin-top:10px;font-size:.82rem;color:var(--red);font-weight:700;">❌ تم إلغاء هذا الطلب</div>`;
@@ -1274,6 +1320,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 
