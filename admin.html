@@ -191,7 +191,7 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
     <div class="admin-page active" id="page-orders">
       <!-- 🔍 Search bar -->
       <div style="margin-bottom:14px;">
-        <input type="text" id="order-search" placeholder="🔍 بحث برقم الطلب، اسم الزبون، أو الهاتف..." oninput="renderOrders()" style="margin-bottom:0;">
+        <input type="text" id="order-search" placeholder="🔍 بحث برقم الطلب، اسم الزبون، أو الهاتف..." style="margin-bottom:0;">
       </div>
       <div class="fbar" id="filter-bar">
         <button class="ftab active" onclick="setFilter('all',this)">الكل</button>
@@ -449,29 +449,58 @@ function esc(s) {
 // ══════════════════════════════════
 //  🔔 SOUND NOTIFICATION
 // ══════════════════════════════════
-function playNotifSound() {
+// AudioContext مشترك لتجنب تسرب الذاكرة
+const _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function _playNote(freq, startTime, duration, volume = 0.35) {
+  if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  const osc  = _audioCtx.createOscillator();
+  const gain = _audioCtx.createGain();
+  osc.connect(gain); gain.connect(_audioCtx.destination);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(freq, startTime);
+  gain.gain.setValueAtTime(volume, startTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+  osc.start(startTime);
+  osc.stop(startTime + duration);
+}
+
+function playAdminAlert(status) {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.frequency.value = 880; osc.type = 'sine';
-    gain.gain.setValueAtTime(0.4, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
-    osc.start(); osc.stop(ctx.currentTime + 0.8);
-    // Double beep for urgency
-    setTimeout(() => {
-      try {
-        const ctx2 = new (window.AudioContext || window.webkitAudioContext)();
-        const osc2 = ctx2.createOscillator();
-        const gain2 = ctx2.createGain();
-        osc2.connect(gain2); gain2.connect(ctx2.destination);
-        osc2.frequency.value = 1100; osc2.type = 'sine';
-        gain2.gain.setValueAtTime(0.3, ctx2.currentTime);
-        gain2.gain.exponentialRampToValueAtTime(0.01, ctx2.currentTime + 0.5);
-        osc2.start(); osc2.stop(ctx2.currentTime + 0.5);
-      } catch {}
-    }, 300);
+    if (_audioCtx.state === 'suspended') _audioCtx.resume();
+    const t = _audioCtx.currentTime;
+    switch (status) {
+      case 'received':
+        // ثلاث نبضات متوسطة — طلب جديد يحتاج موظف الاستلام
+        _playNote(880, t,        0.18, 0.4);
+        _playNote(880, t + 0.28, 0.18, 0.4);
+        _playNote(880, t + 0.56, 0.22, 0.4);
+        break;
+      case 'printing':
+        // نغمتان تأكيد — بدء الطباعة
+        _playNote(660, t,        0.22, 0.35);
+        _playNote(880, t + 0.28, 0.28, 0.35);
+        break;
+      case 'delivering':
+        // نبضتان حادتان سريعتان — تنبيه المندوب
+        _playNote(1100, t,        0.13, 0.38);
+        _playNote(1100, t + 0.21, 0.15, 0.38);
+        break;
+      case 'delivered':
+        // أربع نغمات احتفالية — اكتمال التسليم
+        _playNote(523,  t,        0.14, 0.4);
+        _playNote(659,  t + 0.18, 0.14, 0.4);
+        _playNote(784,  t + 0.36, 0.14, 0.4);
+        _playNote(1047, t + 0.54, 0.26, 0.4);
+        break;
+      case 'cancelled':
+        // نغمة هابطة طويلة — إلغاء الطلب
+        _playNote(440, t,        0.45, 0.3);
+        _playNote(220, t + 0.52, 0.55, 0.25);
+        break;
+      default:
+        _playNote(880, t, 0.4, 0.3);
+    }
   } catch(e) {}
 }
 
@@ -485,6 +514,13 @@ const ADMIN_ID  = '7618746133';
 
 const sb = window.supabase.createClient(SB_URL, SB_KEY);
 let allOrders = [], curFilter = 'all', rtCh = null, currentRole = '';
+
+// ══ DEBOUNCE البحث ════════════════════════════════
+let _searchT;
+document.getElementById('order-search').addEventListener('input', () => {
+  clearTimeout(_searchT);
+  _searchT = setTimeout(renderOrders, 300);
+});
 
 // ══════════════════════════════════
 //  STAFF ROLES CONFIG
@@ -681,7 +717,7 @@ function renderStaffList() {
           </div>
           <div style="font-size:.8rem;color:var(--text-muted);display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
             <span>👤 <b>${getUser(key)}</b></span>
-            <span>🔑 <b>${getPass(key)}</b></span>
+            <span>🔑 <b>••••••</b></span>
           </div>
         </div>
         <div style="margin-top:8px;font-size:.8rem;color:var(--text-muted);">
@@ -701,7 +737,7 @@ function renderStaffList() {
             <b style="color:var(--navy);">${a.emoji||'👤'} ${a.name}</b>
             <div style="font-size:.8rem;color:var(--text-muted);display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
               <span>👤 ${a.username||'—'}</span>
-              <span>🔑 ${a.pass}</span>
+              <span>🔑 ••••••</span>
             </div>
           </div>
           <div style="font-size:.78rem;color:var(--text-muted);margin-top:6px;">
@@ -1178,13 +1214,15 @@ async function startListening() {
   _prevOrderCount = allOrders.length;
   rtCh = sb.channel('admin-rt-v2')
     .on('postgres_changes', {event:'*', schema:'public', table:'orders'}, (payload) => {
-      // Play sound for new orders
+      // Play sound for new orders or status updates
       if (payload.eventType === 'INSERT') {
-        playNotifSound();
+        playAdminAlert('received');
         const n = payload.new;
         if (n && n.name) {
           showToast(`🆕 طلب جديد #${esc(n.id)} — ${esc(n.name)}${n.is_express?' ⚡عاجل':''}`);
         }
+      } else if (payload.eventType === 'UPDATE' && payload.new?.status) {
+        playAdminAlert(payload.new.status);
       }
       fetchOrders();
     })
