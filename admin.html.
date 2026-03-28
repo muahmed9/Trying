@@ -190,10 +190,15 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
       <button class="atab" id="tab-staff-btn" onclick="switchPage('staff',this)"  style="display:none;">👥 الموظفون</button>
       <button class="atab" id="tab-dash-btn"  onclick="switchPage('dash',this)"   style="display:none;">🏆 داشبورد</button>
       <button class="atab" id="tab-reports-btn" onclick="switchPage('reports',this)" style="display:none;">📥 تقارير Excel</button>
+      <button class="atab" id="tab-coupons-btn" onclick="switchPage('coupons',this)" style="display:none;">🎟️ الكوبونات</button>
     </div>
 
     <!-- Page: Orders -->
     <div class="admin-page active" id="page-orders">
+      <!-- 🔍 Search bar -->
+      <div style="margin-bottom:14px;">
+        <input type="text" id="order-search" placeholder="🔍 بحث برقم الطلب، اسم الزبون، أو الهاتف..." oninput="renderOrders()" style="margin-bottom:0;">
+      </div>
       <div class="fbar" id="filter-bar">
         <button class="ftab active" onclick="setFilter('all',this)">الكل</button>
         <button class="ftab" onclick="setFilter('received',this)">📥 مستلم</button>
@@ -352,10 +357,29 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
         </table>
       </div>
     </div>
+
+    <!-- Page: Coupon Management (manager only) -->
+    <div class="admin-page" id="page-coupons">
+      <h3 style="margin:0 0 18px;color:var(--navy);font-weight:800;">🎟️ إدارة الكوبونات</h3>
+      <!-- Create coupon -->
+      <div style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.03);margin-bottom:18px;">
+        <h4 style="margin:0 0 14px;color:var(--navy);font-weight:800;">➕ إنشاء كوبون جديد</h4>
+        <input type="text" id="cpn-code" placeholder="🎟️ كود الكوبون (مثل: WELCOME50)" style="text-transform:uppercase;">
+        <div style="display:flex;gap:10px;margin-bottom:12px;">
+          <select id="cpn-type" style="flex:1;">
+            <option value="percent">خصم نسبة %</option>
+            <option value="fixed">خصم مبلغ ثابت</option>
+          </select>
+          <input type="text" id="cpn-value" placeholder="القيمة" style="flex:1;margin-bottom:0;">
+        </div>
+        <input type="text" id="cpn-max" placeholder="الحد الأقصى للاستخدام (0 = غير محدود)" style="margin-bottom:12px;">
+        <button class="bmain" style="background:var(--teal);color:#fff;" onclick="createCoupon()">✅ إنشاء الكوبون</button>
+      </div>
+      <!-- Coupon list -->
+      <div id="coupon-list" style="color:var(--text-muted);text-align:center;padding:20px;">جاري التحميل...</div>
+    </div>
   </div>
 </div>
-
-<!-- Detail Panel -->
 <div class="detov" id="detov" onclick="closeDet()"></div>
 <div class="detpan" id="detpan">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;border-bottom:2px solid #f1f5f9;padding-bottom:15px;">
@@ -368,6 +392,45 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
 <div id="toast"></div>
 
 <script>
+// ══════════════════════════════════
+//  🔒 SECURITY: Escape HTML to prevent XSS
+// ══════════════════════════════════
+function esc(s) {
+  if (s == null) return '';
+  const d = document.createElement('div');
+  d.textContent = String(s);
+  return d.innerHTML;
+}
+
+// ══════════════════════════════════
+//  🔔 SOUND NOTIFICATION
+// ══════════════════════════════════
+function playNotifSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 880; osc.type = 'sine';
+    gain.gain.setValueAtTime(0.4, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
+    osc.start(); osc.stop(ctx.currentTime + 0.8);
+    // Double beep for urgency
+    setTimeout(() => {
+      try {
+        const ctx2 = new (window.AudioContext || window.webkitAudioContext)();
+        const osc2 = ctx2.createOscillator();
+        const gain2 = ctx2.createGain();
+        osc2.connect(gain2); gain2.connect(ctx2.destination);
+        osc2.frequency.value = 1100; osc2.type = 'sine';
+        gain2.gain.setValueAtTime(0.3, ctx2.currentTime);
+        gain2.gain.exponentialRampToValueAtTime(0.01, ctx2.currentTime + 0.5);
+        osc2.start(); osc2.stop(ctx2.currentTime + 0.5);
+      } catch {}
+    }, 300);
+  } catch(e) {}
+}
+
 // ══════════════════════════════════
 //  CONFIG
 // ══════════════════════════════════
@@ -500,6 +563,7 @@ function enterDashboard() {
       document.getElementById('tab-staff-btn').style.display = '';
       document.getElementById('tab-dash-btn').style.display  = '';
       document.getElementById('tab-reports-btn').style.display = '';
+      document.getElementById('tab-coupons-btn').style.display = '';
     }
   }
   renderStaffList();
@@ -541,6 +605,7 @@ function doLogout() {
       document.getElementById('tab-staff-btn').style.display = '';
       document.getElementById('tab-dash-btn').style.display = '';
       document.getElementById('tab-reports-btn').style.display = '';
+      document.getElementById('tab-coupons-btn').style.display = '';
     }
     renderStaffList();
     setTimeout(startListening, 80);
@@ -708,6 +773,7 @@ function switchPage(name, el) {
   if (name === 'dash') renderStaffDashboard();
   if (name === 'staff') renderStaffList();
   if (name === 'reports') renderReports();
+  if (name === 'coupons') loadCoupons();
 }
 
 // ══════════════════════════════════
@@ -959,10 +1025,23 @@ function exportAnalysisExcel() {
 // ══════════════════════════════════
 //  REAL-TIME
 // ══════════════════════════════════
+let _prevOrderCount = 0;
+
 async function startListening() {
   await fetchOrders();
+  _prevOrderCount = allOrders.length;
   rtCh = sb.channel('admin-rt-v2')
-    .on('postgres_changes', {event:'*', schema:'public', table:'orders'}, () => fetchOrders())
+    .on('postgres_changes', {event:'*', schema:'public', table:'orders'}, (payload) => {
+      // Play sound for new orders
+      if (payload.eventType === 'INSERT') {
+        playNotifSound();
+        const n = payload.new;
+        if (n && n.name) {
+          showToast(`🆕 طلب جديد #${esc(n.id)} — ${esc(n.name)}${n.is_express?' ⚡عاجل':''}`);
+        }
+      }
+      fetchOrders();
+    })
     .subscribe();
 }
 
@@ -1010,22 +1089,43 @@ function calcStats() {
 // ══════════════════════════════════
 function setFilter(f, el) {
   curFilter = f;
+  curPage = 1;
   document.querySelectorAll('.ftab').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   renderOrders();
 }
 
+let curPage = 1;
+const PAGE_SIZE = 30;
+
 function renderOrders() {
   const cont = document.getElementById('olist');
-  const list = curFilter === 'all' ? allOrders : allOrders.filter(o => o.status === curFilter);
+  const searchQ = (document.getElementById('order-search')?.value || '').toLowerCase().trim();
+  let list = curFilter === 'all' ? allOrders : allOrders.filter(o => o.status === curFilter);
+
+  // 🔍 Search filter
+  if (searchQ) {
+    list = list.filter(o =>
+      (o.id || '').toLowerCase().includes(searchQ) ||
+      (o.name || '').toLowerCase().includes(searchQ) ||
+      (o.phone || '').includes(searchQ)
+    );
+  }
+
   if (!list.length) { cont.innerHTML = '<div style="text-align:center;padding:50px;color:var(--text-muted);">لا توجد طلبات</div>'; return; }
+
+  // Pagination
+  const totalPages = Math.ceil(list.length / PAGE_SIZE);
+  if (curPage > totalPages) curPage = totalPages;
+  const start = (curPage - 1) * PAGE_SIZE;
+  const pageList = list.slice(start, start + PAGE_SIZE);
+
   const now = Date.now();
-  cont.innerHTML = list.map(o => {
+  let html = pageList.map(o => {
     const s    = SM[o.status] || SM.received;
     const isNew = now - new Date(o.created_at).getTime() < 15*60*1000;
     const sp   = 'event.stopPropagation()';
     let act = '';
-    // Show buttons only if current role can perform the transition
     if (o.status === 'received') {
       if (canDo('received','printing'))   act += `<button class="abtn aprint" onclick="${sp};chStatus('${o.id}','printing')">🖨️ بدء الطباعة</button>`;
       if (canDo('received','cancelled'))  act += `<button class="abtn acanc"  onclick="${sp};initCancel('${o.id}')">❌ إلغاء</button>`;
@@ -1036,20 +1136,37 @@ function renderOrders() {
       if (canDo('delivering','delivered')) act += `<button class="abtn adone"  onclick="${sp};chStatus('${o.id}','delivered')">✅ تم التسليم</button>`;
       if (canDo('delivering','cancelled')) act += `<button class="abtn acanc"  onclick="${sp};initCancel('${o.id}')">❌ إلغاء</button>`;
     }
-    return `<div class="ocard ${isNew?'isnew':''}" onclick="openDet('${o.id}')">
+    return `<div class="ocard ${isNew?'isnew':''} ${o.is_express?'isnew':''.replace('isnew','')}" style="${o.is_express?'border-right:4px solid #9333ea;':''}" onclick="openDet('${o.id}')">
       <div class="ohdr">
-        <div><b style="color:var(--navy);font-size:1.05rem;">#${o.id}</b>${isNew?'<span class="newbdg">جديد</span>':''}</div>
+        <div>
+          <b style="color:var(--navy);font-size:1.05rem;">#${esc(o.id)}</b>
+          ${isNew?'<span class="newbdg">جديد</span>':''}
+          ${o.is_express?'<span style="background:linear-gradient(135deg,#9333ea,#7c3aed);color:#fff;border-radius:8px;font-size:.65rem;padding:2px 7px;font-weight:800;vertical-align:middle;margin-right:5px;">⚡ عاجل</span>':''}
+        </div>
         <span class="sbdg ${s.c}">${s.i} ${s.l}</span>
       </div>
       <div class="infogrid">
-        <div class="ii">👤 ${o.name}</div><div class="ii">📞 ${o.phone}</div>
-        <div class="ii">🏠 ${o.region}</div><div class="ii" style="color:var(--orange);font-weight:700;">💰 ${(o.total||0).toLocaleString()} د.ع</div>
+        <div class="ii">👤 ${esc(o.name)}</div><div class="ii">📞 ${esc(o.phone)}</div>
+        <div class="ii">🏠 ${esc(o.region)}</div><div class="ii" style="color:var(--orange);font-weight:700;">💰 ${(o.total||0).toLocaleString()} د.ع</div>
         <div class="ii">🎨 ${o.color==='c'?'ملون':'أسود'} • ${o.side==='1'?'وجه':'وجهين'}</div>
         <div class="ii" style="color:var(--teal);">📋 ${o.files?.length||0} ملف</div>
       </div>
+      ${o.notes?`<div style="font-size:.78rem;color:var(--orange);background:rgba(232,107,36,.06);padding:5px 8px;border-radius:8px;margin-top:4px;">📝 ${esc(o.notes).substring(0,50)}${o.notes.length>50?'...':''}</div>`:''}
+      ${o.rating?`<div style="font-size:.78rem;margin-top:4px;">⭐ تقييم: ${'⭐'.repeat(o.rating)}</div>`:''}
       ${act?`<div class="arow">${act}</div>`:''}
     </div>`;
   }).join('');
+
+  // Pagination controls
+  if (totalPages > 1) {
+    html += `<div style="display:flex;justify-content:center;align-items:center;gap:10px;margin-top:16px;padding:10px;">
+      <button onclick="curPage=Math.max(1,curPage-1);renderOrders();" style="border:1.5px solid #e2e8f0;background:var(--card);padding:8px 16px;border-radius:10px;cursor:pointer;font-weight:700;font-family:'Tajawal',sans-serif;" ${curPage===1?'disabled':''}>→ السابق</button>
+      <span style="font-size:.88rem;font-weight:700;color:var(--navy);">صفحة ${curPage} من ${totalPages}</span>
+      <button onclick="curPage=Math.min(${totalPages},curPage+1);renderOrders();" style="border:1.5px solid #e2e8f0;background:var(--card);padding:8px 16px;border-radius:10px;cursor:pointer;font-weight:700;font-family:'Tajawal',sans-serif;" ${curPage===totalPages?'disabled':''}>← التالي</button>
+    </div>`;
+  }
+
+  cont.innerHTML = html;
 }
 
 // ══════════════════════════════════
@@ -1181,16 +1298,23 @@ function openDet(docId) {
   document.getElementById('detbody').innerHTML = `
     <div style="text-align:center;margin-bottom:20px;">
       <span class="sbdg ${s.c}" style="font-size:.95rem;padding:8px 20px;">${s.i} ${s.l}</span>
-      ${o.cancel_reason?`<div style="margin-top:8px;font-size:.83rem;color:var(--red);font-weight:700;">السبب: ${o.cancel_reason}</div>`:''}
+      ${o.is_express?'<div style="margin-top:8px;"><span style="background:linear-gradient(135deg,#9333ea,#7c3aed);color:#fff;border-radius:10px;font-size:.82rem;padding:5px 14px;font-weight:800;">⚡ طلب عاجل</span></div>':''}
+      ${o.cancel_reason?`<div style="margin-top:8px;font-size:.83rem;color:var(--red);font-weight:700;">السبب: ${esc(o.cancel_reason)}</div>`:''}
     </div>
 
     <div style="background:var(--light-teal);border-radius:16px;padding:16px;margin-bottom:14px;border:1px solid rgba(90,179,196,.2);">
-      <div class="irow"><span>👤 الاسم</span><b>${o.name}</b></div>
-      <div class="irow"><span>📞 الهاتف</span><b>${ph}</b></div>
-      <div class="irow"><span>🏠 المنطقة</span><b>${o.region}</b></div>
-      <div class="irow"><span>⏰ وقت التوصيل</span><b>${o.delivery_time||'الآن'}</b></div>
+      <div class="irow"><span>👤 الاسم</span><b>${esc(o.name)}</b></div>
+      <div class="irow"><span>📞 الهاتف</span><b>${esc(ph)}</b></div>
+      <div class="irow"><span>🏠 المنطقة</span><b>${esc(o.region)}</b></div>
+      <div class="irow"><span>⏰ وقت التوصيل</span><b>${esc(o.delivery_time)||'الآن'}</b></div>
       <div class="irow"><span>📍 الموقع</span><a href="${o.loc_url||'#'}" target="_blank" style="color:#fff;background:var(--teal);padding:6px 14px;border-radius:8px;text-decoration:none;font-weight:700;font-size:.82rem;">الخريطة 🗺️</a></div>
     </div>
+
+    ${o.notes?`<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:14px;padding:14px;margin-bottom:14px;"><b style="color:#b45309;font-size:.88rem;">📝 ملاحظات الزبون:</b><p style="margin:6px 0 0;color:#78350f;font-size:.9rem;line-height:1.7;">${esc(o.notes)}</p></div>`:''}
+
+    ${o.coupon_code?`<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:.88rem;"><b style="color:#166534;">🎟️ كوبون:</b> <span style="font-weight:800;color:#166534;">${esc(o.coupon_code)}</span> — خصم ${(o.coupon_discount||0).toLocaleString()} د.ع</div>`:''}
+
+    ${o.rating?`<div style="background:var(--light-teal);border-radius:14px;padding:12px;margin-bottom:14px;text-align:center;"><b style="color:var(--navy);font-size:.88rem;">⭐ تقييم الزبون:</b><div style="font-size:1.5rem;margin-top:4px;">${'⭐'.repeat(o.rating)}${'☆'.repeat(5-o.rating)}</div>${o.rating_comment?`<p style="margin:6px 0 0;font-size:.83rem;color:var(--text-muted);">"${esc(o.rating_comment)}"</p>`:''}</div>`:''}
 
     <p style="font-size:.82rem;color:var(--text-muted);margin:0 0 8px;font-weight:700;">📲 تواصل مع الزبون:</p>
     <div class="contact-row" style="margin-bottom:14px;">
@@ -1201,6 +1325,8 @@ function openDet(docId) {
 
     <div style="background:#f8fafc;border-radius:16px;padding:16px;margin-bottom:14px;border:1px solid #f1f5f9;">
       <div class="irow"><span>🎨 الطباعة</span><b>${o.color==='c'?'ملون':'أسود'} • ${o.side==='1'?'وجه':'وجهين'}</b></div>
+      ${o.express_fee?`<div class="irow"><span>⚡ رسوم الطلب العاجل</span><b style="color:#9333ea;">${(o.express_fee||0).toLocaleString()} د.ع</b></div>`:''}
+      ${o.coupon_discount?`<div class="irow"><span>🎟️ خصم الكوبون</span><b style="color:var(--green);">−${(o.coupon_discount||0).toLocaleString()} د.ع</b></div>`:''}
       <div class="irow"><span>💰 الإجمالي</span><b style="color:var(--orange);font-size:1.15rem;">${(o.total||0).toLocaleString()} د.ع</b></div>
       <div class="irow"><span>💎 نقاط</span><b style="color:var(--green);background:#dcfce7;padding:3px 10px;border-radius:8px;">+${o.loyalty_points_earned||0}</b></div>
     </div>
@@ -1224,6 +1350,83 @@ function closeDet() {
 function showToast(m) {
   const t = document.getElementById('toast'); t.innerText = m; t.style.display='block';
   clearTimeout(t._t); t._t = setTimeout(()=>t.style.display='none', 3500);
+}
+
+// ══════════════════════════════════
+//  COUPON MANAGEMENT
+// ══════════════════════════════════
+async function loadCoupons() {
+  const box = document.getElementById('coupon-list');
+  box.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">جاري التحميل...</div>';
+  try {
+    const {data, error} = await sb.from('coupons').select('*').order('created_at', {ascending:false});
+    if (error) throw error;
+    if (!data || !data.length) {
+      box.innerHTML = '<p style="color:#94a3b8;font-size:.88rem;text-align:center;padding:20px;">لا توجد كوبونات بعد</p>';
+      return;
+    }
+    box.innerHTML = '<h4 style="margin:0 0 12px;color:var(--navy);font-weight:800;font-size:.95rem;">🎟️ الكوبونات الحالية</h4>' +
+      data.map(c => `
+        <div class="staff-card" style="border-right:3px solid ${c.active?'var(--green)':'var(--red)'};">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+            <div>
+              <b style="color:var(--navy);font-size:1rem;">${esc(c.code)}</b>
+              <span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:800;margin-right:6px;background:${c.active?'#dcfce7':'#fee2e2'};color:${c.active?'#166534':'#991b1b'};">${c.active?'نشط':'معطّل'}</span>
+            </div>
+            <span style="font-size:.88rem;font-weight:800;color:var(--orange);">${c.discount_type==='percent'?c.discount_value+'%':c.discount_value.toLocaleString()+' د.ع'}</span>
+          </div>
+          <div style="font-size:.8rem;color:var(--text-muted);margin-top:6px;">
+            تم الاستخدام: <b>${c.used_count||0}</b>${c.max_uses>0?' / '+c.max_uses:' (غير محدود)'}
+          </div>
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <button onclick="toggleCoupon('${c.id}',${!c.active})" style="border:none;background:${c.active?'#fef2f2':'#dcfce7'};color:${c.active?'var(--red)':'#166534'};padding:5px 12px;border-radius:8px;font-size:.78rem;cursor:pointer;font-weight:700;">${c.active?'تعطيل':'تفعيل'}</button>
+            <button onclick="deleteCoupon('${c.id}')" style="border:none;background:#fef2f2;color:var(--red);padding:5px 12px;border-radius:8px;font-size:.78rem;cursor:pointer;font-weight:700;">حذف</button>
+          </div>
+        </div>`).join('');
+  } catch(e) {
+    box.innerHTML = `<p style="color:var(--red);text-align:center;padding:20px;">❌ خطأ في تحميل الكوبونات: ${esc(e.message)}</p>`;
+  }
+}
+
+async function createCoupon() {
+  const code = document.getElementById('cpn-code').value.trim().toUpperCase();
+  const type = document.getElementById('cpn-type').value;
+  const value = parseFloat(document.getElementById('cpn-value').value);
+  const maxUses = parseInt(document.getElementById('cpn-max').value) || 0;
+
+  if (!code || code.length < 3) { alert('يرجى إدخال كود صالح (3 أحرف+)'); return; }
+  if (isNaN(value) || value <= 0) { alert('يرجى إدخال قيمة صحيحة'); return; }
+  if (type === 'percent' && value > 100) { alert('النسبة لا يمكن أن تتجاوز 100%'); return; }
+
+  try {
+    const {error} = await sb.from('coupons').insert({
+      code, discount_type: type, discount_value: value,
+      max_uses: maxUses, used_count: 0, active: true
+    });
+    if (error) throw error;
+    document.getElementById('cpn-code').value = '';
+    document.getElementById('cpn-value').value = '';
+    document.getElementById('cpn-max').value = '';
+    showToast('✅ تم إنشاء الكوبون ' + code);
+    loadCoupons();
+  } catch(e) { alert('❌ خطأ: ' + e.message); }
+}
+
+async function toggleCoupon(id, active) {
+  try {
+    await sb.from('coupons').update({active}).eq('id', id);
+    showToast(active ? '✅ تم تفعيل الكوبون' : '❌ تم تعطيل الكوبون');
+    loadCoupons();
+  } catch(e) { alert('❌ خطأ: ' + e.message); }
+}
+
+async function deleteCoupon(id) {
+  if (!confirm('حذف هذا الكوبون؟')) return;
+  try {
+    await sb.from('coupons').delete().eq('id', id);
+    showToast('🗑️ تم حذف الكوبون');
+    loadCoupons();
+  } catch(e) { alert('❌ خطأ: ' + e.message); }
 }
 </script>
 </body>
