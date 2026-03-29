@@ -1442,13 +1442,10 @@ async function chStatus(docId, newSt, cancelReason = '') {
 // ══════════════════════════════════
 async function tgSend(chatId, text) {
   try {
-    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({chat_id:chatId, text, disable_web_page_preview:true})
+    const r = await sb.functions.invoke('send-tg', {
+      body: { chatId, message: text }
     });
-    const j = await res.json();
-    if (!j.ok) console.error('tgSend error:', j.description);
-    return j.ok;
+    return r.data?.ok || false;
   } catch(e) { return false; }
 }
 
