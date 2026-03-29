@@ -1159,10 +1159,10 @@ function showSuccessUI(oid, pe, np) {
 // ══ TELEGRAM ═════════════════════════════════════
 async function tgMsg(cid, txt) {
   try {
-    const r = await fetch(`https://api.telegram.org/bot${BOT}/sendMessage`,
-      {method:'POST', headers:{'Content-Type':'application/json'},
-       body:JSON.stringify({chat_id:cid, text:txt, disable_web_page_preview:true})});
-    return (await r.json()).ok;
+    const r = await sb.functions.invoke('send-tg', {
+      body: { chatId: cid, message: txt }
+    });
+    return r.data?.ok || false;
   } catch(e) { console.error('TG send error:', e); return false; }
 }
 
@@ -1439,3 +1439,4 @@ init();
 </script>
 </body>
 </html>
+
