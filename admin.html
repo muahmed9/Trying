@@ -770,7 +770,7 @@ async function createCustomAccount() {
   try {
     // إنشاء الموظف عبر Edge Function مباشرة
     const { data: { session } } = await sb.auth.getSession();
-    const res = await fetch(`${SB_URL}/functions/v1/create-staff`, {
+    const res = await fetch(`https://zrumnqtgdscrwgcguseq.supabase.co/functions/v1/create-staff`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
