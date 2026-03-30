@@ -764,12 +764,34 @@ const FILE_TYPE_INFO = {
 };
 function fmtSize(b) { if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(1)+' MB'; }
 
+// ══ FILE MAGIC BYTES VALIDATOR ═══════════════════
+async function validateFileMagic(file) {
+  const buf = await file.slice(0, 8).arrayBuffer();
+  const b = new Uint8Array(buf);
+  const nm = file.name.toLowerCase();
+  // PDF: %PDF
+  if (nm.endsWith('.pdf')) return b[0]===0x25&&b[1]===0x50&&b[2]===0x44&&b[3]===0x46;
+  // ZIP-based (docx, xlsx, pptx)
+  if (['.docx','.xlsx','.pptx','.doc','.xls','.ppt'].some(e=>nm.endsWith(e)))
+    return b[0]===0x50&&b[1]===0x4B;
+  // JPEG
+  if (nm.endsWith('.jpg')||nm.endsWith('.jpeg')) return b[0]===0xFF&&b[1]===0xD8;
+  // PNG
+  if (nm.endsWith('.png')) return b[0]===0x89&&b[1]===0x50&&b[2]===0x4E&&b[3]===0x47;
+  // WEBP
+  if (nm.endsWith('.webp')) return b[0]===0x52&&b[1]===0x49&&b[2]===0x46&&b[3]===0x46;
+  return true;
+}
+
 document.getElementById('fileinp').onchange = async e => {
   const okExts = ['.pdf','.docx','.doc','.xlsx','.xls','.pptx','.ppt','.jpg','.jpeg','.png','.webp'];
   for (const f of e.target.files) {
     if (f.size > 50 * 1024 * 1024) { showToast('❌ ' + f.name + ' يتجاوز 50MB'); continue; }
     const nm = f.name.toLowerCase(), ext = nm.substring(nm.lastIndexOf('.'));
     if (!okExts.includes(ext) && !f.type.startsWith('image/')) continue;
+    // فحص magic bytes
+    const isValid = await validateFileMagic(f);
+    if (!isValid) { showToast('❌ ' + f.name + ' — الملف تالف أو نوعه غير صحيح'); continue; }
     const raw_ext = ext.replace('.','');
     const obj = {file:f, name:f.name, p:1, c:1, isImg:f.type.startsWith('image/'), type:'ملف', ext:raw_ext, size:fmtSize(f.size), preview:null};
     try {
