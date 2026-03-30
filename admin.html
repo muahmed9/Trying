@@ -768,17 +768,13 @@ async function createCustomAccount() {
   if (!perms.length) { alert('يرجى اختيار صلاحية واحدة على الأقل'); return; }
 
   try {
-    // 1. إنشاء المستخدم في Supabase Auth
-    const { data, error } = await sb.auth.admin
-      ? await sb.auth.admin.createUser({ email, password: pass, email_confirm: true })
-      : await sb.functions.invoke('create-staff', { body: { email, password: pass, name, emoji, permissions: perms } });
-
-    // استخدم Edge Function لإنشاء الموظف
+    // إنشاء الموظف عبر Edge Function
     const res = await sb.functions.invoke('create-staff', {
       body: { email, password: pass, name, emoji, permissions: perms }
     });
 
     if (res.error) throw new Error(res.error.message);
+    if (res.data && !res.data.ok) throw new Error(res.data.error || 'خطأ غير معروف');
 
     document.getElementById('new-staff-name').value = '';
     document.getElementById('new-staff-user').value = '';
@@ -1619,4 +1615,3 @@ async function deleteCoupon(id) {
 </script>
 </body>
 </html>
-
