@@ -768,20 +768,14 @@ async function createCustomAccount() {
   if (!perms.length) { alert('يرجى اختيار صلاحية واحدة على الأقل'); return; }
 
   try {
-    // إنشاء الموظف عبر Edge Function مباشرة
-    const { data: { session } } = await sb.auth.getSession();
-    const res = await fetch(`https://zrumnqtgdscrwgcguseq.supabase.co/functions/v1/create-staff`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session?.access_token || SB_KEY}`,
-        'apikey': SB_KEY
-      },
-      body: JSON.stringify({ email, password: pass, name, emoji, permissions: perms })
+    // إنشاء الموظف عبر Edge Function
+    const { data, error: fnErr } = await sb.functions.invoke('create-staff', {
+      body: JSON.stringify({ email, password: pass, name, emoji, permissions: perms }),
+      headers: { 'Content-Type': 'application/json' }
     });
 
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.error || 'خطأ غير معروف');
+    if (fnErr) throw new Error(fnErr.message);
+    if (data && !data.ok) throw new Error(data.error || 'خطأ غير معروف');
 
     document.getElementById('new-staff-name').value = '';
     document.getElementById('new-staff-user').value = '';
