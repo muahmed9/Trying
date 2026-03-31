@@ -116,7 +116,7 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
 </style>
 </head>
 <body>
-
+<audio id="new-order-sound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3" preload="auto"></audio>
 <!-- ════════════════════════════
      CANCEL REASON MODAL
 ════════════════════════════ -->
@@ -205,17 +205,32 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
       <div id="olist"><div style="text-align:center;padding:50px;color:var(--text-muted);">جاري التحميل...</div></div>
     </div>
 
-    <!-- Page: Stats -->
+  
+<!-- Page: Stats (النسخة المتقدمة) -->
     <div class="admin-page" id="page-stats">
+      <!-- شبكة الأرقام السريعة -->
       <div class="sgrid">
-        <div class="scard"><div class="snum" id="s-today"   style="color:var(--navy);">—</div><div class="slbl">طلبات اليوم</div></div>
-        <div class="scard"><div class="snum" id="s-pending" style="color:var(--orange);">—</div><div class="slbl">قيد التنفيذ</div></div>
-        <div class="scard"><div class="snum" id="s-revenue" style="color:var(--green);">—</div><div class="slbl">إيرادات اليوم</div></div>
-        <div class="scard"><div class="snum" id="s-total"   style="color:var(--teal);">—</div><div class="slbl">إجمالي الطلبات</div></div>
+        <div class="scard"><div class="snum" id="s-today-rev" style="color:var(--green);">0</div><div class="slbl">أرباح اليوم</div></div>
+        <div class="scard"><div class="snum" id="s-week-rev"  style="color:var(--teal);">0</div><div class="slbl">أرباح الأسبوع</div></div>
+        <div class="scard"><div class="snum" id="s-month-rev" style="color:var(--navy);">0</div><div class="slbl">أرباح الشهر</div></div>
+        <div class="scard"><div class="snum" id="s-pending"   style="color:var(--orange);">0</div><div class="slbl">طلبات معلقة</div></div>
       </div>
-      <div style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.04);">
-        <h3 style="margin:0 0 16px;color:var(--navy);font-weight:800;">📈 ملخص الطلبات</h3>
-        <div id="stats-detail">جاري الحساب...</div>
+
+      <!-- تحليل الأرباح التفصيلي -->
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:20px;">
+        <!-- ملخص الحالات -->
+        <div style="background:var(--card); border-radius:18px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,.04);">
+          <h3 style="margin:0 0 16px; color:var(--navy); font-weight:800; border-bottom:2px solid var(--light-teal); padding-bottom:10px;">📈 حالات الطلبات</h3>
+          <div id="stats-detail">جاري الحساب...</div>
+        </div>
+
+        <!-- ملخص مالي مقارن -->
+        <div style="background:var(--card); border-radius:18px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,.04);">
+          <h3 style="margin:0 0 16px; color:var(--navy); font-weight:800; border-bottom:2px solid var(--light-teal); padding-bottom:10px;">💰 الملخص المالي</h3>
+          <div id="financial-summary">
+            <!-- سيتم ملؤه عبر JS -->
+          </div>
+        </div>
       </div>
     </div>
 
@@ -685,6 +700,7 @@ function enterDashboard(profile) {
   }
   renderStaffList();
   startListening();
+  loadPricing();    // أضف هذا السطر هنا ليتم جلب الأسعار فور الدخول
 }
 
 async function doLogout() {
@@ -1328,24 +1344,57 @@ let query = sb.from('orders').select('*').order('created_at', {ascending:false})
 //  STATS
 // ══════════════════════════════════
 function calcStats() {
-  const tod = new Date(); tod.setHours(0,0,0,0);
-  const todayOrds   = allOrders.filter(o => new Date(o.created_at) >= tod);
-  const pendingOrds = allOrders.filter(o => ['received','printing','delivering'].includes(o.status));
-  const todayRev    = todayOrds.filter(o => o.status==='delivered').reduce((s,o) => s+(o.total||0), 0);
-  document.getElementById('s-today').innerText   = todayOrds.length;
-  document.getElementById('s-pending').innerText = pendingOrds.length;
-  document.getElementById('s-revenue').innerText = (todayRev/1000).toFixed(0) + 'K';
-  document.getElementById('s-total').innerText   = allOrders.length;
-  document.getElementById('s-pending').style.color = pendingOrds.length > 0 ? 'var(--orange)' : 'var(--green)';
+  const now = new Date();
+  const todayStart = new Date(now.setHours(0,0,0,0));
+  
+  // تواريخ المقارنة
+  const weekStart = new Date(todayStart); weekStart.setDate(weekStart.getDate() - 7);
+  const monthStart = new Date(todayStart); monthStart.setDate(monthStart.getDate() - 30);
 
+  // حساب الأرباح (للطلبات المسلمة فقط)
+  const delivered = allOrders.filter(o => o.status === 'delivered');
+  
+  const revToday = delivered.filter(o => new Date(o.created_at) >= todayStart).reduce((s,o) => s+(o.total||0), 0);
+  const revWeek  = delivered.filter(o => new Date(o.created_at) >= weekStart).reduce((s,o) => s+(o.total||0), 0);
+  const revMonth = delivered.filter(o => new Date(o.created_at) >= monthStart).reduce((s,o) => s+(o.total||0), 0);
+  
+  const pendingCount = allOrders.filter(o => ['received','printing','delivering'].includes(o.status)).length;
+
+  // تحديث الأرقام العلوية (بصيغة الآلاف K)
+  document.getElementById('s-today-rev').innerText = (revToday >= 1000) ? (revToday/1000).toFixed(1) + 'K' : revToday;
+  document.getElementById('s-week-rev').innerText  = (revWeek >= 1000) ? (revWeek/1000).toFixed(1) + 'K' : revWeek;
+  document.getElementById('s-month-rev').innerText = (revMonth >= 1000) ? (revMonth/1000).toFixed(1) + 'K' : revMonth;
+  document.getElementById('s-pending').innerText   = pendingCount;
+  document.getElementById('s-pending').style.color = pendingCount > 0 ? 'var(--orange)' : 'var(--green)';
+
+  // ملخص الحالات
   const det = document.getElementById('stats-detail');
-  if (!det) return;
   const byStatus = {};
   Object.keys(SM).forEach(k => byStatus[k] = allOrders.filter(o=>o.status===k).length);
   det.innerHTML = Object.entries(byStatus).map(([k,v]) => {
     const s = SM[k];
-    return `<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:.92rem;"><span>${s.i} ${s.l}</span><b>${v} طلب</b></div>`;
+    return `<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #f1f5f9;">
+              <span>${s.i} ${s.l}</span>
+              <b style="color:var(--navy);">${v} طلب</b>
+            </div>`;
   }).join('');
+
+  // الملخص المالي المقارن
+  const fin = document.getElementById('financial-summary');
+  fin.innerHTML = `
+    <div style="background:var(--light-teal); padding:15px; border-radius:12px; margin-bottom:10px;">
+      <div style="font-size:.85rem; color:var(--text-muted);">إجمالي مبيعات اليوم</div>
+      <div style="font-size:1.4rem; font-weight:800; color:var(--green);">${revToday.toLocaleString()} د.ع</div>
+    </div>
+    <div style="padding:10px 5px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; font-size:.9rem;">
+      <span>متوسط قيمة الطلب (الشهري)</span>
+      <b>${delivered.length ? Math.round(revMonth/delivered.length).toLocaleString() : 0} د.ع</b>
+    </div>
+    <div style="padding:10px 5px; display:flex; justify-content:space-between; font-size:.9rem;">
+      <span>إجمالي أرباح آخر 30 يوم</span>
+      <b style="color:var(--navy);">${revMonth.toLocaleString()} د.ع</b>
+    </div>
+  `;
 }
 
 // ══════════════════════════════════
@@ -1753,6 +1802,21 @@ async function savePricing() {
     if (error) throw error;
     showToast('✅ تم تحديث الأسعار بنجاح لدى جميع الزبائن');
   } catch (e) { showToast('❌ فشل الحفظ، تأكد من جدول site_settings'); }
+}
+  function startRealtimeListener() {
+  sb.channel('custom-all-channel')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, payload => {
+      // تشغيل صوت التنبيه
+      const audio = document.getElementById('new-order-sound');
+      if (audio) audio.play().catch(() => console.log("الصوت يحتاج تفاعل أولاً"));
+      
+      // إظهار تنبيه بسيط
+      showToast("🔔 طلب جديد وصل الآن!");
+      
+      // تحديث قائمة الطلبات والإحصائيات فوراً
+      fetchOrders();
+    })
+    .subscribe();
 }
 </script>
 </body>
