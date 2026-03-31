@@ -768,16 +768,9 @@ async function createCustomAccount() {
   if (!perms.length) { alert('يرجى اختيار صلاحية واحدة على الأقل'); return; }
 
   try {
-    const bodyData = JSON.stringify({ 
-      email, 
-      password: pass, 
-      name, 
-      emoji, 
-      permissions: perms 
-    });
-
+    // إنشاء مستخدم جديد عبر Supabase Auth Admin API مباشرة
     const res = await fetch(
-      'https://zrumnqtgdscrwgcguseq.supabase.co/functions/v1/create-staff',
+      'https://zrumnqtgdscrwgcguseq.supabase.co/auth/v1/admin/users',
       {
         method: 'POST',
         headers: {
@@ -785,12 +778,27 @@ async function createCustomAccount() {
           'apikey': SB_KEY,
           'Authorization': 'Bearer ' + SB_KEY
         },
-        body: bodyData
+        body: JSON.stringify({
+          email,
+          password: pass,
+          email_confirm: true,
+          user_metadata: { name, emoji, permissions: perms }
+        })
       }
     );
 
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.error || 'خطأ غير معروف');
+    const userData = await res.json();
+    if (!res.ok) throw new Error(userData.msg || userData.message || 'فشل إنشاء المستخدم');
+
+    // إضافة الدور في profiles
+    const { error: profErr } = await sb.from('profiles').insert({
+      id: userData.id,
+      role: 'custom',
+      name,
+      emoji: emoji || '👤',
+      permissions: perms
+    });
+    if (profErr) throw profErr;
 
     document.getElementById('new-staff-name').value = '';
     document.getElementById('new-staff-user').value = '';
@@ -801,7 +809,7 @@ async function createCustomAccount() {
     renderStaffList();
     showToast('✅ تم إنشاء حساب ' + name);
   } catch(e) {
-    alert('❌ خطأ: ' + e.message);
+    console.error(e); showToast('❌ حدث خطأ. يرجى المحاولة مجدداً.');
   }
 }
 
@@ -812,7 +820,7 @@ async function deleteCustomAccount(userId) {
     showToast('🗑️ تم حذف الحساب');
     renderStaffList();
   } catch(e) {
-    alert('❌ خطأ: ' + e.message);
+    console.error(e); showToast('❌ حدث خطأ. يرجى المحاولة مجدداً.');
   }
 }
 
@@ -1609,7 +1617,7 @@ async function createCoupon() {
     document.getElementById('cpn-max').value = '';
     showToast('✅ تم إنشاء الكوبون ' + code);
     loadCoupons();
-  } catch(e) { alert('❌ خطأ: ' + e.message); }
+  } catch(e) { console.error(e); showToast('❌ حدث خطأ. يرجى المحاولة مجدداً.'); }
 }
 
 async function toggleCoupon(id, active) {
@@ -1617,7 +1625,7 @@ async function toggleCoupon(id, active) {
     await sb.from('coupons').update({active}).eq('id', id);
     showToast(active ? '✅ تم تفعيل الكوبون' : '❌ تم تعطيل الكوبون');
     loadCoupons();
-  } catch(e) { alert('❌ خطأ: ' + e.message); }
+  } catch(e) { console.error(e); showToast('❌ حدث خطأ. يرجى المحاولة مجدداً.'); }
 }
 
 async function deleteCoupon(id) {
@@ -1626,7 +1634,7 @@ async function deleteCoupon(id) {
     await sb.from('coupons').delete().eq('id', id);
     showToast('🗑️ تم حذف الكوبون');
     loadCoupons();
-  } catch(e) { alert('❌ خطأ: ' + e.message); }
+  } catch(e) { console.error(e); showToast('❌ حدث خطأ. يرجى المحاولة مجدداً.'); }
 }
 </script>
 </body>
