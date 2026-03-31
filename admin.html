@@ -795,17 +795,62 @@ async function createCustomAccount() {
   }
 }
 
-async function deleteCustomAccount(userId) {
-  if (!confirm('حذف هذا الحساب؟')) return;
+async function createCustomAccount() {
+  const name  = document.getElementById('new-staff-name').value.trim();
+  const email = document.getElementById('new-staff-user').value.trim();
+  const pass  = document.getElementById('new-staff-pass').value;
+  const emoji = document.getElementById('new-staff-emoji').value;
+
+  if (!name || !email || !pass || pass.length < 6) {
+    alert('يرجى إدخال الاسم والبريد الإلكتروني وكلمة مرور (6 أحرف+)');
+    return;
+  }
+
+  const perms = ['perm-rp','perm-pd','perm-dd','perm-canc']
+    .map(id => document.getElementById(id))
+    .filter(el => el?.checked)
+    .map(el => el.value);
+
+  if (!perms.length) { alert('يرجى اختيار صلاحية واحدة على الأقل'); return; }
+
+  showToast('⏳ جاري إنشاء الحساب، يرجى الانتظار...');
+
   try {
+    // الاتصال بالخادم الآمن الذي رفعته أنت للتو!
+    const { data, error } = await sb.functions.invoke('create-staff', {
+      body: { email, password: pass, name, emoji, permissions: perms }
+    });
+
+    if (error) throw new Error(error.message || 'حدث خطأ أثناء الاتصال بالخادم');
+    if (data && data.error) throw new Error(data.error);
+
+    // تصفير الحقول بعد النجاح
+    document.getElementById('new-staff-name').value = '';
+    document.getElementById('new-staff-user').value = '';
+    document.getElementById('new-staff-pass').value = '';
+    ['perm-rp','perm-pd','perm-dd','perm-canc'].forEach(id => {
+      const el = document.getElementById(id); if(el) el.checked = false;
+    });
+
+    renderStaffList();
+    showToast('✅ تم إنشاء حساب الموظف (' + name + ') بنجاح!');
+  } catch(e) {
+    console.error('Create staff error:', e);
+    showToast('❌ خطأ: ' + (e.message || 'يرجى المحاولة مجدداً'));
+  }
+}
+
+async function deleteCustomAccount(userId) {
+  if (!confirm('هل أنت متأكد من سحب صلاحيات هذا الموظف ومنعه من الدخول؟')) return;
+  try {
+    // حذف ملف الموظف من قاعدة البيانات مما يمنعه من رؤية أي شيء أو تسجيل الدخول
     await sb.from('profiles').delete().eq('id', userId);
-    showToast('🗑️ تم حذف الحساب');
+    showToast('🗑️ تم إيقاف الحساب بنجاح ولن يتمكن من الدخول');
     renderStaffList();
   } catch(e) {
     console.error(e); showToast('❌ حدث خطأ. يرجى المحاولة مجدداً.');
   }
 }
-
 function changeCredentials() {
   showToast('⚠️ لتغيير كلمة المرور، استخدم Supabase Dashboard → Authentication → Users');
 }
@@ -1239,7 +1284,8 @@ async function startListening() {
 }
 
 async function fetchOrders() {
-  let query = sb.from('orders').select('*').order('created_at', {ascending:false});
+  // جلب آخر 50 طلب فقط لضمان سرعة لوحة التحكم
+let query = sb.from('orders').select('*').order('created_at', {ascending:false}).limit(50);
   // Role-based pre-filter: each role sees only relevant statuses
   const sees = (currentRole === '__custom__') ? null : ROLES[currentRole]?.sees;
   if (sees) query = query.in('status', sees);
@@ -1294,8 +1340,9 @@ const PAGE_SIZE = 30;
 function renderOrders() {
   const cont = document.getElementById('olist');
   const searchQ = (document.getElementById('order-search')?.value || '').toLowerCase().trim();
-  let list = curFilter === 'all' ? allOrders : allOrders.filter(o => o.status === curFilter);
-
+let list = allOrders;
+if (curFilter !== 'all') list = list.filter(o => o.status === curFilter);
+  
   // 🔍 Search filter
   if (searchQ) {
     list = list.filter(o =>
@@ -1389,28 +1436,67 @@ async function confirmCancel() {
   await chStatus(idToCancel, 'cancelled', reason); // الإرسال باستخدام المعرف المحفوظ
 }
 
-// ══════════════════════════════════
-//  CHANGE STATUS
-// ══════════════════════════════════
 async function chStatus(docId, newSt, cancelReason = '') {
   if (newSt !== 'cancelled') {
     if (!confirm(`تأكيد: تحديث الطلب إلى "${SM[newSt]?.l}"؟`)) return;
   }
 
-  const {data:order, error:fErr} = await sb.from('orders').select('*').eq('id', docId).single();
-  if (fErr) { alert('❌ خطأ في جلب بيانات الطلب'); return; }
+  try {
+    // 1. استدعاء الدالة الذكية لتحديث الحالة والسجل في قاعدة البيانات مباشرة
+    const actorName = ROLES[currentRole]?.label || currentCustomLabel || 'موظف';
+    const actorRole = currentRole === 'custom' ? 'موظف' : (ROLES[currentRole]?.label || '');
 
-  // Add loyalty points on delivery (only on print_price, only if no discount was applied)
-  if (newSt === 'delivered' && order.status !== 'delivered') {
-    const {data:user} = await sb.from('users').select('*').eq('id', order.user_id).single();
-    if (user) {
-      const ptsToAdd = order.loyalty_points_earned || 0;
-      await sb.from('users').update({
-        loyalty_points:   (user.loyalty_points || 0) + ptsToAdd,
-        first_order_done: true
-      }).eq('id', order.user_id);
+    const { error: uErr } = await sb.rpc('update_status_with_history', {
+      order_id_input: docId,
+      new_status_input: newSt,
+      actor_name: actorName,
+      actor_role: actorRole,
+      cancel_reason_input: cancelReason
+    });
+
+    if (uErr) throw uErr;
+
+    // 2. تحديث النقاط إذا تم التسليم (كما فعلنا سابقاً)
+    if (newSt === 'delivered') {
+      const { data: order } = await sb.from('orders').select('user_id, loyalty_points_earned').eq('id', docId).single();
+      if (order && order.loyalty_points_earned > 0) {
+        await sb.rpc('add_points_to_user', { 
+          user_id_input: order.user_id, 
+          points_to_add: order.loyalty_points_earned 
+        });
+      }
+      await sb.from('users').update({ first_order_done: true }).eq('id', order.user_id);
     }
+
+    // 3. إشعار الزبون عبر تيليجرام (اختياري حسب رغبتك)
+    const { data: finalOrder } = await sb.from('orders').select('*').eq('id', docId).single();
+    if (finalOrder && finalOrder.telegram_id && !finalOrder.telegram_id.startsWith('guest_')) {
+      const msg = custMsg(docId, newSt, cancelReason);
+      if (msg) await tgSend(finalOrder.telegram_id, msg);
+    }
+
+    showToast(`✅ تم التحديث بنجاح: ${SM[newSt]?.l}`);
+    closeDet();
+    await fetchOrders();
+
+  } catch(e) {
+    console.error(e);
+    alert('❌ حدث خطأ أثناء التحديث: ' + e.message);
   }
+}
+// تحديث النقاط بشكل آمن عبر قاعدة البيانات مباشرة
+if (newSt === 'delivered' && order.status !== 'delivered') {
+  const ptsToAdd = order.loyalty_points_earned || 0;
+  if (ptsToAdd > 0) {
+    // استدعاء الدالة الحسابية التي أنشأناها في Supabase
+    await sb.rpc('add_points_to_user', { 
+      user_id_input: order.user_id, 
+      points_to_add: ptsToAdd 
+    });
+  }
+  // تأكيد أن أول طلب قد تم
+  await sb.from('users').update({ first_order_done: true }).eq('id', order.user_id);
+}
 
   const newHistory = [...(order.status_history || []), {
     status: newSt, time: new Date().toISOString(), by: ROLES[currentRole]?.label || currentRole
