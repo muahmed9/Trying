@@ -117,6 +117,7 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
 </head>
 <body>
 <audio id="new-order-sound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3" preload="auto"></audio>
+
 <!-- ════════════════════════════
      CANCEL REASON MODAL
 ════════════════════════════ -->
@@ -148,7 +149,6 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
     <div style="font-size:3rem;margin-bottom:10px;">🖨️</div>
     <h2 style="color:var(--navy);margin-bottom:6px;font-weight:800;">لوحة التحكم</h2>
     <p style="color:var(--text-muted);margin-bottom:24px;font-size:.92rem;">خدمات الشاطر الطلابية</p>
-
     <div class="errbox" id="loginerr"></div>
     <input type="text" id="adm-user" placeholder="📧 البريد الإلكتروني" autocomplete="email">
     <input type="password" id="adm-pass" placeholder="🔑 كلمة المرور" autocomplete="current-password">
@@ -181,8 +181,8 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
     <div class="admin-tabs" id="admin-tabs">
       <button class="atab active" onclick="switchPage('orders',this)">📋 الطلبات</button>
       <button class="atab" onclick="switchPage('stats',this)">📊 الإحصائيات</button>
-      <button class="atab" id="tab-staff-btn" onclick="switchPage('staff',this)"  style="display:none;">👥 الموظفون</button>
-      <button class="atab" id="tab-dash-btn"  onclick="switchPage('dash',this)"   style="display:none;">🏆 داشبورد</button>
+      <button class="atab" id="tab-staff-btn"   onclick="switchPage('staff',this)"   style="display:none;">👥 الموظفون</button>
+      <button class="atab" id="tab-dash-btn"    onclick="switchPage('dash',this)"    style="display:none;">🏆 داشبورد</button>
       <button class="atab" id="tab-reports-btn" onclick="switchPage('reports',this)" style="display:none;">📥 تقارير Excel</button>
       <button class="atab" id="tab-coupons-btn" onclick="switchPage('coupons',this)" style="display:none;">🎟️ الكوبونات</button>
       <button class="atab" id="tab-pricing-btn" onclick="switchPage('pricing',this)" style="display:none;">💰 التسعير</button>
@@ -190,7 +190,6 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
 
     <!-- Page: Orders -->
     <div class="admin-page active" id="page-orders">
-      <!-- 🔍 Search bar -->
       <div style="margin-bottom:14px;">
         <input type="text" id="order-search" placeholder="🔍 بحث برقم الطلب، اسم الزبون، أو الهاتف..." style="margin-bottom:0;">
       </div>
@@ -205,31 +204,22 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
       <div id="olist"><div style="text-align:center;padding:50px;color:var(--text-muted);">جاري التحميل...</div></div>
     </div>
 
-  
-<!-- Page: Stats (النسخة المتقدمة) -->
+    <!-- Page: Stats -->
     <div class="admin-page" id="page-stats">
-      <!-- شبكة الأرقام السريعة -->
       <div class="sgrid">
         <div class="scard"><div class="snum" id="s-today-rev" style="color:var(--green);">0</div><div class="slbl">أرباح اليوم</div></div>
         <div class="scard"><div class="snum" id="s-week-rev"  style="color:var(--teal);">0</div><div class="slbl">أرباح الأسبوع</div></div>
         <div class="scard"><div class="snum" id="s-month-rev" style="color:var(--navy);">0</div><div class="slbl">أرباح الشهر</div></div>
         <div class="scard"><div class="snum" id="s-pending"   style="color:var(--orange);">0</div><div class="slbl">طلبات معلقة</div></div>
       </div>
-
-      <!-- تحليل الأرباح التفصيلي -->
       <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:20px;">
-        <!-- ملخص الحالات -->
         <div style="background:var(--card); border-radius:18px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,.04);">
           <h3 style="margin:0 0 16px; color:var(--navy); font-weight:800; border-bottom:2px solid var(--light-teal); padding-bottom:10px;">📈 حالات الطلبات</h3>
           <div id="stats-detail">جاري الحساب...</div>
         </div>
-
-        <!-- ملخص مالي مقارن -->
         <div style="background:var(--card); border-radius:18px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,.04);">
           <h3 style="margin:0 0 16px; color:var(--navy); font-weight:800; border-bottom:2px solid var(--light-teal); padding-bottom:10px;">💰 الملخص المالي</h3>
-          <div id="financial-summary">
-            <!-- سيتم ملؤه عبر JS -->
-          </div>
+          <div id="financial-summary"></div>
         </div>
       </div>
     </div>
@@ -238,8 +228,6 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
     <div class="admin-page" id="page-staff">
       <h3 style="margin:0 0 18px;color:var(--navy);font-weight:800;">👥 إدارة الموظفين</h3>
       <div id="staff-list"></div>
-
-      <!-- Change built-in passwords -->
       <div style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.03);margin-bottom:18px;">
         <h4 style="margin:0 0 14px;color:var(--navy);font-weight:800;">🔑 تغيير بيانات الدخول</h4>
         <select id="change-role-sel" style="margin-bottom:12px;">
@@ -247,12 +235,10 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
           <option value="driver">مندوب توصيل</option>
           <option value="admin">المدير (أنت)</option>
         </select>
-        <input type="text" id="new-user" placeholder="👤 اسم المستخدم الجديد (اختياري)">
+        <input type="text"     id="new-user" placeholder="👤 اسم المستخدم الجديد (اختياري)">
         <input type="password" id="new-pass" placeholder="🔑 كلمة المرور الجديدة (اختياري)">
         <button class="bmain" style="background:var(--teal);color:#fff;" onclick="changeCredentials()">حفظ التغييرات</button>
       </div>
-
-      <!-- Create custom account -->
       <div style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.03);">
         <h4 style="margin:0 0 14px;color:var(--navy);font-weight:800;">➕ إضافة حساب موظف جديد</h4>
         <input type="text"     id="new-staff-name"  placeholder="✍️ اسم الموظف" style="margin-bottom:10px;">
@@ -288,7 +274,6 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
     <!-- Page: Employee Dashboard (manager only) -->
     <div class="admin-page" id="page-dash">
       <h3 style="margin:0 0 14px;color:var(--navy);font-weight:800;">📊 داشبورد الموظفين</h3>
-      <!-- Date filter -->
       <div style="background:var(--card);border-radius:14px;padding:14px;margin-bottom:16px;box-shadow:0 3px 10px rgba(0,0,0,.03);border:1px solid #edf0f4;">
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
           <div class="fbar" id="dash-period-bar" style="margin-bottom:0;flex:1;">
@@ -317,8 +302,6 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
           <button onclick="exportAnalysisExcel()" style="background:var(--orange);color:#fff;border:none;padding:10px 16px;border-radius:12px;font-weight:800;cursor:pointer;font-family:'Tajawal',sans-serif;font-size:.88rem;">📊 تصدير التحليل</button>
         </div>
       </div>
-
-      <!-- Date & Status filter -->
       <div style="background:var(--card);border-radius:14px;padding:14px;margin-bottom:16px;box-shadow:0 3px 10px rgba(0,0,0,.03);border:1px solid #edf0f4;">
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
           <div class="fbar" id="rp-period-bar" style="margin-bottom:0;flex:1;">
@@ -348,16 +331,12 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
           </select>
         </div>
       </div>
-
-      <!-- Summary -->
       <div class="sgrid" style="margin-bottom:18px;">
         <div class="scard"><div class="snum" id="rp-total"     style="color:var(--navy);">—</div><div class="slbl">إجمالي الطلبات</div></div>
         <div class="scard"><div class="snum" id="rp-done"      style="color:var(--green);">—</div><div class="slbl">مكتملة</div></div>
         <div class="scard"><div class="snum" id="rp-pending"   style="color:var(--orange);">—</div><div class="slbl">قيد التنفيذ</div></div>
         <div class="scard"><div class="snum" id="rp-cancelled" style="color:var(--red);">—</div><div class="slbl">ملغاة</div></div>
       </div>
-
-      <!-- All Orders Table -->
       <div style="background:var(--card);border-radius:18px;padding:18px;margin-bottom:18px;box-shadow:0 4px 12px rgba(0,0,0,.04);overflow-x:auto;">
         <h4 style="margin:0 0 14px;color:var(--navy);font-weight:800;">📋 جدول جميع الطلبات</h4>
         <table id="rp-orders-table" style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:750px;">
@@ -379,8 +358,6 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
           </tbody>
         </table>
       </div>
-
-      <!-- Staff Analysis Table -->
       <div style="background:var(--card);border-radius:18px;padding:18px;margin-bottom:18px;box-shadow:0 4px 12px rgba(0,0,0,.04);overflow-x:auto;">
         <h4 style="margin:0 0 14px;color:var(--navy);font-weight:800;">👥 تحليل أداء الموظفين</h4>
         <table id="rp-staff-table" style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:500px;">
@@ -398,8 +375,6 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
           </tbody>
         </table>
       </div>
-
-      <!-- Order Types Analysis -->
       <div style="background:var(--card);border-radius:18px;padding:18px;box-shadow:0 4px 12px rgba(0,0,0,.04);overflow-x:auto;">
         <h4 style="margin:0 0 14px;color:var(--navy);font-weight:800;">🎨 تحليل أنواع الطلبات</h4>
         <table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:420px;">
@@ -418,10 +393,9 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
       </div>
     </div>
 
-    <!-- Page: Coupon Management (manager only) -->
+    <!-- ✅ FIX #3: page-coupons is now its own independent div -->
     <div class="admin-page" id="page-coupons">
       <h3 style="margin:0 0 18px;color:var(--navy);font-weight:800;">🎟️ إدارة الكوبونات</h3>
-      <!-- Create coupon -->
       <div style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.03);margin-bottom:18px;">
         <h4 style="margin:0 0 14px;color:var(--navy);font-weight:800;">➕ إنشاء كوبون جديد</h4>
         <input type="text" id="cpn-code" placeholder="🎟️ كود الكوبون (مثل: WELCOME50)" style="text-transform:uppercase;">
@@ -435,9 +409,9 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
         <input type="text" id="cpn-max" placeholder="الحد الأقصى للاستخدام (0 = غير محدود)" style="margin-bottom:12px;">
         <button class="bmain" style="background:var(--teal);color:#fff;" onclick="createCoupon()">✅ إنشاء الكوبون</button>
       </div>
-      <!-- Coupon list -->
       <div id="coupon-list" style="color:var(--text-muted);text-align:center;padding:20px;">جاري التحميل...</div>
-      <!-- Page: Pricing Management (manager only) -->
+    </div>
+    <!-- ✅ FIX #3: page-pricing is now its own independent div (was nested inside page-coupons) -->
     <div class="admin-page" id="page-pricing">
       <h3 style="margin:0 0 18px;color:var(--navy);font-weight:800;">💰 إدارة أسعار الخدمات</h3>
       <div style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.03);margin-bottom:18px;">
@@ -459,9 +433,10 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
         <button class="bmain" style="background:var(--teal);color:#fff;" onclick="savePricing()">✅ حفظ وتحديث الأسعار</button>
       </div>
     </div>
-    </div>
-  </div>
-</div>
+
+  </div><!-- end .main -->
+</div><!-- end .dash -->
+
 <div class="detov" id="detov" onclick="closeDet()"></div>
 <div class="detpan" id="detpan">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;border-bottom:2px solid #f1f5f9;padding-bottom:15px;">
@@ -475,7 +450,7 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
 
 <script>
 // ══════════════════════════════════
-//  🔒 SECURITY: Escape HTML to prevent XSS
+//  🔒 XSS Protection
 // ══════════════════════════════════
 function esc(s) {
   if (s == null) return '';
@@ -487,12 +462,11 @@ function esc(s) {
 // ══════════════════════════════════
 //  🔔 SOUND NOTIFICATION
 // ══════════════════════════════════
-// AudioContext مشترك لتجنب تسرب الذاكرة
 const _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-// فك الحظر عن الصوت بمجرد أن ينقر المستخدم على الشاشة لأول مرة
 document.addEventListener('click', function() {
   if (_audioCtx.state === 'suspended') _audioCtx.resume();
 }, { once: true });
+
 function _playNote(freq, startTime, duration, volume = 0.35) {
   if (_audioCtx.state === 'suspended') _audioCtx.resume();
   const osc  = _audioCtx.createOscillator();
@@ -512,30 +486,25 @@ function playAdminAlert(status) {
     const t = _audioCtx.currentTime;
     switch (status) {
       case 'received':
-        // ثلاث نبضات متوسطة — طلب جديد يحتاج موظف الاستلام
         _playNote(880, t,        0.18, 0.4);
         _playNote(880, t + 0.28, 0.18, 0.4);
         _playNote(880, t + 0.56, 0.22, 0.4);
         break;
       case 'printing':
-        // نغمتان تأكيد — بدء الطباعة
         _playNote(660, t,        0.22, 0.35);
         _playNote(880, t + 0.28, 0.28, 0.35);
         break;
       case 'delivering':
-        // نبضتان حادتان سريعتان — تنبيه المندوب
         _playNote(1100, t,        0.13, 0.38);
         _playNote(1100, t + 0.21, 0.15, 0.38);
         break;
       case 'delivered':
-        // أربع نغمات احتفالية — اكتمال التسليم
         _playNote(523,  t,        0.14, 0.4);
         _playNote(659,  t + 0.18, 0.14, 0.4);
         _playNote(784,  t + 0.36, 0.14, 0.4);
         _playNote(1047, t + 0.54, 0.26, 0.4);
         break;
       case 'cancelled':
-        // نغمة هابطة طويلة — إلغاء الطلب
         _playNote(440, t,        0.45, 0.3);
         _playNote(220, t + 0.52, 0.55, 0.25);
         break;
@@ -548,14 +517,14 @@ function playAdminAlert(status) {
 // ══════════════════════════════════
 //  CONFIG
 // ══════════════════════════════════
-const SB_URL    = 'https://zrumnqtgdscrwgcguseq.supabase.co';
-const SB_KEY    = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpydW1ucXRnZHNjcndnY2d1c2VxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNjM2NzMsImV4cCI6MjA4OTgzOTY3M30.Pw71Qfz57br6TwnaRK_2DcgHfEGUHgK_OrpRzuv2Na8';
-const ADMIN_ID  = '7618746133';
+const SB_URL   = 'https://zrumnqtgdscrwgcguseq.supabase.co';
+const SB_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpydW1ucXRnZHNjcndnY2d1c2VxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNjM2NzMsImV4cCI6MjA4OTgzOTY3M30.Pw71Qfz57br6TwnaRK_2DcgHfEGUHgK_OrpRzuv2Na8';
+const ADMIN_ID = '7618746133';
 
 const sb = window.supabase.createClient(SB_URL, SB_KEY);
 let allOrders = [], curFilter = 'all', rtCh = null, currentRole = '';
 
-// ══ DEBOUNCE البحث ════════════════════════════════
+// ── Search debounce ──
 let _searchT;
 document.getElementById('order-search').addEventListener('input', () => {
   clearTimeout(_searchT);
@@ -567,61 +536,45 @@ document.getElementById('order-search').addEventListener('input', () => {
 // ══════════════════════════════════
 const ROLES = {
   admin: {
-    label:'مدير', badge:'rb-admin', defaultUser:'admin', defaultPass:'shater2024', emoji:'🏢', mgr:true,
+    label:'مدير', badge:'rb-admin', emoji:'🏢', mgr:true,
     can:  ['received→printing','printing→delivering','delivering→delivered','any→cancelled'],
     sees: null
   },
   operator: {
-    label:'موظف استنساخ', badge:'rb-oper', defaultUser:'operator', defaultPass:'copy2024', emoji:'🖨️', mgr:false,
+    label:'موظف استنساخ', badge:'rb-oper', emoji:'🖨️', mgr:false,
     can:  ['received→printing','printing→delivering','received→cancelled','printing→cancelled'],
     sees: ['received','printing','delivering','cancelled']
   },
   driver: {
-    label:'مندوب توصيل', badge:'rb-driver', defaultUser:'driver', defaultPass:'driver2024', emoji:'🛵', mgr:false,
+    label:'مندوب توصيل', badge:'rb-driver', emoji:'🛵', mgr:false,
     can:  ['delivering→delivered'],
     sees: ['printing','delivering','delivered','cancelled']
   }
 };
 
-// Also support dynamic custom accounts stored in localStorage
-function getCustomAccounts() {
-  try { return JSON.parse(localStorage.getItem('custom-accounts') || '[]'); } catch { return []; }
-}
-function saveCustomAccounts(arr) { localStorage.setItem('custom-accounts', JSON.stringify(arr)); }
-
-function getPass(role) { return localStorage.getItem('sp-' + role) || ROLES[role]?.defaultPass || ''; }
-function getUser(role) { return localStorage.getItem('su-' + role) || ROLES[role]?.defaultUser || ''; }
-
-// Custom account login check — now matches by username
-function tryCustomLogin(user, pass) {
-  return getCustomAccounts().find(a => a.username === user && a.pass === pass);
-}
 function canDo(from, to) {
-  // Check built-in role
   const allowed = ROLES[currentRole]?.can || [];
   if (allowed.includes(`${from}→${to}`)) return true;
   if (to === 'cancelled' && allowed.includes('any→cancelled')) return true;
-  // Check if logged in as custom account
   if (currentRole === '__custom__' && currentCustomCan) {
-    return currentCustomCan.includes(`${from}→${to}`) || (to==='cancelled' && currentCustomCan.includes('any→cancelled'));
+    return currentCustomCan.includes(`${from}→${to}`) ||
+           (to === 'cancelled' && currentCustomCan.includes('any→cancelled'));
   }
   return false;
 }
-// For custom accounts
-let currentCustomCan = null;
+
+let currentCustomCan   = null;
 let currentCustomLabel = '';
 
-// Status map
 const SM = {
-  received:   {l:'مستلم',       c:'sr',i:'📥'},
-  printing:   {l:'قيد الطباعة', c:'sp',i:'🖨️'},
-  delivering: {l:'في الطريق',   c:'sd',i:'🛵'},
-  delivered:  {l:'تم التسليم',  c:'sv',i:'✅'},
-  cancelled:  {l:'ملغى',        c:'sc',i:'❌'}
+  received:   {l:'مستلم',       c:'sr', i:'📥'},
+  printing:   {l:'قيد الطباعة', c:'sp', i:'🖨️'},
+  delivering: {l:'في الطريق',   c:'sd', i:'🛵'},
+  delivered:  {l:'تم التسليم',  c:'sv', i:'✅'},
+  cancelled:  {l:'ملغى',        c:'sc', i:'❌'}
 };
 
-// Customer notification messages
-function custMsg(id, status, reason='') {
+function custMsg(id, status, reason = '') {
   const msgs = {
     printing:   `🖨️ طلبك #${id} قيد الطباعة الآن!\nسنُخطرك عند الإرسال للتوصيل.`,
     delivering: `🛵 طلبك #${id} في الطريق إليك!\nالمندوب متجه نحوك الآن 🏃`,
@@ -650,14 +603,12 @@ async function doLogin() {
   }
 
   btn.innerText = 'جاري التحقق...';
-  btn.disabled = true;
+  btn.disabled  = true;
 
   try {
-    // 1. تسجيل الدخول عبر Supabase Auth
     const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
     if (error) throw error;
 
-    // 2. جلب الدور من جدول profiles
     const { data: profile, error: pErr } = await sb.from('profiles')
       .select('role, name, emoji, permissions')
       .eq('id', data.user.id)
@@ -665,34 +616,35 @@ async function doLogin() {
 
     if (pErr || !profile) throw new Error('لا يوجد صلاحيات لهذا الحساب');
 
-    // 3. تعيين الدور
     currentRole = profile.role;
     if (profile.role === 'custom') {
-      currentCustomCan = profile.permissions || [];
-      currentCustomLabel = `${profile.emoji||'👤'} ${profile.name}`;
+      currentCustomCan   = profile.permissions || [];
+      currentCustomLabel = `${profile.emoji || '👤'} ${profile.name}`;
     }
 
     enterDashboard(profile);
   } catch(e) {
-    err.innerText = '❌ ' + (e.message === 'Invalid login credentials' ? 'البريد أو كلمة المرور غير صحيحة' : e.message);
+    err.innerText = '❌ ' + (e.message === 'Invalid login credentials'
+      ? 'البريد أو كلمة المرور غير صحيحة' : e.message);
     err.style.display = 'block';
     btn.innerText = 'تسجيل الدخول';
-    btn.disabled = false;
+    btn.disabled  = false;
   }
 }
 
 function enterDashboard(profile) {
   document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('dashboard').style.display = 'block';
+  document.getElementById('dashboard').style.display    = 'block';
 
   if (currentRole === 'custom') {
     document.getElementById('role-badge-top').innerText = currentCustomLabel;
   } else {
     const r = ROLES[currentRole] || ROLES.operator;
-    document.getElementById('role-badge-top').innerText = `${profile?.emoji||r.emoji} ${profile?.name||r.label}`;
+    document.getElementById('role-badge-top').innerText =
+      `${profile?.emoji || r.emoji} ${profile?.name || r.label}`;
     if (r.mgr) {
-      document.getElementById('tab-staff-btn').style.display = '';
-      document.getElementById('tab-dash-btn').style.display  = '';
+      document.getElementById('tab-staff-btn').style.display   = '';
+      document.getElementById('tab-dash-btn').style.display    = '';
       document.getElementById('tab-reports-btn').style.display = '';
       document.getElementById('tab-coupons-btn').style.display = '';
       document.getElementById('tab-pricing-btn').style.display = '';
@@ -700,7 +652,7 @@ function enterDashboard(profile) {
   }
   renderStaffList();
   startListening();
-  loadPricing();    // أضف هذا السطر هنا ليتم جلب الأسعار فور الدخول
+  loadPricing();
 }
 
 async function doLogout() {
@@ -709,8 +661,8 @@ async function doLogout() {
   location.reload();
 }
 
-// Auto-login إذا كانت الجلسة نشطة
-(async function () {
+// Auto-login if session active
+(async function() {
   try {
     const { data: { session } } = await sb.auth.getSession();
     if (!session) return;
@@ -724,18 +676,19 @@ async function doLogout() {
 
     currentRole = profile.role;
     if (profile.role === 'custom') {
-      currentCustomCan = profile.permissions || [];
-      currentCustomLabel = `${profile.emoji||'👤'} ${profile.name}`;
+      currentCustomCan   = profile.permissions || [];
+      currentCustomLabel = `${profile.emoji || '👤'} ${profile.name}`;
     }
 
     document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
+    document.getElementById('dashboard').style.display    = 'block';
     enterDashboard(profile);
   } catch {}
 })();
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') doLogin();
+  if (e.key === 'Enter' &&
+      document.getElementById('login-screen').style.display !== 'none') doLogin();
 });
 
 // ══════════════════════════════════
@@ -745,7 +698,8 @@ async function renderStaffList() {
   const list = document.getElementById('staff-list');
   if (!list) return;
 
-  list.innerHTML = '<h4 style="margin:0 0 12px;color:var(--navy);font-weight:800;font-size:.95rem;">🏷️ الأدوار المتاحة</h4>' +
+  list.innerHTML =
+    '<h4 style="margin:0 0 12px;color:var(--navy);font-weight:800;font-size:.95rem;">🏷️ الأدوار المتاحة</h4>' +
     Object.entries(ROLES).map(([key, r]) => `
       <div class="staff-card">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
@@ -754,7 +708,7 @@ async function renderStaffList() {
           </div>
         </div>
         <div style="margin-top:8px;font-size:.8rem;color:var(--text-muted);">
-          <b>الصلاحيات:</b> ${r.can.map(c=>c.replace('→',' ← ')).join(' | ')}
+          <b>الصلاحيات:</b> ${r.can.map(c => c.replace('→', ' ← ')).join(' | ')}
         </div>
       </div>`).join('');
 
@@ -773,23 +727,26 @@ async function renderStaffList() {
       return;
     }
 
-    custEl.innerHTML = '<h4 style="margin:14px 0 10px;color:var(--navy);font-weight:800;font-size:.92rem;">👥 حسابات الموظفين</h4>' +
+    custEl.innerHTML =
+      '<h4 style="margin:14px 0 10px;color:var(--navy);font-weight:800;font-size:.92rem;">👥 حسابات الموظفين</h4>' +
       accounts.map(a => `
         <div class="staff-card" style="border-right:3px solid var(--teal);">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
-            <b style="color:var(--navy);">${a.emoji||'👤'} ${esc(a.name)}</b>
+            <b style="color:var(--navy);">${a.emoji || '👤'} ${esc(a.name)}</b>
             <span class="role-badge rb-oper">${a.role}</span>
           </div>
           <div style="font-size:.78rem;color:var(--text-muted);margin-top:6px;">
-            ${(a.permissions||[]).map(p=>p.replace('→',' ← ')).join(' | ') || 'لا صلاحيات'}
+            ${(a.permissions || []).map(p => p.replace('→', ' ← ')).join(' | ') || 'لا صلاحيات'}
           </div>
-          <button onclick="deleteCustomAccount('${a.id}')" style="margin-top:8px;border:none;background:#fef2f2;color:var(--red);padding:5px 12px;border-radius:8px;font-size:.78rem;cursor:pointer;font-weight:700;">حذف</button>
+          <button onclick="deleteCustomAccount('${a.id}')"
+            style="margin-top:8px;border:none;background:#fef2f2;color:var(--red);padding:5px 12px;border-radius:8px;font-size:.78rem;cursor:pointer;font-weight:700;">حذف</button>
         </div>`).join('');
   } catch(e) {
     custEl.innerHTML = '<p style="color:var(--red);font-size:.85rem;text-align:center;padding:10px;">❌ خطأ في تحميل الحسابات</p>';
   }
 }
 
+// ✅ FIX #2: Single definition of createCustomAccount (duplicate removed)
 async function createCustomAccount() {
   const name  = document.getElementById('new-staff-name').value.trim();
   const email = document.getElementById('new-staff-user').value.trim();
@@ -801,7 +758,7 @@ async function createCustomAccount() {
     return;
   }
 
-  const perms = ['perm-rp','perm-pd','perm-dd','perm-canc']
+  const perms = ['perm-rp', 'perm-pd', 'perm-dd', 'perm-canc']
     .map(id => document.getElementById(id))
     .filter(el => el?.checked)
     .map(el => el.value);
@@ -811,7 +768,6 @@ async function createCustomAccount() {
   showToast('⏳ جاري إنشاء الحساب، يرجى الانتظار...');
 
   try {
-    // الاتصال بالخادم الآمن الذي رفعته أنت للتو!
     const { data, error } = await sb.functions.invoke('create-staff', {
       body: { email, password: pass, name, emoji, permissions: perms }
     });
@@ -819,57 +775,11 @@ async function createCustomAccount() {
     if (error) throw new Error(error.message || 'حدث خطأ أثناء الاتصال بالخادم');
     if (data && data.error) throw new Error(data.error);
 
-    // تصفير الحقول بعد النجاح
     document.getElementById('new-staff-name').value = '';
     document.getElementById('new-staff-user').value = '';
     document.getElementById('new-staff-pass').value = '';
-    ['perm-rp','perm-pd','perm-dd','perm-canc'].forEach(id => {
-      const el = document.getElementById(id); if(el) el.checked = false;
-    });
-
-    renderStaffList();
-    showToast('✅ تم إنشاء حساب الموظف (' + name + ') بنجاح!');
-  } catch(e) {
-    console.error('Create staff error:', e);
-    showToast('❌ خطأ: ' + (e.message || 'يرجى المحاولة مجدداً'));
-  }
-}
-
-async function createCustomAccount() {
-  const name  = document.getElementById('new-staff-name').value.trim();
-  const email = document.getElementById('new-staff-user').value.trim();
-  const pass  = document.getElementById('new-staff-pass').value;
-  const emoji = document.getElementById('new-staff-emoji').value;
-
-  if (!name || !email || !pass || pass.length < 6) {
-    alert('يرجى إدخال الاسم والبريد الإلكتروني وكلمة مرور (6 أحرف+)');
-    return;
-  }
-
-  const perms = ['perm-rp','perm-pd','perm-dd','perm-canc']
-    .map(id => document.getElementById(id))
-    .filter(el => el?.checked)
-    .map(el => el.value);
-
-  if (!perms.length) { alert('يرجى اختيار صلاحية واحدة على الأقل'); return; }
-
-  showToast('⏳ جاري إنشاء الحساب، يرجى الانتظار...');
-
-  try {
-    // الاتصال بالخادم الآمن الذي رفعته أنت للتو!
-    const { data, error } = await sb.functions.invoke('create-staff', {
-      body: { email, password: pass, name, emoji, permissions: perms }
-    });
-
-    if (error) throw new Error(error.message || 'حدث خطأ أثناء الاتصال بالخادم');
-    if (data && data.error) throw new Error(data.error);
-
-    // تصفير الحقول بعد النجاح
-    document.getElementById('new-staff-name').value = '';
-    document.getElementById('new-staff-user').value = '';
-    document.getElementById('new-staff-pass').value = '';
-    ['perm-rp','perm-pd','perm-dd','perm-canc'].forEach(id => {
-      const el = document.getElementById(id); if(el) el.checked = false;
+    ['perm-rp', 'perm-pd', 'perm-dd', 'perm-canc'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.checked = false;
     });
 
     renderStaffList();
@@ -883,19 +793,19 @@ async function createCustomAccount() {
 async function deleteCustomAccount(userId) {
   if (!confirm('هل أنت متأكد من سحب صلاحيات هذا الموظف ومنعه من الدخول؟')) return;
   try {
-    // حذف ملف الموظف من قاعدة البيانات مما يمنعه من رؤية أي شيء أو تسجيل الدخول
     await sb.from('profiles').delete().eq('id', userId);
     showToast('🗑️ تم إيقاف الحساب بنجاح ولن يتمكن من الدخول');
     renderStaffList();
-  } catch(e) {
-    console.error(e); showToast('❌ حدث خطأ. يرجى المحاولة مجدداً.');
-  }
+  } catch(e) { console.error(e); showToast('❌ حدث خطأ. يرجى المحاولة مجدداً.'); }
 }
+
 function changeCredentials() {
   showToast('⚠️ لتغيير كلمة المرور، استخدم Supabase Dashboard → Authentication → Users');
 }
 
-// ── Date Filter Helpers ──
+// ══════════════════════════════════
+//  DATE FILTER HELPERS
+// ══════════════════════════════════
 function _getDateRange(prefix) {
   const from = document.getElementById(prefix + '-from')?.value;
   const to   = document.getElementById(prefix + '-to')?.value;
@@ -904,11 +814,12 @@ function _getDateRange(prefix) {
     to:   to   ? new Date(to + 'T23:59:59')   : null,
   };
 }
+
 function _setPeriodDates(prefix, period) {
-  const now = new Date();
+  const now   = new Date();
   const fromEl = document.getElementById(prefix + '-from');
   const toEl   = document.getElementById(prefix + '-to');
-  const fmt = d => d.toISOString().split('T')[0];
+  const fmt    = d => d.toISOString().split('T')[0];
   if (period === 'today') {
     fromEl.value = fmt(now); toEl.value = fmt(now);
   } else if (period === 'week') {
@@ -919,11 +830,12 @@ function _setPeriodDates(prefix, period) {
     fromEl.value = fmt(d); toEl.value = fmt(now);
   } else { fromEl.value = ''; toEl.value = ''; }
 }
+
 function _filterByDate(orders, range) {
   return orders.filter(o => {
     const d = new Date(o.created_at);
     if (range.from && d < range.from) return false;
-    if (range.to && d > range.to) return false;
+    if (range.to   && d > range.to)   return false;
     return true;
   });
 }
@@ -934,6 +846,7 @@ function setDashPeriod(period, el) {
   _setPeriodDates('dash', period);
   renderStaffDashboard();
 }
+
 function setRpPeriod(period, el) {
   document.querySelectorAll('#rp-period-bar .ftab').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
@@ -941,83 +854,85 @@ function setRpPeriod(period, el) {
   renderReports();
 }
 
-// ── Employee performance dashboard ──
+// ══════════════════════════════════
+//  EMPLOYEE DASHBOARD
+// ══════════════════════════════════
 function renderStaffDashboard() {
   const box = document.getElementById('emp-dash');
   if (!box) return;
-  const range = _getDateRange('dash');
+  const range    = _getDateRange('dash');
   const filtered = _filterByDate(allOrders, range);
 
-  const actorMap = {};
+  const actorMap   = {};
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+
   filtered.forEach(o => {
-    const hist = o.status_history || [];
-    hist.forEach((h, i) => {
+    (o.status_history || []).forEach((h, i) => {
       if (!h.by) return;
-      // If date range set, only count actions within range
       if (range.from && new Date(h.time) < range.from) return;
-      if (range.to && new Date(h.time) > range.to) return;
-      if (!actorMap[h.by]) actorMap[h.by] = {done:[], timings:[]};
-      actorMap[h.by].done.push({orderId:o.id, status:h.status, time:h.time});
-      if (i > 0 && hist[i-1].time) {
-        const dur = (new Date(h.time) - new Date(hist[i-1].time)) / 60000;
+      if (range.to   && new Date(h.time) > range.to)   return;
+      if (!actorMap[h.by]) actorMap[h.by] = { done: [], timings: [] };
+      actorMap[h.by].done.push({ orderId: o.id, status: h.status, time: h.time });
+      const prev = (o.status_history || [])[i - 1];
+      if (prev?.time) {
+        const dur = (new Date(h.time) - new Date(prev.time)) / 60000;
         if (dur > 0 && dur < 1440) actorMap[h.by].timings.push(dur);
       }
     });
   });
 
-  const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-
   if (!Object.keys(actorMap).length) {
-    box.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted);">لا توجد بيانات${range.from?' في الفترة المحددة':''}</div>`;
+    box.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted);">لا توجد بيانات${range.from ? ' في الفترة المحددة' : ''}</div>`;
     return;
   }
 
-  // Summary stats at top
-  const totalActions = Object.values(actorMap).reduce((s,d) => s + d.done.length, 0);
-  const totalOrders = filtered.length;
-  const completedOrders = filtered.filter(o => o.status === 'delivered').length;
-  const revenue = filtered.filter(o => o.status === 'delivered').reduce((s,o) => s + (o.total||0), 0);
+  const totalActions  = Object.values(actorMap).reduce((s, d) => s + d.done.length, 0);
+  const totalOrders   = filtered.length;
+  const completedOrds = filtered.filter(o => o.status === 'delivered').length;
+  const revenue       = filtered.filter(o => o.status === 'delivered').reduce((s, o) => s + (o.total || 0), 0);
 
   box.innerHTML = `
     <div class="sgrid" style="margin-bottom:16px;">
       <div class="scard"><div class="snum" style="color:var(--navy);">${totalOrders}</div><div class="slbl">الطلبات</div></div>
-      <div class="scard"><div class="snum" style="color:var(--green);">${completedOrders}</div><div class="slbl">مكتملة</div></div>
+      <div class="scard"><div class="snum" style="color:var(--green);">${completedOrds}</div><div class="slbl">مكتملة</div></div>
       <div class="scard"><div class="snum" style="color:var(--orange);">${totalActions}</div><div class="slbl">إجراء</div></div>
-      <div class="scard"><div class="snum" style="color:var(--teal);">${(revenue/1000).toFixed(0)}K</div><div class="slbl">الإيرادات</div></div>
+      <div class="scard"><div class="snum" style="color:var(--teal);">${(revenue / 1000).toFixed(0)}K</div><div class="slbl">الإيرادات</div></div>
     </div>` +
-  Object.entries(actorMap).map(([actor, data]) => {
-    const todayTasks = data.done.filter(d => new Date(d.time) >= todayStart).length;
-    const totalTasks = data.done.length;
-    const avgMin = data.timings.length
-      ? Math.round(data.timings.reduce((a,b)=>a+b,0) / data.timings.length)
-      : null;
-    const avgStr = avgMin ? (avgMin >= 60 ? `${Math.floor(avgMin/60)}س ${avgMin%60}د` : `${avgMin}د`) : '—';
-    return `
-      <div style="background:var(--card);border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:0 3px 10px rgba(0,0,0,.04);border:1px solid #edf0f4;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-          <b style="color:var(--navy);font-size:1rem;">${esc(actor)}</b>
-          <span style="background:#dbeafe;color:#1e40af;padding:4px 12px;border-radius:20px;font-size:.78rem;font-weight:700;">${totalTasks} إجراء</span>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center;">
-          <div style="background:#f8fafc;border-radius:12px;padding:12px;">
-            <div style="font-size:1.6rem;font-weight:800;color:var(--navy);">${totalTasks}</div>
-            <div style="font-size:.73rem;color:var(--text-muted);">إجمالي</div>
+    Object.entries(actorMap).map(([actor, data]) => {
+      const todayTasks = data.done.filter(d => new Date(d.time) >= todayStart).length;
+      const totalTasks = data.done.length;
+      const avgMin = data.timings.length
+        ? Math.round(data.timings.reduce((a, b) => a + b, 0) / data.timings.length) : null;
+      const avgStr = avgMin
+        ? (avgMin >= 60 ? `${Math.floor(avgMin / 60)}س ${avgMin % 60}د` : `${avgMin}د`) : '—';
+      return `
+        <div style="background:var(--card);border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:0 3px 10px rgba(0,0,0,.04);border:1px solid #edf0f4;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <b style="color:var(--navy);font-size:1rem;">${esc(actor)}</b>
+            <span style="background:#dbeafe;color:#1e40af;padding:4px 12px;border-radius:20px;font-size:.78rem;font-weight:700;">${totalTasks} إجراء</span>
           </div>
-          <div style="background:#f8fafc;border-radius:12px;padding:12px;">
-            <div style="font-size:1.6rem;font-weight:800;color:var(--green);">${todayTasks}</div>
-            <div style="font-size:.73rem;color:var(--text-muted);">اليوم</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center;">
+            <div style="background:#f8fafc;border-radius:12px;padding:12px;">
+              <div style="font-size:1.6rem;font-weight:800;color:var(--navy);">${totalTasks}</div>
+              <div style="font-size:.73rem;color:var(--text-muted);">إجمالي</div>
+            </div>
+            <div style="background:#f8fafc;border-radius:12px;padding:12px;">
+              <div style="font-size:1.6rem;font-weight:800;color:var(--green);">${todayTasks}</div>
+              <div style="font-size:.73rem;color:var(--text-muted);">اليوم</div>
+            </div>
+            <div style="background:#f8fafc;border-radius:12px;padding:12px;">
+              <div style="font-size:1.6rem;font-weight:800;color:var(--orange);">${avgStr}</div>
+              <div style="font-size:.73rem;color:var(--text-muted);">متوسط الوقت</div>
+            </div>
           </div>
-          <div style="background:#f8fafc;border-radius:12px;padding:12px;">
-            <div style="font-size:1.6rem;font-weight:800;color:var(--orange);">${avgStr}</div>
-            <div style="font-size:.73rem;color:var(--text-muted);">متوسط الوقت</div>
+          <div style="margin-top:12px;font-size:.8rem;color:var(--text-muted);">
+            <b>آخر 5 إجراءات:</b>
+            ${data.done.slice(-5).reverse().map(d =>
+              `<span style="display:inline-block;background:#f1f5f9;padding:3px 8px;border-radius:7px;margin:3px 2px;">${SM[d.status]?.i || '?'} #${d.orderId}</span>`
+            ).join('')}
           </div>
-        </div>
-        <div style="margin-top:12px;font-size:.8rem;color:var(--text-muted);">
-          <b>آخر 5 إجراءات:</b>
-          ${data.done.slice(-5).reverse().map(d=>`<span style="display:inline-block;background:#f1f5f9;padding:3px 8px;border-radius:7px;margin:3px 2px;">${SM[d.status]?.i||'?'} #${d.orderId}</span>`).join('')}
-        </div>
-      </div>`;
-  }).join('');
+        </div>`;
+    }).join('');
 }
 
 // ══════════════════════════════════
@@ -1028,9 +943,9 @@ function switchPage(name, el) {
   document.querySelectorAll('.atab').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   el.classList.add('active');
-  if (name === 'stats') calcStats();
-  if (name === 'dash') renderStaffDashboard();
-  if (name === 'staff') renderStaffList();
+  if (name === 'stats')   calcStats();
+  if (name === 'dash')    renderStaffDashboard();
+  if (name === 'staff')   renderStaffList();
   if (name === 'reports') renderReports();
   if (name === 'coupons') loadCoupons();
   if (name === 'pricing') loadPricing();
@@ -1045,17 +960,16 @@ const STATUS_AR = {
 };
 
 function renderReports() {
-  // Build region filter options dynamically
   const regionSel = document.getElementById('rp-region-filter');
   if (regionSel) {
     const regions = [...new Set(allOrders.map(o => o.region).filter(Boolean))].sort();
-    const curVal = regionSel.value;
-    regionSel.innerHTML = '<option value="all">كل المناطق</option>' + regions.map(r => `<option value="${esc(r)}">${esc(r)}</option>`).join('');
+    const curVal  = regionSel.value;
+    regionSel.innerHTML = '<option value="all">كل المناطق</option>' +
+      regions.map(r => `<option value="${esc(r)}">${esc(r)}</option>`).join('');
     regionSel.value = curVal || 'all';
   }
 
-  // Apply filters
-  const range = _getDateRange('rp');
+  const range   = _getDateRange('rp');
   const statusF = document.getElementById('rp-status-filter')?.value || 'all';
   const regionF = document.getElementById('rp-region-filter')?.value || 'all';
 
@@ -1063,7 +977,6 @@ function renderReports() {
   if (statusF !== 'all') orders = orders.filter(o => o.status === statusF);
   if (regionF !== 'all') orders = orders.filter(o => o.region === regionF);
 
-  // Summary
   const done      = orders.filter(o => o.status === 'delivered').length;
   const pending   = orders.filter(o => ['received','printing','delivering'].includes(o.status)).length;
   const cancelled = orders.filter(o => o.status === 'cancelled').length;
@@ -1072,12 +985,11 @@ function renderReports() {
   document.getElementById('rp-pending').innerText   = pending;
   document.getElementById('rp-cancelled').innerText = cancelled;
 
-  // Orders table
   const obody = document.getElementById('rp-orders-body');
   if (!orders.length) {
     obody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted);">لا توجد بيانات في الفترة المحددة</td></tr>`;
   } else {
-    const rowStyle = (i) => i % 2 === 0 ? 'background:#f8fafc;' : '';
+    const rowStyle = i => i % 2 === 0 ? 'background:#f8fafc;' : '';
     obody.innerHTML = orders.map((o, i) => {
       const dt = new Date(o.created_at).toLocaleDateString('ar-IQ');
       const statusColor = {
@@ -1086,23 +998,22 @@ function renderReports() {
       }[o.status] || '#64748b';
       return `<tr style="${rowStyle(i)}">
         <td style="padding:9px 10px;font-weight:800;color:var(--navy);">${esc(o.id)}</td>
-        <td style="padding:9px 10px;">${esc(o.name)||''}</td>
-        <td style="padding:9px 10px;direction:ltr;text-align:right;">${esc(o.phone)||''}</td>
-        <td style="padding:9px 10px;">${esc(o.region)||''}</td>
+        <td style="padding:9px 10px;">${esc(o.name) || ''}</td>
+        <td style="padding:9px 10px;direction:ltr;text-align:right;">${esc(o.phone) || ''}</td>
+        <td style="padding:9px 10px;">${esc(o.region) || ''}</td>
         <td style="padding:9px 10px;">
           <span style="background:${statusColor}22;color:${statusColor};padding:3px 10px;border-radius:20px;font-size:.78rem;font-weight:700;">
-            ${STATUS_AR[o.status]||o.status}
+            ${STATUS_AR[o.status] || o.status}
           </span>
         </td>
-        <td style="padding:9px 10px;">${o.color==='c'?'🌈 ملون':'⚪ أسود'} · ${o.side==='1'?'وجه':'وجهين'}</td>
-        <td style="padding:9px 10px;text-align:center;">${o.files?.length||0}</td>
-        <td style="padding:9px 10px;font-weight:800;color:var(--orange);">${(o.total||0).toLocaleString()} د.ع</td>
+        <td style="padding:9px 10px;">${o.color === 'c' ? '🌈 ملون' : '⚪ أسود'} · ${o.side === '1' ? 'وجه' : 'وجهين'}</td>
+        <td style="padding:9px 10px;text-align:center;">${o.files?.length || 0}</td>
+        <td style="padding:9px 10px;font-weight:800;color:var(--orange);">${(o.total || 0).toLocaleString()} د.ع</td>
         <td style="padding:9px 10px;color:var(--text-muted);">${dt}</td>
       </tr>`;
     }).join('');
   }
 
-  // Staff analysis
   const staffStats = {};
   orders.forEach(o => {
     if (!o.status_history) return;
@@ -1110,25 +1021,25 @@ function renderReports() {
       if (!h.by) return;
       const next = o.status_history[idx + 1];
       const dur  = next ? (new Date(next.time) - new Date(h.time)) / 60000 : 0;
-      if (!staffStats[h.by]) staffStats[h.by] = { role: h.role||'', completed:0, totalMin:0, count:0, lastAt:'' };
+      if (!staffStats[h.by]) staffStats[h.by] = { role: h.role || '', completed: 0, totalMin: 0, count: 0, lastAt: '' };
       staffStats[h.by].count++;
-      if (dur > 0) { staffStats[h.by].totalMin += dur; }
+      if (dur > 0) staffStats[h.by].totalMin += dur;
       if (!staffStats[h.by].lastAt || h.time > staffStats[h.by].lastAt) staffStats[h.by].lastAt = h.time;
       if (o.status === 'delivered') staffStats[h.by].completed++;
     });
   });
+
   const sbody = document.getElementById('rp-staff-body');
   const staffEntries = Object.entries(staffStats);
   if (!staffEntries.length) {
     sbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">لا توجد بيانات</td></tr>`;
   } else {
     sbody.innerHTML = staffEntries.map(([name, s], i) => {
-      const avg = s.count > 0 ? Math.round(s.totalMin / s.count) : 0;
+      const avg  = s.count > 0 ? Math.round(s.totalMin / s.count) : 0;
       const last = s.lastAt ? new Date(s.lastAt).toLocaleDateString('ar-IQ') : '—';
-      const rowStyle = i % 2 === 0 ? 'background:#f8fafc;' : '';
-      return `<tr style="${rowStyle}">
+      return `<tr style="${i % 2 === 0 ? 'background:#f8fafc;' : ''}">
         <td style="padding:9px 10px;font-weight:800;">${esc(name)}</td>
-        <td style="padding:9px 10px;color:var(--text-muted);">${s.role||'—'}</td>
+        <td style="padding:9px 10px;color:var(--text-muted);">${s.role || '—'}</td>
         <td style="padding:9px 10px;text-align:center;font-weight:800;color:var(--green);">${s.completed}</td>
         <td style="padding:9px 10px;text-align:center;">${avg} د</td>
         <td style="padding:9px 10px;color:var(--text-muted);">${last}</td>
@@ -1136,46 +1047,43 @@ function renderReports() {
     }).join('');
   }
 
-  // Order types analysis
   const typeGroups = {
-    'ملون · وجه':    { label:'🌈 ملون — وجه واحد',  count:0, rev:0 },
-    'ملون · وجهين':  { label:'🌈 ملون — وجهين',      count:0, rev:0 },
-    'أسود · وجه':    { label:'⚪ أسود — وجه واحد',   count:0, rev:0 },
-    'أسود · وجهين':  { label:'⚪ أسود — وجهين',      count:0, rev:0 },
+    'ملون · وجه':   { label: '🌈 ملون — وجه واحد',  count: 0, rev: 0 },
+    'ملون · وجهين': { label: '🌈 ملون — وجهين',      count: 0, rev: 0 },
+    'أسود · وجه':   { label: '⚪ أسود — وجه واحد',   count: 0, rev: 0 },
+    'أسود · وجهين': { label: '⚪ أسود — وجهين',      count: 0, rev: 0 },
   };
   orders.forEach(o => {
-    const k = `${o.color==='c'?'ملون':'أسود'} · ${o.side==='1'?'وجه':'وجهين'}`;
-    if (typeGroups[k]) { typeGroups[k].count++; typeGroups[k].rev += (o.total||0); }
+    const k = `${o.color === 'c' ? 'ملون' : 'أسود'} · ${o.side === '1' ? 'وجه' : 'وجهين'}`;
+    if (typeGroups[k]) { typeGroups[k].count++; typeGroups[k].rev += (o.total || 0); }
   });
-  const totalOrders = orders.length || 1;
-  const tbody = document.getElementById('rp-type-body');
-  tbody.innerHTML = Object.values(typeGroups).map((g, i) => {
-    const pct = ((g.count / totalOrders) * 100).toFixed(1);
-    const rowStyle = i % 2 === 0 ? 'background:#f8fafc;' : '';
-    return `<tr style="${rowStyle}">
-      <td style="padding:9px 10px;font-weight:700;">${g.label}</td>
-      <td style="padding:9px 10px;text-align:center;font-weight:800;">${g.count}</td>
-      <td style="padding:9px 10px;color:var(--orange);font-weight:800;">${g.rev.toLocaleString()} د.ع</td>
-      <td style="padding:9px 10px;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div style="flex:1;background:#e2e8f0;height:6px;border-radius:3px;overflow:hidden;">
-            <div style="width:${pct}%;height:100%;background:var(--teal);border-radius:3px;"></div>
+  const totalOrd = orders.length || 1;
+  document.getElementById('rp-type-body').innerHTML =
+    Object.values(typeGroups).map((g, i) => {
+      const pct = ((g.count / totalOrd) * 100).toFixed(1);
+      return `<tr style="${i % 2 === 0 ? 'background:#f8fafc;' : ''}">
+        <td style="padding:9px 10px;font-weight:700;">${g.label}</td>
+        <td style="padding:9px 10px;text-align:center;font-weight:800;">${g.count}</td>
+        <td style="padding:9px 10px;color:var(--orange);font-weight:800;">${g.rev.toLocaleString()} د.ع</td>
+        <td style="padding:9px 10px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="flex:1;background:#e2e8f0;height:6px;border-radius:3px;overflow:hidden;">
+              <div style="width:${pct}%;height:100%;background:var(--teal);border-radius:3px;"></div>
+            </div>
+            <span style="font-size:.78rem;font-weight:700;color:var(--text-muted);min-width:35px;">${pct}%</span>
           </div>
-          <span style="font-size:.78rem;font-weight:700;color:var(--text-muted);min-width:35px;">${pct}%</span>
-        </div>
-      </td>
-    </tr>`;
-  }).join('');
+        </td>
+      </tr>`;
+    }).join('');
 }
 
-// ── Excel export helpers ──────────────────────────
+// ── Excel helpers ──
 function _xlsEscape(v) {
   if (v == null) return '';
   return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 function _buildXls(sheets) {
-  // sheets = [ { name, headers:[], rows:[[]] } ]
   let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <?mso-application progid="Excel.Sheet"?>
 <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
@@ -1188,12 +1096,13 @@ function _buildXls(sheets) {
 </Styles>`;
   sheets.forEach(sh => {
     xml += `<Worksheet ss:Name="${_xlsEscape(sh.name)}"><Table>`;
-    xml += `<Row>` + sh.headers.map(h => `<Cell ss:StyleID="h"><Data ss:Type="String">${_xlsEscape(h)}</Data></Cell>`).join('') + `</Row>`;
+    xml += `<Row>` + sh.headers.map(h =>
+      `<Cell ss:StyleID="h"><Data ss:Type="String">${_xlsEscape(h)}</Data></Cell>`).join('') + `</Row>`;
     sh.rows.forEach((row, ri) => {
       const style = ri % 2 === 0 ? 'e' : 's';
       xml += `<Row>` + row.map(cell => {
         const isNum = typeof cell === 'number';
-        return `<Cell ss:StyleID="${style}"><Data ss:Type="${isNum?'Number':'String'}">${_xlsEscape(cell)}</Data></Cell>`;
+        return `<Cell ss:StyleID="${style}"><Data ss:Type="${isNum ? 'Number' : 'String'}">${_xlsEscape(cell)}</Data></Cell>`;
       }).join('') + `</Row>`;
     });
     xml += `</Table></Worksheet>`;
@@ -1203,7 +1112,7 @@ function _buildXls(sheets) {
 }
 
 function _downloadXls(xml, filename) {
-  const blob = new Blob([xml], { type:'application/vnd.ms-excel;charset=utf-8' });
+  const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href = url; a.download = filename; a.click();
@@ -1213,87 +1122,77 @@ function _downloadXls(xml, filename) {
 function exportOrdersExcel() {
   const headers = ['رقم الطلب','الاسم','رقم الهاتف','المنطقة','الحالة','نوع الطباعة','طريقة الطباعة','عدد الملفات','سعر الطباعة','رسوم التوصيل','المجموع','النقاط المكتسبة','تاريخ الطلب'];
   const rows = allOrders.map(o => [
-    o.id,
-    o.name||'',
-    o.phone||'',
-    o.region||'',
-    STATUS_AR[o.status]||o.status,
-    o.color==='c'?'ملون':'أسود وأبيض',
-    o.side==='1'?'وجه واحد':'وجهين',
-    o.files?.length||0,
-    o.print_price||0,
-    o.delivery_fee||0,
-    o.total||0,
-    o.loyalty_points_earned||0,
+    o.id, o.name || '', o.phone || '', o.region || '',
+    STATUS_AR[o.status] || o.status,
+    o.color === 'c' ? 'ملون' : 'أسود وأبيض',
+    o.side === '1' ? 'وجه واحد' : 'وجهين',
+    o.files?.length || 0, o.print_price || 0,
+    o.delivery_fee || 0, o.total || 0,
+    o.loyalty_points_earned || 0,
     new Date(o.created_at).toLocaleDateString('ar-IQ')
   ]);
-  const xml = _buildXls([{ name:'جميع الطلبات', headers, rows }]);
+  const xml = _buildXls([{ name: 'جميع الطلبات', headers, rows }]);
   _downloadXls(xml, `الشاطر_طلبات_${new Date().toLocaleDateString('ar-IQ').replace(/\//g,'-')}.xls`);
   showToast('✅ تم تصدير الطلبات بنجاح');
 }
 
 function exportAnalysisExcel() {
-  // Sheet 1: Orders
   const ordHeaders = ['رقم الطلب','الاسم','الهاتف','المنطقة','الحالة','الطباعة','الملفات','المجموع','التاريخ'];
   const ordRows = allOrders.map(o => [
-    o.id, o.name||'', o.phone||'', o.region||'',
-    STATUS_AR[o.status]||o.status,
-    `${o.color==='c'?'ملون':'أسود'} · ${o.side==='1'?'وجه':'وجهين'}`,
-    o.files?.length||0, o.total||0,
+    o.id, o.name || '', o.phone || '', o.region || '',
+    STATUS_AR[o.status] || o.status,
+    `${o.color === 'c' ? 'ملون' : 'أسود'} · ${o.side === '1' ? 'وجه' : 'وجهين'}`,
+    o.files?.length || 0, o.total || 0,
     new Date(o.created_at).toLocaleDateString('ar-IQ')
   ]);
 
-  // Sheet 2: Status summary
   const statHeaders = ['الحالة','العدد','الإيرادات (د.ع)'];
-  const statuses = ['received','printing','delivering','delivered','cancelled'];
-  const statRows = statuses.map(st => {
+  const statRows = ['received','printing','delivering','delivered','cancelled'].map(st => {
     const grp = allOrders.filter(o => o.status === st);
-    return [STATUS_AR[st]||st, grp.length, grp.reduce((s,o)=>s+(o.total||0),0)];
+    return [STATUS_AR[st] || st, grp.length, grp.reduce((s, o) => s + (o.total || 0), 0)];
   });
 
-  // Sheet 3: Staff
   const staffStats = {};
   allOrders.forEach(o => {
-    (o.status_history||[]).forEach((h, idx) => {
+    (o.status_history || []).forEach((h, idx) => {
       if (!h.by) return;
-      const next = o.status_history[idx+1];
-      const dur  = next ? (new Date(next.time)-new Date(h.time))/60000 : 0;
-      if (!staffStats[h.by]) staffStats[h.by] = { role:h.role||'', completed:0, totalMin:0, count:0, lastAt:'' };
+      const next = o.status_history[idx + 1];
+      const dur  = next ? (new Date(next.time) - new Date(h.time)) / 60000 : 0;
+      if (!staffStats[h.by]) staffStats[h.by] = { role: h.role || '', completed: 0, totalMin: 0, count: 0, lastAt: '' };
       staffStats[h.by].count++;
-      if (dur>0) staffStats[h.by].totalMin += dur;
-      if (!staffStats[h.by].lastAt||h.time>staffStats[h.by].lastAt) staffStats[h.by].lastAt=h.time;
-      if (o.status==='delivered') staffStats[h.by].completed++;
+      if (dur > 0) staffStats[h.by].totalMin += dur;
+      if (!staffStats[h.by].lastAt || h.time > staffStats[h.by].lastAt) staffStats[h.by].lastAt = h.time;
+      if (o.status === 'delivered') staffStats[h.by].completed++;
     });
   });
   const staffHeaders = ['الموظف','الدور','طلبات مكتملة','إجمالي تعاملات','متوسط الوقت (دقيقة)','آخر نشاط'];
-  const staffRows = Object.entries(staffStats).map(([name,s]) => [
-    name, s.role||'—', s.completed, s.count,
-    s.count>0?Math.round(s.totalMin/s.count):0,
-    s.lastAt?new Date(s.lastAt).toLocaleDateString('ar-IQ'):'—'
+  const staffRows = Object.entries(staffStats).map(([name, s]) => [
+    name, s.role || '—', s.completed, s.count,
+    s.count > 0 ? Math.round(s.totalMin / s.count) : 0,
+    s.lastAt ? new Date(s.lastAt).toLocaleDateString('ar-IQ') : '—'
   ]);
 
-  // Sheet 4: Type analysis
   const typeGroups = {
-    'ملون · وجه': {label:'ملون — وجه واحد',count:0,rev:0},
-    'ملون · وجهين':{label:'ملون — وجهين',count:0,rev:0},
-    'أسود · وجه': {label:'أسود — وجه واحد',count:0,rev:0},
-    'أسود · وجهين':{label:'أسود — وجهين',count:0,rev:0},
+    'ملون · وجه':   { label: 'ملون — وجه واحد',  count: 0, rev: 0 },
+    'ملون · وجهين': { label: 'ملون — وجهين',      count: 0, rev: 0 },
+    'أسود · وجه':   { label: 'أسود — وجه واحد',   count: 0, rev: 0 },
+    'أسود · وجهين': { label: 'أسود — وجهين',      count: 0, rev: 0 },
   };
-  allOrders.forEach(o=>{
-    const k=`${o.color==='c'?'ملون':'أسود'} · ${o.side==='1'?'وجه':'وجهين'}`;
-    if(typeGroups[k]){typeGroups[k].count++;typeGroups[k].rev+=(o.total||0);}
+  allOrders.forEach(o => {
+    const k = `${o.color === 'c' ? 'ملون' : 'أسود'} · ${o.side === '1' ? 'وجه' : 'وجهين'}`;
+    if (typeGroups[k]) { typeGroups[k].count++; typeGroups[k].rev += (o.total || 0); }
   });
-  const typeHeaders=['نوع الطباعة','عدد الطلبات','الإيرادات (د.ع)','النسبة %'];
-  const total = allOrders.length||1;
-  const typeRows = Object.values(typeGroups).map(g=>[
-    g.label, g.count, g.rev, Number(((g.count/total)*100).toFixed(1))
+  const total = allOrders.length || 1;
+  const typeHeaders = ['نوع الطباعة','عدد الطلبات','الإيرادات (د.ع)','النسبة %'];
+  const typeRows = Object.values(typeGroups).map(g => [
+    g.label, g.count, g.rev, Number(((g.count / total) * 100).toFixed(1))
   ]);
 
   const xml = _buildXls([
-    { name:'جميع الطلبات',      headers:ordHeaders,   rows:ordRows },
-    { name:'ملخص الحالات',      headers:statHeaders,  rows:statRows },
-    { name:'أداء الموظفين',      headers:staffHeaders, rows:staffRows },
-    { name:'تحليل أنواع الطباعة',headers:typeHeaders,  rows:typeRows },
+    { name: 'جميع الطلبات',       headers: ordHeaders,   rows: ordRows },
+    { name: 'ملخص الحالات',       headers: statHeaders,  rows: statRows },
+    { name: 'أداء الموظفين',       headers: staffHeaders, rows: staffRows },
+    { name: 'تحليل أنواع الطباعة', headers: typeHeaders,  rows: typeRows },
   ]);
   _downloadXls(xml, `الشاطر_تحليل_شامل_${new Date().toLocaleDateString('ar-IQ').replace(/\//g,'-')}.xls`);
   showToast('✅ تم تصدير التحليل الشامل بنجاح');
@@ -1302,19 +1201,15 @@ function exportAnalysisExcel() {
 // ══════════════════════════════════
 //  REAL-TIME
 // ══════════════════════════════════
-let _prevOrderCount = 0;
-
 async function startListening() {
   await fetchOrders();
-  _prevOrderCount = allOrders.length;
   rtCh = sb.channel('admin-rt-v2')
-    .on('postgres_changes', {event:'*', schema:'public', table:'orders'}, (payload) => {
-      // Play sound for new orders or status updates
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
       if (payload.eventType === 'INSERT') {
         playAdminAlert('received');
         const n = payload.new;
         if (n && n.name) {
-          showToast(`🆕 طلب جديد #${esc(n.id)} — ${esc(n.name)}${n.is_express?' ⚡عاجل':''}`);
+          showToast(`🆕 طلب جديد #${esc(n.id)} — ${esc(n.name)}${n.is_express ? ' ⚡عاجل' : ''}`);
         }
       } else if (payload.eventType === 'UPDATE' && payload.new?.status) {
         playAdminAlert(payload.new.status);
@@ -1325,12 +1220,10 @@ async function startListening() {
 }
 
 async function fetchOrders() {
-  // جلب آخر 50 طلب فقط لضمان سرعة لوحة التحكم
-let query = sb.from('orders').select('*').order('created_at', {ascending:false}).limit(50);
-  // Role-based pre-filter: each role sees only relevant statuses
+  let query = sb.from('orders').select('*').order('created_at', { ascending: false }).limit(50);
   const sees = (currentRole === '__custom__') ? null : ROLES[currentRole]?.sees;
   if (sees) query = query.in('status', sees);
-  const {data, error} = await query;
+  const { data, error } = await query;
   if (error) return;
   allOrders = data || [];
   const p = allOrders.filter(o => ['received','printing','delivering'].includes(o.status)).length;
@@ -1344,34 +1237,27 @@ let query = sb.from('orders').select('*').order('created_at', {ascending:false})
 //  STATS
 // ══════════════════════════════════
 function calcStats() {
-  const now = new Date();
-  const todayStart = new Date(now.setHours(0,0,0,0));
-  
-  // تواريخ المقارنة
-  const weekStart = new Date(todayStart); weekStart.setDate(weekStart.getDate() - 7);
+  const now        = new Date();
+  const todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0);
+  const weekStart  = new Date(todayStart); weekStart.setDate(weekStart.getDate() - 7);
   const monthStart = new Date(todayStart); monthStart.setDate(monthStart.getDate() - 30);
 
-  // حساب الأرباح (للطلبات المسلمة فقط)
   const delivered = allOrders.filter(o => o.status === 'delivered');
-  
-  const revToday = delivered.filter(o => new Date(o.created_at) >= todayStart).reduce((s,o) => s+(o.total||0), 0);
-  const revWeek  = delivered.filter(o => new Date(o.created_at) >= weekStart).reduce((s,o) => s+(o.total||0), 0);
-  const revMonth = delivered.filter(o => new Date(o.created_at) >= monthStart).reduce((s,o) => s+(o.total||0), 0);
-  
+  const revToday  = delivered.filter(o => new Date(o.created_at) >= todayStart).reduce((s, o) => s + (o.total || 0), 0);
+  const revWeek   = delivered.filter(o => new Date(o.created_at) >= weekStart).reduce((s, o) => s + (o.total || 0), 0);
+  const revMonth  = delivered.filter(o => new Date(o.created_at) >= monthStart).reduce((s, o) => s + (o.total || 0), 0);
   const pendingCount = allOrders.filter(o => ['received','printing','delivering'].includes(o.status)).length;
 
-  // تحديث الأرقام العلوية (بصيغة الآلاف K)
-  document.getElementById('s-today-rev').innerText = (revToday >= 1000) ? (revToday/1000).toFixed(1) + 'K' : revToday;
-  document.getElementById('s-week-rev').innerText  = (revWeek >= 1000) ? (revWeek/1000).toFixed(1) + 'K' : revWeek;
-  document.getElementById('s-month-rev').innerText = (revMonth >= 1000) ? (revMonth/1000).toFixed(1) + 'K' : revMonth;
+  document.getElementById('s-today-rev').innerText = revToday >= 1000 ? (revToday / 1000).toFixed(1) + 'K' : revToday;
+  document.getElementById('s-week-rev').innerText  = revWeek  >= 1000 ? (revWeek  / 1000).toFixed(1) + 'K' : revWeek;
+  document.getElementById('s-month-rev').innerText = revMonth >= 1000 ? (revMonth / 1000).toFixed(1) + 'K' : revMonth;
   document.getElementById('s-pending').innerText   = pendingCount;
   document.getElementById('s-pending').style.color = pendingCount > 0 ? 'var(--orange)' : 'var(--green)';
 
-  // ملخص الحالات
   const det = document.getElementById('stats-detail');
   const byStatus = {};
-  Object.keys(SM).forEach(k => byStatus[k] = allOrders.filter(o=>o.status===k).length);
-  det.innerHTML = Object.entries(byStatus).map(([k,v]) => {
+  Object.keys(SM).forEach(k => byStatus[k] = allOrders.filter(o => o.status === k).length);
+  det.innerHTML = Object.entries(byStatus).map(([k, v]) => {
     const s = SM[k];
     return `<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #f1f5f9;">
               <span>${s.i} ${s.l}</span>
@@ -1379,22 +1265,19 @@ function calcStats() {
             </div>`;
   }).join('');
 
-  // الملخص المالي المقارن
-  const fin = document.getElementById('financial-summary');
-  fin.innerHTML = `
+  document.getElementById('financial-summary').innerHTML = `
     <div style="background:var(--light-teal); padding:15px; border-radius:12px; margin-bottom:10px;">
       <div style="font-size:.85rem; color:var(--text-muted);">إجمالي مبيعات اليوم</div>
       <div style="font-size:1.4rem; font-weight:800; color:var(--green);">${revToday.toLocaleString()} د.ع</div>
     </div>
     <div style="padding:10px 5px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; font-size:.9rem;">
       <span>متوسط قيمة الطلب (الشهري)</span>
-      <b>${delivered.length ? Math.round(revMonth/delivered.length).toLocaleString() : 0} د.ع</b>
+      <b>${delivered.length ? Math.round(revMonth / delivered.length).toLocaleString() : 0} د.ع</b>
     </div>
     <div style="padding:10px 5px; display:flex; justify-content:space-between; font-size:.9rem;">
       <span>إجمالي أرباح آخر 30 يوم</span>
       <b style="color:var(--navy);">${revMonth.toLocaleString()} د.ع</b>
-    </div>
-  `;
+    </div>`;
 }
 
 // ══════════════════════════════════
@@ -1402,7 +1285,7 @@ function calcStats() {
 // ══════════════════════════════════
 function setFilter(f, el) {
   curFilter = f;
-  curPage = 1;
+  curPage   = 1;
   document.querySelectorAll('.ftab').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   renderOrders();
@@ -1412,33 +1295,32 @@ let curPage = 1;
 const PAGE_SIZE = 30;
 
 function renderOrders() {
-  const cont = document.getElementById('olist');
+  const cont    = document.getElementById('olist');
   const searchQ = (document.getElementById('order-search')?.value || '').toLowerCase().trim();
-let list = allOrders;
-if (curFilter !== 'all') list = list.filter(o => o.status === curFilter);
-  
-  // 🔍 Search filter
+  let list = allOrders;
+  if (curFilter !== 'all') list = list.filter(o => o.status === curFilter);
   if (searchQ) {
     list = list.filter(o =>
-      (o.id || '').toLowerCase().includes(searchQ) ||
-      (o.name || '').toLowerCase().includes(searchQ) ||
+      (o.id    || '').toLowerCase().includes(searchQ) ||
+      (o.name  || '').toLowerCase().includes(searchQ) ||
       (o.phone || '').includes(searchQ)
     );
   }
 
-  if (!list.length) { cont.innerHTML = '<div style="text-align:center;padding:50px;color:var(--text-muted);">لا توجد طلبات</div>'; return; }
+  if (!list.length) {
+    cont.innerHTML = '<div style="text-align:center;padding:50px;color:var(--text-muted);">لا توجد طلبات</div>';
+    return;
+  }
 
-  // Pagination
   const totalPages = Math.ceil(list.length / PAGE_SIZE);
   if (curPage > totalPages) curPage = totalPages;
-  const start = (curPage - 1) * PAGE_SIZE;
-  const pageList = list.slice(start, start + PAGE_SIZE);
+  const pageList = list.slice((curPage - 1) * PAGE_SIZE, curPage * PAGE_SIZE);
 
   const now = Date.now();
   let html = pageList.map(o => {
-    const s    = SM[o.status] || SM.received;
-    const isNew = now - new Date(o.created_at).getTime() < 15*60*1000;
-    const sp   = 'event.stopPropagation()';
+    const s     = SM[o.status] || SM.received;
+    const isNew = now - new Date(o.created_at).getTime() < 15 * 60 * 1000;
+    const sp    = 'event.stopPropagation()';
     let act = '';
     if (o.status === 'received') {
       if (canDo('received','printing'))   act += `<button class="abtn aprint" onclick="${sp};chStatus('${o.id}','printing')">🖨️ بدء الطباعة</button>`;
@@ -1447,36 +1329,36 @@ if (curFilter !== 'all') list = list.filter(o => o.status === curFilter);
       if (canDo('printing','delivering')) act += `<button class="abtn adeliv" onclick="${sp};chStatus('${o.id}','delivering')">🛵 أرسل للتوصيل</button>`;
       if (canDo('printing','cancelled'))  act += `<button class="abtn acanc"  onclick="${sp};initCancel('${o.id}')">❌ إلغاء</button>`;
     } else if (o.status === 'delivering') {
-      if (canDo('delivering','delivered')) act += `<button class="abtn adone"  onclick="${sp};chStatus('${o.id}','delivered')">✅ تم التسليم</button>`;
-      if (canDo('delivering','cancelled')) act += `<button class="abtn acanc"  onclick="${sp};initCancel('${o.id}')">❌ إلغاء</button>`;
+      if (canDo('delivering','delivered')) act += `<button class="abtn adone" onclick="${sp};chStatus('${o.id}','delivered')">✅ تم التسليم</button>`;
+      if (canDo('delivering','cancelled')) act += `<button class="abtn acanc" onclick="${sp};initCancel('${o.id}')">❌ إلغاء</button>`;
     }
-    return `<div class="ocard ${isNew?'isnew':''} ${o.is_express?'isnew':''.replace('isnew','')}" style="${o.is_express?'border-right:4px solid #9333ea;':''}" onclick="openDet('${o.id}')">
+    return `<div class="ocard ${isNew ? 'isnew' : ''}" style="${o.is_express ? 'border-right:4px solid #9333ea;' : ''}" onclick="openDet('${o.id}')">
       <div class="ohdr">
         <div>
           <b style="color:var(--navy);font-size:1.05rem;">#${esc(o.id)}</b>
-          ${isNew?'<span class="newbdg">جديد</span>':''}
-          ${o.is_express?'<span style="background:linear-gradient(135deg,#9333ea,#7c3aed);color:#fff;border-radius:8px;font-size:.65rem;padding:2px 7px;font-weight:800;vertical-align:middle;margin-right:5px;">⚡ عاجل</span>':''}
+          ${isNew ? '<span class="newbdg">جديد</span>' : ''}
+          ${o.is_express ? '<span style="background:linear-gradient(135deg,#9333ea,#7c3aed);color:#fff;border-radius:8px;font-size:.65rem;padding:2px 7px;font-weight:800;vertical-align:middle;margin-right:5px;">⚡ عاجل</span>' : ''}
         </div>
         <span class="sbdg ${s.c}">${s.i} ${s.l}</span>
       </div>
       <div class="infogrid">
         <div class="ii">👤 ${esc(o.name)}</div><div class="ii">📞 ${esc(o.phone)}</div>
-        <div class="ii">🏠 ${esc(o.region)}</div><div class="ii" style="color:var(--orange);font-weight:700;">💰 ${(o.total||0).toLocaleString()} د.ع</div>
-        <div class="ii">🎨 ${o.color==='c'?'ملون':'أسود'} • ${o.side==='1'?'وجه':'وجهين'}</div>
-        <div class="ii" style="color:var(--teal);">📋 ${o.files?.length||0} ملف</div>
+        <div class="ii">🏠 ${esc(o.region)}</div>
+        <div class="ii" style="color:var(--orange);font-weight:700;">💰 ${(o.total || 0).toLocaleString()} د.ع</div>
+        <div class="ii">🎨 ${o.color === 'c' ? 'ملون' : 'أسود'} • ${o.side === '1' ? 'وجه' : 'وجهين'}</div>
+        <div class="ii" style="color:var(--teal);">📋 ${o.files?.length || 0} ملف</div>
       </div>
-      ${o.notes?`<div style="font-size:.78rem;color:var(--orange);background:rgba(232,107,36,.06);padding:5px 8px;border-radius:8px;margin-top:4px;">📝 ${esc(o.notes).substring(0,50)}${o.notes.length>50?'...':''}</div>`:''}
-      ${o.rating?`<div style="font-size:.78rem;margin-top:4px;">⭐ تقييم: ${'⭐'.repeat(o.rating)}</div>`:''}
-      ${act?`<div class="arow">${act}</div>`:''}
+      ${o.notes ? `<div style="font-size:.78rem;color:var(--orange);background:rgba(232,107,36,.06);padding:5px 8px;border-radius:8px;margin-top:4px;">📝 ${esc(o.notes).substring(0, 50)}${o.notes.length > 50 ? '...' : ''}</div>` : ''}
+      ${o.rating ? `<div style="font-size:.78rem;margin-top:4px;">⭐ تقييم: ${'⭐'.repeat(o.rating)}</div>` : ''}
+      ${act ? `<div class="arow">${act}</div>` : ''}
     </div>`;
   }).join('');
 
-  // Pagination controls
   if (totalPages > 1) {
     html += `<div style="display:flex;justify-content:center;align-items:center;gap:10px;margin-top:16px;padding:10px;">
-      <button onclick="curPage=Math.max(1,curPage-1);renderOrders();" style="border:1.5px solid #e2e8f0;background:var(--card);padding:8px 16px;border-radius:10px;cursor:pointer;font-weight:700;font-family:'Tajawal',sans-serif;" ${curPage===1?'disabled':''}>→ السابق</button>
+      <button onclick="curPage=Math.max(1,curPage-1);renderOrders();" style="border:1.5px solid #e2e8f0;background:var(--card);padding:8px 16px;border-radius:10px;cursor:pointer;font-weight:700;font-family:'Tajawal',sans-serif;" ${curPage === 1 ? 'disabled' : ''}>→ السابق</button>
       <span style="font-size:.88rem;font-weight:700;color:var(--navy);">صفحة ${curPage} من ${totalPages}</span>
-      <button onclick="curPage=Math.min(${totalPages},curPage+1);renderOrders();" style="border:1.5px solid #e2e8f0;background:var(--card);padding:8px 16px;border-radius:10px;cursor:pointer;font-weight:700;font-family:'Tajawal',sans-serif;" ${curPage===totalPages?'disabled':''}>← التالي</button>
+      <button onclick="curPage=Math.min(${totalPages},curPage+1);renderOrders();" style="border:1.5px solid #e2e8f0;background:var(--card);padding:8px 16px;border-radius:10px;cursor:pointer;font-weight:700;font-family:'Tajawal',sans-serif;" ${curPage === totalPages ? 'disabled' : ''}>← التالي</button>
     </div>`;
   }
 
@@ -1494,7 +1376,10 @@ function initCancel(docId) {
   document.getElementById('custom-reason').value = '';
   document.getElementById('cancel-modal').classList.add('open');
 }
-function closeCancelModal() { document.getElementById('cancel-modal').classList.remove('open'); pendingCancelId = null; }
+function closeCancelModal() {
+  document.getElementById('cancel-modal').classList.remove('open');
+  pendingCancelId = null;
+}
 function pickReason(el, txt) {
   document.querySelectorAll('.rbtn-reason').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
@@ -1503,48 +1388,50 @@ function pickReason(el, txt) {
 async function confirmCancel() {
   const reason = document.getElementById('custom-reason').value.trim();
   if (!reason) { alert('يرجى تحديد سبب الإلغاء أو كتابته'); return; }
-  
-  // -- التعديل تم هنا --
-  const idToCancel = pendingCancelId; // حفظ المعرف قبل الإغلاق
-  closeCancelModal();                 // إغلاق النافذة (والذي يفرغ pendingCancelId)
-  await chStatus(idToCancel, 'cancelled', reason); // الإرسال باستخدام المعرف المحفوظ
+  const idToCancel = pendingCancelId;
+  closeCancelModal();
+  await chStatus(idToCancel, 'cancelled', reason);
 }
 
+// ══════════════════════════════════
+//  ✅ FIX #1: chStatus — clean single implementation, no orphaned code
+// ══════════════════════════════════
 async function chStatus(docId, newSt, cancelReason = '') {
   if (newSt !== 'cancelled') {
     if (!confirm(`تأكيد: تحديث الطلب إلى "${SM[newSt]?.l}"؟`)) return;
   }
 
   try {
-    // 1. استدعاء الدالة الذكية لتحديث الحالة والسجل في قاعدة البيانات مباشرة
     const actorName = ROLES[currentRole]?.label || currentCustomLabel || 'موظف';
     const actorRole = currentRole === 'custom' ? 'موظف' : (ROLES[currentRole]?.label || '');
 
     const { error: uErr } = await sb.rpc('update_status_with_history', {
-      order_id_input: docId,
-      new_status_input: newSt,
-      actor_name: actorName,
-      actor_role: actorRole,
+      order_id_input:    docId,
+      new_status_input:  newSt,
+      actor_name:        actorName,
+      actor_role:        actorRole,
       cancel_reason_input: cancelReason
     });
 
     if (uErr) throw uErr;
 
-    // 2. تحديث النقاط إذا تم التسليم (كما فعلنا سابقاً)
     if (newSt === 'delivered') {
-      const { data: order } = await sb.from('orders').select('user_id, loyalty_points_earned').eq('id', docId).single();
+      const { data: order } = await sb.from('orders')
+        .select('user_id, loyalty_points_earned')
+        .eq('id', docId).single();
       if (order && order.loyalty_points_earned > 0) {
-        await sb.rpc('add_points_to_user', { 
-          user_id_input: order.user_id, 
-          points_to_add: order.loyalty_points_earned 
+        await sb.rpc('add_points_to_user', {
+          user_id_input: order.user_id,
+          points_to_add: order.loyalty_points_earned
         });
       }
-      await sb.from('users').update({ first_order_done: true }).eq('id', order.user_id);
+      if (order?.user_id) {
+        await sb.from('users').update({ first_order_done: true }).eq('id', order.user_id);
+      }
     }
 
-    // 3. إشعار الزبون عبر تيليجرام (اختياري حسب رغبتك)
     const { data: finalOrder } = await sb.from('orders').select('*').eq('id', docId).single();
-    if (finalOrder && finalOrder.telegram_id && !finalOrder.telegram_id.startsWith('guest_')) {
+    if (finalOrder?.telegram_id && !finalOrder.telegram_id.startsWith('guest_')) {
       const msg = custMsg(docId, newSt, cancelReason);
       if (msg) await tgSend(finalOrder.telegram_id, msg);
     }
@@ -1558,62 +1445,13 @@ async function chStatus(docId, newSt, cancelReason = '') {
     alert('❌ حدث خطأ أثناء التحديث: ' + e.message);
   }
 }
-// تحديث النقاط بشكل آمن عبر قاعدة البيانات مباشرة
-if (newSt === 'delivered' && order.status !== 'delivered') {
-  const ptsToAdd = order.loyalty_points_earned || 0;
-  if (ptsToAdd > 0) {
-    // استدعاء الدالة الحسابية التي أنشأناها في Supabase
-    await sb.rpc('add_points_to_user', { 
-      user_id_input: order.user_id, 
-      points_to_add: ptsToAdd 
-    });
-  }
-  // تأكيد أن أول طلب قد تم
-  await sb.from('users').update({ first_order_done: true }).eq('id', order.user_id);
-}
-
-  const newHistory = [...(order.status_history || []), {
-    status: newSt, time: new Date().toISOString(), by: ROLES[currentRole]?.label || currentRole
-  }];
-
-  const {error:uErr} = await sb.from('orders').update({
-    status: newSt,
-    status_history: newHistory,
-    ...(newSt === 'cancelled' ? {cancel_reason: cancelReason} : {})
-  }).eq('id', docId);
-  if (uErr) { alert('❌ فشل التحديث: ' + uErr.message); return; }
-
-  // Notify customer
-  const custTg  = order.telegram_id || '';
-  const validTg = custTg && !custTg.startsWith('guest_');
-  if (validTg) {
-    const msg = custMsg(order.id, newSt, cancelReason);
-    if (msg) await tgSend(custTg, msg);
-  }
-
-  // Notify admin
-  const s = SM[newSt] || {};
-  await tgSend(ADMIN_ID,
-    `${s.i} تم تحديث الطلب #${order.id}\n` +
-    `الحالة: ${s.l}\nالزبون: ${order.name} | ${order.phone}\n` +
-    `المنفذ: ${ROLES[currentRole]?.emoji} ${ROLES[currentRole]?.label}\n` +
-    (newSt === 'cancelled' ? `السبب: ${cancelReason}\n` : '') +
-    (validTg ? '📲 تم إشعار الزبون' : '⚠️ الزبون غير مرتبط بتيليجرام')
-  );
-
-  showToast(`✅ تم التحديث: ${s.l}`);
-  closeDet();
-  await fetchOrders();
-}
 
 // ══════════════════════════════════
 //  TELEGRAM
 // ══════════════════════════════════
 async function tgSend(chatId, text) {
   try {
-    const r = await sb.functions.invoke('send-tg', {
-      body: { chatId, message: text }
-    });
+    const r = await sb.functions.invoke('send-tg', { body: { chatId, message: text } });
     return r.data?.ok || false;
   } catch(e) { return false; }
 }
@@ -1628,10 +1466,10 @@ function openDet(docId) {
   document.getElementById('detpan').classList.add('open');
   document.getElementById('dettitle').innerText = 'طلب #' + o.id;
 
-  const s    = SM[o.status] || SM.received;
-  const zip  = o.zip_url || '';
-  const ph   = o.phone || '';
-  const waN  = '964' + ph.replace(/^0/, '');
+  const s   = SM[o.status] || SM.received;
+  const ph  = o.phone || '';
+  const waN = '964' + ph.replace(/^0/, '');
+  const zip = o.zip_url || '';
 
   let detAct = '';
   if (o.status === 'received') {
@@ -1641,30 +1479,33 @@ function openDet(docId) {
     if (canDo('printing','delivering')) detAct += `<button class="abtn adeliv" style="padding:12px;" onclick="chStatus('${o.id}','delivering')">🛵 أرسل للتوصيل</button>`;
     if (canDo('printing','cancelled'))  detAct += `<button class="abtn acanc"  style="padding:12px;" onclick="initCancel('${o.id}')">❌ إلغاء</button>`;
   } else if (o.status === 'delivering') {
-    if (canDo('delivering','delivered')) detAct += `<button class="abtn adone"  style="padding:12px;" onclick="chStatus('${o.id}','delivered')">✅ تم التسليم</button>`;
-    if (canDo('delivering','cancelled')) detAct += `<button class="abtn acanc"  style="padding:12px;" onclick="initCancel('${o.id}')">❌ إلغاء</button>`;
+    if (canDo('delivering','delivered')) detAct += `<button class="abtn adone" style="padding:12px;" onclick="chStatus('${o.id}','delivered')">✅ تم التسليم</button>`;
+    if (canDo('delivering','cancelled')) detAct += `<button class="abtn acanc" style="padding:12px;" onclick="initCancel('${o.id}')">❌ إلغاء</button>`;
   }
 
   document.getElementById('detbody').innerHTML = `
     <div style="text-align:center;margin-bottom:20px;">
       <span class="sbdg ${s.c}" style="font-size:.95rem;padding:8px 20px;">${s.i} ${s.l}</span>
-      ${o.is_express?'<div style="margin-top:8px;"><span style="background:linear-gradient(135deg,#9333ea,#7c3aed);color:#fff;border-radius:10px;font-size:.82rem;padding:5px 14px;font-weight:800;">⚡ طلب عاجل</span></div>':''}
-      ${o.cancel_reason?`<div style="margin-top:8px;font-size:.83rem;color:var(--red);font-weight:700;">السبب: ${esc(o.cancel_reason)}</div>`:''}
+      ${o.is_express ? '<div style="margin-top:8px;"><span style="background:linear-gradient(135deg,#9333ea,#7c3aed);color:#fff;border-radius:10px;font-size:.82rem;padding:5px 14px;font-weight:800;">⚡ طلب عاجل</span></div>' : ''}
+      ${o.cancel_reason ? `<div style="margin-top:8px;font-size:.83rem;color:var(--red);font-weight:700;">السبب: ${esc(o.cancel_reason)}</div>` : ''}
     </div>
 
     <div style="background:var(--light-teal);border-radius:16px;padding:16px;margin-bottom:14px;border:1px solid rgba(90,179,196,.2);">
       <div class="irow"><span>👤 الاسم</span><b>${esc(o.name)}</b></div>
       <div class="irow"><span>📞 الهاتف</span><b>${esc(ph)}</b></div>
       <div class="irow"><span>🏠 المنطقة</span><b>${esc(o.region)}</b></div>
-      <div class="irow"><span>⏰ وقت التوصيل</span><b>${esc(o.delivery_time)||'الآن'}</b></div>
-      <div class="irow"><span>📍 الموقع</span><a href="${o.loc_url||'#'}" target="_blank" style="color:#fff;background:var(--teal);padding:6px 14px;border-radius:8px;text-decoration:none;font-weight:700;font-size:.82rem;">الخريطة 🗺️</a></div>
+      <div class="irow"><span>⏰ وقت التوصيل</span><b>${esc(o.delivery_time) || 'الآن'}</b></div>
+      <div class="irow"><span>📍 الموقع</span>
+        <a href="${o.loc_url || '#'}" target="_blank"
+           style="color:#fff;background:var(--teal);padding:6px 14px;border-radius:8px;text-decoration:none;font-weight:700;font-size:.82rem;">الخريطة 🗺️</a>
+      </div>
     </div>
 
-    ${o.notes?`<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:14px;padding:14px;margin-bottom:14px;"><b style="color:#b45309;font-size:.88rem;">📝 ملاحظات الزبون:</b><p style="margin:6px 0 0;color:#78350f;font-size:.9rem;line-height:1.7;">${esc(o.notes)}</p></div>`:''}
+    ${o.notes ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:14px;padding:14px;margin-bottom:14px;"><b style="color:#b45309;font-size:.88rem;">📝 ملاحظات الزبون:</b><p style="margin:6px 0 0;color:#78350f;font-size:.9rem;line-height:1.7;">${esc(o.notes)}</p></div>` : ''}
 
-    ${o.coupon_code?`<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:.88rem;"><b style="color:#166534;">🎟️ كوبون:</b> <span style="font-weight:800;color:#166534;">${esc(o.coupon_code)}</span> — خصم ${(o.coupon_discount||0).toLocaleString()} د.ع</div>`:''}
+    ${o.coupon_code ? `<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:.88rem;"><b style="color:#166534;">🎟️ كوبون:</b> <span style="font-weight:800;color:#166534;">${esc(o.coupon_code)}</span> — خصم ${(o.coupon_discount || 0).toLocaleString()} د.ع</div>` : ''}
 
-    ${o.rating?`<div style="background:var(--light-teal);border-radius:14px;padding:12px;margin-bottom:14px;text-align:center;"><b style="color:var(--navy);font-size:.88rem;">⭐ تقييم الزبون:</b><div style="font-size:1.5rem;margin-top:4px;">${'⭐'.repeat(o.rating)}${'☆'.repeat(5-o.rating)}</div>${o.rating_comment?`<p style="margin:6px 0 0;font-size:.83rem;color:var(--text-muted);">"${esc(o.rating_comment)}"</p>`:''}</div>`:''}
+    ${o.rating ? `<div style="background:var(--light-teal);border-radius:14px;padding:12px;margin-bottom:14px;text-align:center;"><b style="color:var(--navy);font-size:.88rem;">⭐ تقييم الزبون:</b><div style="font-size:1.5rem;margin-top:4px;">${'⭐'.repeat(o.rating)}${'☆'.repeat(5 - o.rating)}</div>${o.rating_comment ? `<p style="margin:6px 0 0;font-size:.83rem;color:var(--text-muted);">"${esc(o.rating_comment)}"</p>` : ''}</div>` : ''}
 
     <p style="font-size:.82rem;color:var(--text-muted);margin:0 0 8px;font-weight:700;">📲 تواصل مع الزبون:</p>
     <div class="contact-row" style="margin-bottom:14px;">
@@ -1674,32 +1515,43 @@ function openDet(docId) {
     </div>
 
     <div style="background:#f8fafc;border-radius:16px;padding:16px;margin-bottom:14px;border:1px solid #f1f5f9;">
-      <div class="irow"><span>🎨 الطباعة</span><b>${o.color==='c'?'ملون':'أسود'} • ${o.side==='1'?'وجه':'وجهين'}</b></div>
-      ${o.express_fee?`<div class="irow"><span>⚡ رسوم الطلب العاجل</span><b style="color:#9333ea;">${(o.express_fee||0).toLocaleString()} د.ع</b></div>`:''}
-      ${o.coupon_discount?`<div class="irow"><span>🎟️ خصم الكوبون</span><b style="color:var(--green);">−${(o.coupon_discount||0).toLocaleString()} د.ع</b></div>`:''}
-      <div class="irow"><span>💰 الإجمالي</span><b style="color:var(--orange);font-size:1.15rem;">${(o.total||0).toLocaleString()} د.ع</b></div>
-      <div class="irow"><span>💎 نقاط</span><b style="color:var(--green);background:#dcfce7;padding:3px 10px;border-radius:8px;">+${o.loyalty_points_earned||0}</b></div>
+      <div class="irow"><span>🎨 الطباعة</span><b>${o.color === 'c' ? 'ملون' : 'أسود'} • ${o.side === '1' ? 'وجه' : 'وجهين'}</b></div>
+      ${o.express_fee ? `<div class="irow"><span>⚡ رسوم الطلب العاجل</span><b style="color:#9333ea;">${(o.express_fee || 0).toLocaleString()} د.ع</b></div>` : ''}
+      ${o.coupon_discount ? `<div class="irow"><span>🎟️ خصم الكوبون</span><b style="color:var(--green);">−${(o.coupon_discount || 0).toLocaleString()} د.ع</b></div>` : ''}
+      <div class="irow"><span>💰 الإجمالي</span><b style="color:var(--orange);font-size:1.15rem;">${(o.total || 0).toLocaleString()} د.ع</b></div>
+      <div class="irow"><span>💎 نقاط</span><b style="color:var(--green);background:#dcfce7;padding:3px 10px;border-radius:8px;">+${o.loyalty_points_earned || 0}</b></div>
     </div>
 
-    ${(currentRole !== 'driver' && currentRole !== '__custom__' ? true : (currentCustomCan?.includes('received→printing')||currentCustomCan?.includes('printing→delivering'))) ? `
-    <h4 style="margin:0 0 10px;color:var(--navy);font-weight:800;">الملفات (${o.files?.length||0})</h4>
-    ${zip?'<a href="'+zip+'" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:10px;background:var(--navy);color:#fff;padding:14px;border-radius:13px;font-weight:800;text-decoration:none;margin-bottom:12px;box-shadow:0 5px 14px rgba(13,59,102,.2);">📦 تحميل كل الملفات (ZIP)</a>':'<p style=\"color:var(--red);background:#fef2f2;padding:10px;border-radius:10px;text-align:center;font-weight:700;margin-bottom:12px;\">⚠️ لم يتم رفع الملفات</p>'}
+    <h4 style="margin:0 0 10px;color:var(--navy);font-weight:800;">الملفات (${o.files?.length || 0})</h4>
+    ${zip
+      ? `<a href="${zip}" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:10px;background:var(--navy);color:#fff;padding:14px;border-radius:13px;font-weight:800;text-decoration:none;margin-bottom:12px;box-shadow:0 5px 14px rgba(13,59,102,.2);">📦 تحميل كل الملفات (ZIP)</a>`
+      : `<p style="color:var(--red);background:#fef2f2;padding:10px;border-radius:10px;text-align:center;font-weight:700;margin-bottom:12px;">⚠️ لم يتم رفع الملفات</p>`
+    }
     <div style="background:#fff;border-radius:13px;padding:8px 14px;border:1px solid #f1f5f9;margin-bottom:18px;">
-      ${o.files?.map(f=>'<div style="font-size:.87rem;padding:8px 0;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;"><span>📄 '+f.name+'</span><span style="color:var(--text-muted);background:#f8fafc;padding:3px 8px;border-radius:6px;font-weight:700;font-size:.82rem;">'+f.pages+'ص × <b style=\"color:var(--navy);\">'+f.copies+'</b>ن</span></div>').join('')||''}
-    </div>` : ''}
+      ${o.files?.map(f =>
+        `<div style="font-size:.87rem;padding:8px 0;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;">
+          <span>📄 ${f.name}</span>
+          <span style="color:var(--text-muted);background:#f8fafc;padding:3px 8px;border-radius:6px;font-weight:700;font-size:.82rem;">${f.pages}ص × <b style="color:var(--navy);">${f.copies}</b>ن</span>
+        </div>`
+      ).join('') || ''}
+    </div>
 
-    ${detAct?`<div class="arow">${detAct}</div>`:`<div style="text-align:center;background:#f8fafc;border-radius:12px;padding:14px;color:var(--text-muted);font-weight:700;">${o.status==='delivered'?'✅ الطلب مكتمل':'❌ الطلب ملغى'}</div>`}`;
+    ${detAct
+      ? `<div class="arow">${detAct}</div>`
+      : `<div style="text-align:center;background:#f8fafc;border-radius:12px;padding:14px;color:var(--text-muted);font-weight:700;">${o.status === 'delivered' ? '✅ الطلب مكتمل' : '❌ الطلب ملغى'}</div>`
+    }`;
 }
 
 function closeDet() {
   document.getElementById('detov').classList.remove('open');
   document.getElementById('detpan').classList.remove('open');
-  setTimeout(() => document.getElementById('detov').style.display='none', 300);
+  setTimeout(() => document.getElementById('detov').style.display = 'none', 300);
 }
 
 function showToast(m) {
-  const t = document.getElementById('toast'); t.innerText = m; t.style.display='block';
-  clearTimeout(t._t); t._t = setTimeout(()=>t.style.display='none', 3500);
+  const t = document.getElementById('toast');
+  t.innerText = m; t.style.display = 'block';
+  clearTimeout(t._t); t._t = setTimeout(() => t.style.display = 'none', 3500);
 }
 
 // ══════════════════════════════════
@@ -1709,39 +1561,42 @@ async function loadCoupons() {
   const box = document.getElementById('coupon-list');
   box.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">جاري التحميل...</div>';
   try {
-    const {data, error} = await sb.from('coupons').select('*').order('created_at', {ascending:false});
+    const { data, error } = await sb.from('coupons').select('*').order('created_at', { ascending: false });
     if (error) throw error;
-    if (!data || !data.length) {
+    if (!data?.length) {
       box.innerHTML = '<p style="color:#94a3b8;font-size:.88rem;text-align:center;padding:20px;">لا توجد كوبونات بعد</p>';
       return;
     }
-    box.innerHTML = '<h4 style="margin:0 0 12px;color:var(--navy);font-weight:800;font-size:.95rem;">🎟️ الكوبونات الحالية</h4>' +
+    box.innerHTML =
+      '<h4 style="margin:0 0 12px;color:var(--navy);font-weight:800;font-size:.95rem;">🎟️ الكوبونات الحالية</h4>' +
       data.map(c => `
-        <div class="staff-card" style="border-right:3px solid ${c.active?'var(--green)':'var(--red)'};">
+        <div class="staff-card" style="border-right:3px solid ${c.active ? 'var(--green)' : 'var(--red)'};">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
             <div>
               <b style="color:var(--navy);font-size:1rem;">${esc(c.code)}</b>
-              <span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:800;margin-right:6px;background:${c.active?'#dcfce7':'#fee2e2'};color:${c.active?'#166534':'#991b1b'};">${c.active?'نشط':'معطّل'}</span>
+              <span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:800;margin-right:6px;background:${c.active ? '#dcfce7' : '#fee2e2'};color:${c.active ? '#166534' : '#991b1b'};">${c.active ? 'نشط' : 'معطّل'}</span>
             </div>
-            <span style="font-size:.88rem;font-weight:800;color:var(--orange);">${c.discount_type==='percent'?c.discount_value+'%':c.discount_value.toLocaleString()+' د.ع'}</span>
+            <span style="font-size:.88rem;font-weight:800;color:var(--orange);">${c.discount_type === 'percent' ? c.discount_value + '%' : c.discount_value.toLocaleString() + ' د.ع'}</span>
           </div>
           <div style="font-size:.8rem;color:var(--text-muted);margin-top:6px;">
-            تم الاستخدام: <b>${c.used_count||0}</b>${c.max_uses>0?' / '+c.max_uses:' (غير محدود)'}
+            تم الاستخدام: <b>${c.used_count || 0}</b>${c.max_uses > 0 ? ' / ' + c.max_uses : ' (غير محدود)'}
           </div>
           <div style="display:flex;gap:6px;margin-top:8px;">
-            <button onclick="toggleCoupon('${c.id}',${!c.active})" style="border:none;background:${c.active?'#fef2f2':'#dcfce7'};color:${c.active?'var(--red)':'#166534'};padding:5px 12px;border-radius:8px;font-size:.78rem;cursor:pointer;font-weight:700;">${c.active?'تعطيل':'تفعيل'}</button>
-            <button onclick="deleteCoupon('${c.id}')" style="border:none;background:#fef2f2;color:var(--red);padding:5px 12px;border-radius:8px;font-size:.78rem;cursor:pointer;font-weight:700;">حذف</button>
+            <button onclick="toggleCoupon('${c.id}',${!c.active})"
+              style="border:none;background:${c.active ? '#fef2f2' : '#dcfce7'};color:${c.active ? 'var(--red)' : '#166534'};padding:5px 12px;border-radius:8px;font-size:.78rem;cursor:pointer;font-weight:700;">${c.active ? 'تعطيل' : 'تفعيل'}</button>
+            <button onclick="deleteCoupon('${c.id}')"
+              style="border:none;background:#fef2f2;color:var(--red);padding:5px 12px;border-radius:8px;font-size:.78rem;cursor:pointer;font-weight:700;">حذف</button>
           </div>
         </div>`).join('');
   } catch(e) {
-    box.innerHTML = `<p style="color:var(--red);text-align:center;padding:20px;">❌ خطأ في تحميل الكوبونات: ${esc(e.message)}</p>`;
+    box.innerHTML = `<p style="color:var(--red);text-align:center;padding:20px;">❌ خطأ: ${esc(e.message)}</p>`;
   }
 }
 
 async function createCoupon() {
-  const code = document.getElementById('cpn-code').value.trim().toUpperCase();
-  const type = document.getElementById('cpn-type').value;
-  const value = parseFloat(document.getElementById('cpn-value').value);
+  const code    = document.getElementById('cpn-code').value.trim().toUpperCase();
+  const type    = document.getElementById('cpn-type').value;
+  const value   = parseFloat(document.getElementById('cpn-value').value);
   const maxUses = parseInt(document.getElementById('cpn-max').value) || 0;
 
   if (!code || code.length < 3) { alert('يرجى إدخال كود صالح (3 أحرف+)'); return; }
@@ -1749,14 +1604,14 @@ async function createCoupon() {
   if (type === 'percent' && value > 100) { alert('النسبة لا يمكن أن تتجاوز 100%'); return; }
 
   try {
-    const {error} = await sb.from('coupons').insert({
+    const { error } = await sb.from('coupons').insert({
       code, discount_type: type, discount_value: value,
       max_uses: maxUses, used_count: 0, active: true
     });
     if (error) throw error;
-    document.getElementById('cpn-code').value = '';
+    document.getElementById('cpn-code').value  = '';
     document.getElementById('cpn-value').value = '';
-    document.getElementById('cpn-max').value = '';
+    document.getElementById('cpn-max').value   = '';
     showToast('✅ تم إنشاء الكوبون ' + code);
     loadCoupons();
   } catch(e) { console.error(e); showToast('❌ حدث خطأ. يرجى المحاولة مجدداً.'); }
@@ -1764,7 +1619,7 @@ async function createCoupon() {
 
 async function toggleCoupon(id, active) {
   try {
-    await sb.from('coupons').update({active}).eq('id', id);
+    await sb.from('coupons').update({ active }).eq('id', id);
     showToast(active ? '✅ تم تفعيل الكوبون' : '❌ تم تعطيل الكوبون');
     loadCoupons();
   } catch(e) { console.error(e); showToast('❌ حدث خطأ. يرجى المحاولة مجدداً.'); }
@@ -1778,47 +1633,35 @@ async function deleteCoupon(id) {
     loadCoupons();
   } catch(e) { console.error(e); showToast('❌ حدث خطأ. يرجى المحاولة مجدداً.'); }
 }
-  async function loadPricing() {
+
+// ══════════════════════════════════
+//  PRICING MANAGEMENT
+// ══════════════════════════════════
+async function loadPricing() {
   try {
     const { data, error } = await sb.from('site_settings').select('value').eq('key', 'pricing').single();
     if (error) throw error;
-    if (data && data.value) {
+    if (data?.value) {
       const p = data.value;
-      document.getElementById('price-bw').value = p.black_white || 0;
-      document.getElementById('price-color').value = p.color || 0;
-      document.getElementById('price-delivery').value = p.delivery || 0;
+      document.getElementById('price-bw').value       = p.black_white || 0;
+      document.getElementById('price-color').value    = p.color       || 0;
+      document.getElementById('price-delivery').value = p.delivery    || 0;
     }
-  } catch (e) { console.error('Error loading prices:', e); }
+  } catch(e) { console.error('Error loading prices:', e); }
 }
 
 async function savePricing() {
   const newPrices = {
-    black_white: parseInt(document.getElementById('price-bw').value) || 0,
-    color: parseInt(document.getElementById('price-color').value) || 0,
-    delivery: parseInt(document.getElementById('price-delivery').value) || 0
+    black_white: parseInt(document.getElementById('price-bw').value)       || 0,
+    color:       parseInt(document.getElementById('price-color').value)    || 0,
+    delivery:    parseInt(document.getElementById('price-delivery').value) || 0
   };
   try {
     const { error } = await sb.from('site_settings').update({ value: newPrices }).eq('key', 'pricing');
     if (error) throw error;
     showToast('✅ تم تحديث الأسعار بنجاح لدى جميع الزبائن');
-  } catch (e) { showToast('❌ فشل الحفظ، تأكد من جدول site_settings'); }
-}
-  function startRealtimeListener() {
-  sb.channel('custom-all-channel')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, payload => {
-      // تشغيل صوت التنبيه
-      const audio = document.getElementById('new-order-sound');
-      if (audio) audio.play().catch(() => console.log("الصوت يحتاج تفاعل أولاً"));
-      
-      // إظهار تنبيه بسيط
-      showToast("🔔 طلب جديد وصل الآن!");
-      
-      // تحديث قائمة الطلبات والإحصائيات فوراً
-      fetchOrders();
-    })
-    .subscribe();
+  } catch(e) { showToast('❌ فشل الحفظ، تأكد من جدول site_settings'); }
 }
 </script>
 </body>
 </html>
-
