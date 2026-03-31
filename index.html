@@ -1048,7 +1048,7 @@ async function sendOrder() {
 
   } catch(e) {
     console.error('Send order error:', e);
-    showErr('❌ ' + (e.message || 'حدث خطأ أثناء الإرسال'));
+    console.error('Order error:', e); showErr('❌ حدث خطأ. يرجى المحاولة مجدداً.');
     btn.disabled = false; btn.innerText = '🚀 تأكيد وإرسال الطلب';
     stxt.style.display = 'none';
   }
