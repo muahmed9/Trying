@@ -451,7 +451,10 @@ function esc(s) {
 // ══════════════════════════════════
 // AudioContext مشترك لتجنب تسرب الذاكرة
 const _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
+// فك الحظر عن الصوت بمجرد أن ينقر المستخدم على الشاشة لأول مرة
+document.addEventListener('click', function() {
+  if (_audioCtx.state === 'suspended') _audioCtx.resume();
+}, { once: true });
 function _playNote(freq, startTime, duration, volume = 0.35) {
   if (_audioCtx.state === 'suspended') _audioCtx.resume();
   const osc  = _audioCtx.createOscillator();
@@ -747,69 +750,8 @@ async function renderStaffList() {
   }
 }
 
-
 async function createCustomAccount() {
-  const name  = document.getElementById('new-staff-name').value.trim();
-  const email = document.getElementById('new-staff-user').value.trim();
-  const pass  = document.getElementById('new-staff-pass').value;
-  const emoji = document.getElementById('new-staff-emoji').value;
-
-  if (!name || !email || !pass || pass.length < 6) {
-    alert('يرجى إدخال الاسم والبريد الإلكتروني وكلمة مرور (6 أحرف+)');
-    return;
-  }
-
-  const perms = ['perm-rp','perm-pd','perm-dd','perm-canc']
-    .map(id => document.getElementById(id))
-    .filter(el => el?.checked)
-    .map(el => el.value);
-
-  if (!perms.length) { alert('يرجى اختيار صلاحية واحدة على الأقل'); return; }
-
-  try {
-    // إنشاء مستخدم جديد عبر Supabase Auth Admin API مباشرة
-    const res = await fetch(
-      'https://zrumnqtgdscrwgcguseq.supabase.co/auth/v1/admin/users',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SB_KEY,
-          'Authorization': 'Bearer ' + SB_KEY
-        },
-        body: JSON.stringify({
-          email,
-          password: pass,
-          email_confirm: true,
-          user_metadata: { name, emoji, permissions: perms }
-        })
-      }
-    );
-
-    const userData = await res.json();
-    if (!res.ok) throw new Error(userData.msg || userData.message || 'فشل إنشاء المستخدم');
-
-    // إضافة الدور في profiles
-    const { error: profErr } = await sb.from('profiles').insert({
-      id: userData.id,
-      role: 'custom',
-      name,
-      emoji: emoji || '👤',
-      permissions: perms
-    });
-    if (profErr) throw profErr;
-
-    document.getElementById('new-staff-name').value = '';
-    document.getElementById('new-staff-user').value = '';
-    document.getElementById('new-staff-pass').value = '';
-    ['perm-rp','perm-pd','perm-dd','perm-canc'].forEach(id => {
-      const el = document.getElementById(id); if(el) el.checked = false;
-    });
-    renderStaffList();
-    showToast('✅ تم إنشاء حساب ' + name);
-  } catch(e) {
-    console.error(e); showToast('❌ حدث خطأ. يرجى المحاولة مجدداً.');
-  }
+  showToast('⚠️ لدواعي أمنية، يرجى إضافة الموظفين من لوحة تحكم Supabase (قسم Authentication) مباشرة.');
 }
 
 async function deleteCustomAccount(userId) {
