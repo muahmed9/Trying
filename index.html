@@ -120,7 +120,7 @@ body{background:var(--bg);direction:rtl;margin:0;padding:0 0 85px;color:var(--te
 .obtn:active{transform:scale(.97);}
 .bmain{width:100%;padding:16px;border:none;border-radius:16px;font-weight:800;font-size:1.1rem;cursor:pointer;transition:all .25s;font-family:'Tajawal',sans-serif;}
 .bmain:active{transform:scale(.97);}
-.bmain:disabled{opacity:.65;cursor:not-allowed;transform:none;}
+.bmain:disabled{opacity:.65;cursor:not-allowed;transform:not-allowed;}
 .btn-action{background:var(--orange);color:#fff;box-shadow:0 6px 15px rgba(232,107,36,.25);}
 input[type=text],input[type=tel],textarea,select{width:100%;padding:15px;border:1.5px solid #e2e8f0;border-radius:14px;font-size:1rem;margin-bottom:12px;background:var(--input-bg);outline:none;transition:border-color .2s,background .25s,color .25s;font-family:'Tajawal',sans-serif;color:var(--text-main);}
 textarea{resize:none;min-height:60px;}
@@ -168,7 +168,7 @@ input:checked+.togs:before{transform:translateX(-24px);}
 /* TIMELINE */
 .tlstep{display:flex;align-items:flex-start;gap:14px;margin-bottom:5px;}
 .tlc{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;font-weight:800;transition:all .3s;}
-.tld{background:var(--green);color:#fff;box-shadow:0 0 8px rgba(16,185,129,.25);}
+.tld{background:var(--green);color:#fff;box-shadow:0 0 8 rgba(16,185,129,.25);}
 .tlcur{background:var(--orange);color:#fff;animation:pulseGlow 2s infinite;}
 .tlpendin{background:#f1f5f9;color:#94a3b8;}
 [data-theme="dark"] .tlpendin{background:#334155;color:#64748b;}
@@ -494,14 +494,22 @@ let ordFilter = 'all';
 let allUserOrders = [];
 let _rateOid = null, _rateStars = 0;
 
+// Dynamic Pricing Settings (fetched from DB)
+let settings = { 
+  min_price: 1000, 
+  min_pages: 5, 
+  bw_single: 90, 
+  bw_double: 75, 
+  delivery: 3000, 
+  color_tiers: [] 
+};
+
 // 🔒 Rate Limiting
 let lastOrderTime = 0;
 const ORDER_COOLDOWN = 60000; // 1 minute between orders
 
 // ══ SOUND NOTIFICATION ═══════════════════════════
-// AudioContext مشترك لتجنب إنشاء context جديد في كل مرة
 const _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-// فك الحظر عن الصوت بمجرد أن ينقر المستخدم على الشاشة لأول مرة
 document.addEventListener('click', function() {
   if (_audioCtx.state === 'suspended') _audioCtx.resume();
 }, { once: true });
@@ -524,30 +532,25 @@ function playStatusSound(status) {
     const t = _audioCtx.currentTime;
     switch (status) {
       case 'received':
-        // نغمة هادئة صاعدة — تأكيد الاستلام
         _playNote(220, t,        0.2, 0.25);
         _playNote(440, t + 0.22, 0.35, 0.3);
         break;
       case 'printing':
-        // نغمتان متتاليتان — بدء الطباعة
         _playNote(440, t,        0.18, 0.3);
         _playNote(550, t + 0.22, 0.22, 0.3);
         break;
       case 'delivering':
-        // ثلاث نبضات سريعة تصاعدية — المندوب في الطريق
         _playNote(440, t,        0.13, 0.28);
         _playNote(550, t + 0.17, 0.13, 0.28);
         _playNote(660, t + 0.34, 0.18, 0.3);
         break;
       case 'delivered':
-        // لحن احتفالي أربع نغمات — تم التسليم 🎉
         _playNote(523,  t,        0.16, 0.35);
         _playNote(659,  t + 0.19, 0.16, 0.35);
         _playNote(784,  t + 0.38, 0.16, 0.35);
         _playNote(1047, t + 0.57, 0.28, 0.4);
         break;
       case 'cancelled':
-        // نغمتان هابطتان — إلغاء
         _playNote(440, t,        0.32, 0.28);
         _playNote(330, t + 0.38, 0.38, 0.25);
         break;
@@ -605,10 +608,18 @@ async function init() {
               loyalty_points:0, total_orders:0, total_spent:0, first_order_done:false};
       await sb.from('users').insert(uDoc);
     }
+    
+    // Fetch dynamic pricing settings
+    const {data: stg} = await sb.from('site_settings').select('value').eq('key', 'pricing').single();
+    if (stg && stg.value) {
+      settings = stg.value;
+    }
   } catch(e) { console.error('Init error:', e); }
+  
   if (!uDoc.first_order_done) document.getElementById('fo-gift').style.display = 'block';
   refreshPtsUI();
   startRT();
+  calcUI(); // Recalculate with fetched settings
 }
 
 // ══ REAL-TIME ════════════════════════════════════
@@ -628,23 +639,15 @@ function startRT() {
             showToast('🔔 ' + (m[st] || st));
           }
           playStatusSound(st);
-
-          // ① حدّث قائمة الطلبات
           loadOrders();
-
-          // ② حدّث شاشة النجاح
           if (_successOid && p.new.id === _successOid) {
             if (st === 'cancelled') _successCancelReason = p.new.cancel_reason || '';
             _updateSuccessScreen(st, p.new.status_history || []);
           }
-
-          // ③ حدّث تفاصيل الطلب إذا مفتوحة
           if (document.getElementById('det-ov').classList.contains('open') &&
               document.getElementById('det-title').innerText.includes(p.new.id)) {
               showDet(p.new.id);
           }
-
-          // ④ عرض تقييم عند التسليم
           if (st === 'delivered') {
             init();
             setTimeout(() => showRateModal(p.new.id), 1500);
@@ -784,21 +787,15 @@ const FILE_TYPE_INFO = {
 };
 function fmtSize(b) { if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(1)+' MB'; }
 
-// ══ FILE MAGIC BYTES VALIDATOR ═══════════════════
 async function validateFileMagic(file) {
   const buf = await file.slice(0, 8).arrayBuffer();
   const b = new Uint8Array(buf);
   const nm = file.name.toLowerCase();
-  // PDF: %PDF
   if (nm.endsWith('.pdf')) return b[0]===0x25&&b[1]===0x50&&b[2]===0x44&&b[3]===0x46;
-  // ZIP-based (docx, xlsx, pptx)
   if (['.docx','.xlsx','.pptx','.doc','.xls','.ppt'].some(e=>nm.endsWith(e)))
     return b[0]===0x50&&b[1]===0x4B;
-  // JPEG
   if (nm.endsWith('.jpg')||nm.endsWith('.jpeg')) return b[0]===0xFF&&b[1]===0xD8;
-  // PNG
   if (nm.endsWith('.png')) return b[0]===0x89&&b[1]===0x50&&b[2]===0x4E&&b[3]===0x47;
-  // WEBP
   if (nm.endsWith('.webp')) return b[0]===0x52&&b[1]===0x49&&b[2]===0x46&&b[3]===0x46;
   return true;
 }
@@ -809,7 +806,6 @@ document.getElementById('fileinp').onchange = async e => {
     if (f.size > 50 * 1024 * 1024) { showBigFileSheet(f); continue; }
     const nm = f.name.toLowerCase(), ext = nm.substring(nm.lastIndexOf('.'));
     if (!okExts.includes(ext) && !f.type.startsWith('image/')) continue;
-    // فحص magic bytes
     const isValid = await validateFileMagic(f);
     if (!isValid) { showToast('❌ ' + f.name + ' — الملف تالف أو نوعه غير صحيح'); continue; }
     const raw_ext = ext.replace('.','');
@@ -861,12 +857,25 @@ function getLoc() {
 
 // ══ PRICE CALCULATION ════════════════════════════
 function roundTo250(n) { return Math.round(n / 250) * 250; }
+
+// Dynamic calculation logic based on Admin settings
 function calcPrice(sh, im) {
   const t = sh + im; if (!t) return 0;
-  if (t <= 5) return roundTo250(1000);
-  let raw;
-  if (color === 'c') { if(t<=25) raw=t*150; else if(t<=40) raw=t*130; else if(t<=70) raw=t*120; else raw=t*100; }
-  else { raw = t * (side === '1' ? 90 : 75); }
+  
+  // 1. Min Price Logic
+  if (t <= (settings.min_pages || 5)) return roundTo250(settings.min_price || 1000);
+  
+  let raw = 0;
+  if (color === 'c') {
+    // 2. Color calculation using Dynamic Tiers
+    const tiers = settings.color_tiers || [];
+    const tier = tiers.find(pt => t <= pt.max) || (tiers.length > 0 ? tiers[tiers.length - 1] : null);
+    raw = t * (tier ? tier.price : 150);
+  } else {
+    // 3. B&W calculation using side-specific prices
+    const pricePerPage = (side === '1') ? (settings.bw_single || 90) : (settings.bw_double || 75);
+    raw = t * pricePerPage;
+  }
   return roundTo250(raw);
 }
 
@@ -895,7 +904,11 @@ function calcUI() {
 
   const pp = calcPrice(sh, im);
   const isFO = !uDoc.first_order_done;
-  const df = files.length===0 ? 0 : (pp>=10000||isFO ? 0 : 1000);
+  
+  // Dynamic delivery fee
+  const deliveryCost = settings.delivery || 3000;
+  const df = files.length===0 ? 0 : (pp>=10000||isFO ? 0 : deliveryCost);
+  
   const isG = (uDoc.loyalty_points||0) >= 1000;
   const td = isG ? Math.round(pp*.05) : 0;
   const useP = document.getElementById('ptstog')?.checked && pendingR;
@@ -903,7 +916,6 @@ function calcUI() {
   const isExpress = document.getElementById('expressTog')?.checked;
   const expressFee = isExpress ? 1500 : 0;
 
-  // Coupon discount
   let couponDisc = 0;
   if (appliedCoupon && pp > 0) {
     if (appliedCoupon.discount_type === 'percent') couponDisc = Math.round(pp * appliedCoupon.discount_value / 100);
@@ -960,22 +972,18 @@ async function sendOrder() {
   const phone  = document.getElementById('uPhone').value.trim();
   const region = document.getElementById('uRegion').value.trim();
 
-  // 🔒 Input validation
-  if (!name)                               return showErr('❌ يرجى كتابة الاسم');
-  if (name.length < 3)                     return showErr('❌ الاسم يجب أن يكون 3 أحرف على الأقل');
+  if (!name) return showErr('❌ يرجى كتابة الاسم');
+  if (name.length < 3) return showErr('❌ الاسم يجب أن يكون 3 أحرف على الأقل');
   if (phone.length!==11 || isNaN(+phone)) return showErr('❌ رقم الهاتف يجب أن يكون 11 رقمًا');
-  if (!region)                              return showErr('❌ يرجى إدخال اسم المنطقة');
-  if (!locUrl)                              return showErr('❌ يرجى تحديد موقعك على الخريطة');
-  if (!files.length)                        return showErr('❌ يرجى رفع ملف واحد على الأقل');
+  if (!region) return showErr('❌ يرجى إدخال اسم المنطقة');
+  if (!locUrl) return showErr('❌ يرجى تحديد موقعك على الخريطة');
+  if (!files.length) return showErr('❌ يرجى رفع ملف واحد على الأقل');
 
-  // 🔒 Rate limiting
   const now = Date.now();
   if (now - lastOrderTime < ORDER_COOLDOWN) {
     return showErr('❌ يرجى الانتظار قليلاً قبل إرسال طلب جديد');
   }
   hideErr();
-
-  // تحديث الحساب قبل قراءة البيانات
   calcUI();
 
   const btn = document.getElementById('sendbtn');
@@ -1032,7 +1040,6 @@ async function sendOrder() {
     const {error:dbErr} = await sb.from('orders').insert(order);
     if (dbErr) throw dbErr;
 
-    // Update coupon usage
     if (appliedCoupon) {
       await sb.from('coupons').update({used_count: (appliedCoupon.used_count||0) + 1}).eq('id', appliedCoupon.id);
     }
@@ -1071,10 +1078,10 @@ async function sendOrder() {
     showErr('❌ حدث خطأ. يرجى المحاولة مجدداً.');
     btn.disabled = false; btn.innerText = '🚀 تأكيد وإرسال الطلب';
     stxt.style.display = 'none';
-    // إخفاء شريط التحميل وتصفيره لكي يتمكن الزبون من المحاولة مجدداً
     document.getElementById('pcon').style.display = 'none';
     document.getElementById('pbar').style.width = '0%';
   }
+}
 
 // ══ SUCCESS SCREEN ═══════════════════════════════
 let _successOid = null, _successPe = 0, _successNp = 0, _successCancelReason = '';
@@ -1102,7 +1109,6 @@ function _buildSuccessHTML(currentStatus) {
     return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:${i < 3 ? '1px solid var(--border)' : 'none'};opacity:${opacity};transition:opacity .4s;">${iconEl}<b style="color:${lc};font-size:.97rem;">${s.label}</b></div>`;
   }).join('');
 
-  // Dynamic header based on status
   const headerMap = {
     received:   { icon:'📥', title:'تم استلام طلبك',       sub:'سنبدأ بالعمل عليه قريباً' },
     printing:   { icon:'🖨️', title:'جاري طباعة ملفاتك',   sub:'سنُخطرك عند الانتهاء' },
@@ -1112,7 +1118,6 @@ function _buildSuccessHTML(currentStatus) {
   };
   const hdr = headerMap[currentStatus] || headerMap.received;
 
-  // Points message based on status
   let ptsHtml = '';
   if (_successPe > 0) {
     if (isDelivered) {
@@ -1133,9 +1138,7 @@ function _buildSuccessHTML(currentStatus) {
       <h2 style="color:var(--navy);margin:0 0 4px;font-weight:800;font-size:1.3rem;">${hdr.title}</h2>
       <p style="color:var(--text-muted);margin:0 0 6px;font-size:.92rem;">${hdr.sub}</p>
       <p style="color:var(--orange);margin:0 0 20px;font-weight:800;font-size:1.05rem;">طلب #${esc(_successOid)}</p>
-
       ${isPending ? `<p style="font-size:.82rem;color:var(--teal);font-weight:600;margin:0 0 16px;background:rgba(90,179,196,.1);padding:8px 14px;border-radius:10px;">📱 ستصلك إشعارات على تيليجرام عند كل تحديث</p>` : ''}
-
       ${isCancelled ? `<div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:16px;padding:18px;margin-bottom:16px;text-align:right;">
         ${_successCancelReason ? `<div style="background:#fff;border:1px solid #fecaca;border-radius:12px;padding:12px;margin-bottom:14px;">
           <p style="margin:0 0 4px;font-size:.82rem;color:#94a3b8;font-weight:700;">📋 سبب الإلغاء:</p>
@@ -1150,15 +1153,9 @@ function _buildSuccessHTML(currentStatus) {
           </div>
         </div>
       </div>` : ''}
-
       <div id="suc-banner" style="display:none;"></div>
-
       <div id="suc-steps" style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:16px;text-align:right;">${stepsHTML}</div>
-
       ${ptsHtml}
-
-      <div id="suc-thx" style="display:none;"></div>
-
       ${isDelivered ? `
         <button onclick="location.reload()" class="bmain btn-action" style="margin-bottom:10px;">🖨️ اطلب مرة أخرى</button>
         <button onclick="goTab('orders')" class="bmain" style="background:var(--card);color:var(--text-muted);border:1.5px solid var(--border);">📋 طلباتي</button>
@@ -1175,14 +1172,7 @@ function _buildSuccessHTML(currentStatus) {
 function _updateSuccessScreen(status, history) {
   const tab = document.getElementById('tab-order');
   if (!tab || !_successOid) return;
-  // Simply rebuild the whole success screen with new status
   tab.innerHTML = _buildSuccessHTML(status);
-}
-
-function _refreshSuccessScreen(newStatus) {
-  const tab = document.getElementById('tab-order');
-  if (!tab || !tab.querySelector('#suc-banner')) return;
-  _updateSuccessScreen(newStatus);
 }
 
 async function _refreshSuccessFromServer(oid) {
@@ -1239,7 +1229,6 @@ function renderUserOrders() {
     cancelled:{l:'ملغى',c:'s-c',i:'❌',idx:-1}
   };
   const segs = ['استلام','طباعة','توصيل','تسليم'];
-
   let filtered = allUserOrders;
   if (ordFilter === 'active') filtered = allUserOrders.filter(o => ['received','printing','delivering'].includes(o.status));
   else if (ordFilter === 'delivered') filtered = allUserOrders.filter(o => o.status === 'delivered');
@@ -1251,10 +1240,8 @@ function renderUserOrders() {
     return;
   }
 
-  let ac = 0;
   box.innerHTML = filtered.map(o => {
     const s = SM[o.status] || SM.received;
-    if (['received','printing','delivering'].includes(o.status)) ac++;
     const dt = new Date(o.created_at).toLocaleDateString('ar-IQ');
     let ptsNote = 'قيد الانتظار ⏳';
     if (o.status==='delivered') ptsNote = '<span style="color:var(--green);">تمت الإضافة ✅</span>';
@@ -1271,8 +1258,8 @@ function renderUserOrders() {
       }).join('')}</div>`;
     } else {
       mpHtml = `<div style="margin-top:10px;background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:10px;">
-        <div style="font-size:.85rem;color:#991b1b;font-weight:700;margin-bottom:${o.cancel_reason?'6px':'0'};">❌ تم إلغاء هذا الطلب</div>
-        ${o.cancel_reason ? `<div style="font-size:.82rem;color:#b91c1c;font-weight:600;">📋 السبب: ${esc(o.cancel_reason)}</div>` : ''}
+        <div style="font-size:.85rem;color:#991b1b;font-weight:700;">❌ تم إلغاء هذا الطلب</div>
+        ${o.cancel_reason ? `<div style="font-size:.82rem;color:#b91c1c;font-weight:600;margin-top:6px;">📋 السبب: ${esc(o.cancel_reason)}</div>` : ''}
       </div>`;
     }
 
@@ -1324,7 +1311,6 @@ async function showDet(oid) {
 
   let cancelBox = '';
   if (o.status === 'cancelled') {
-    // ── Cancelled: show reason + contact ──
     cancelBox = `
     <div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:18px;padding:18px;margin-bottom:18px;">
       <div style="text-align:center;margin-bottom:14px;">
@@ -1338,7 +1324,7 @@ async function showDet(oid) {
       </div>` : ''}
       <p style="margin:0 0 10px;font-size:.88rem;color:#991b1b;font-weight:700;text-align:center;">للاستفسار أو إعادة الطلب تواصل معنا:</p>
       <div style="display:flex;flex-direction:column;gap:8px;">
-        <a href="tel:07752564099" style="display:block;background:#ef4444;color:#fff;text-decoration:none;padding:12px;border-radius:12px;font-weight:700;font-size:.92rem;text-align:center;">📞 اتصل بنا (07752564099)</a>
+        <a href="tel:07752564099" style="display:block;background:#ef4444;color:#fff;text-decoration:none;padding:10px;border-radius:12px;font-weight:700;font-size:.92rem;text-align:center;">📞 اتصل بنا (07752564099)</a>
         <div style="display:flex;gap:8px;">
           <a href="https://wa.me/9647752564099" target="_blank" style="flex:1;background:#25D366;color:#fff;text-decoration:none;padding:10px;border-radius:12px;font-weight:700;font-size:.88rem;display:flex;align-items:center;justify-content:center;gap:5px;">💬 واتساب</a>
           <a href="https://t.me/+9647752564099" target="_blank" style="flex:1;background:#0088cc;color:#fff;text-decoration:none;padding:10px;border-radius:12px;font-weight:700;font-size:.88rem;display:flex;align-items:center;justify-content:center;gap:5px;">✈️ تيليجرام</a>
@@ -1356,28 +1342,8 @@ async function showDet(oid) {
         </div>
       </div>
     </div>`;
-  } else if (o.status === 'cancelled') {
-    cancelBox = `<div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:16px;padding:18px;margin-bottom:18px;">
-      <div style="text-align:center;margin-bottom:12px;">
-        <div style="font-size:2.5rem;margin-bottom:6px;">❌</div>
-        <b style="color:#991b1b;font-size:1.05rem;">تم إلغاء هذا الطلب</b>
-      </div>
-      ${o.cancel_reason ? `<div style="background:#fff;border:1px solid #fecaca;border-radius:12px;padding:12px;margin-bottom:14px;">
-        <p style="margin:0 0 4px;font-size:.82rem;color:#94a3b8;font-weight:700;">📋 سبب الإلغاء:</p>
-        <p style="margin:0;font-size:.95rem;color:#991b1b;font-weight:800;line-height:1.6;">${esc(o.cancel_reason)}</p>
-      </div>` : ''}
-      <p style="margin:0 0 10px;font-size:.88rem;color:#78350f;font-weight:700;text-align:center;">📞 للاستفسار أو إعادة الطلب تواصل معنا:</p>
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <a href="tel:07752564099" style="display:block;background:#ef4444;color:#fff;text-decoration:none;padding:10px;border-radius:12px;font-weight:700;font-size:.9rem;text-align:center;">📞 اتصل بنا (07752564099)</a>
-        <div style="display:flex;gap:8px;">
-          <a href="https://wa.me/9647752564099" target="_blank" style="flex:1;background:#25D366;color:#fff;text-decoration:none;padding:10px;border-radius:12px;font-weight:700;font-size:.88rem;display:flex;align-items:center;justify-content:center;gap:5px;">💬 واتساب</a>
-          <a href="https://t.me/+9647752564099" target="_blank" style="flex:1;background:#0088cc;color:#fff;text-decoration:none;padding:10px;border-radius:12px;font-weight:700;font-size:.88rem;display:flex;align-items:center;justify-content:center;gap:5px;">✈️ تيليجرام</a>
-        </div>
-      </div>
-    </div>`;
   }
 
-  // Rating display
   let ratingHtml = '';
   if (o.rating) {
     ratingHtml = `<div style="background:var(--light-teal);border-radius:14px;padding:12px;margin-bottom:16px;text-align:center;">
@@ -1389,7 +1355,6 @@ async function showDet(oid) {
     ratingHtml = `<button onclick="showRateModal('${esc(o.id)}')" class="bmain" style="background:var(--teal);color:#fff;margin-bottom:16px;font-size:.95rem;">⭐ قيّم هذا الطلب</button>`;
   }
 
-  // Re-order button
   let reorderBtn = '';
   if (o.status === 'delivered' || o.status === 'cancelled') {
     reorderBtn = `<button onclick="reOrder('${esc(o.id)}')" class="bmain" style="background:var(--navy);color:#fff;margin-bottom:14px;font-size:.95rem;">🔄 أعد هذا الطلب</button>`;
@@ -1411,16 +1376,13 @@ async function showDet(oid) {
 }
 function closeDet() { document.getElementById('det-ov').classList.remove('open'); }
 
-// ══ RE-ORDER ═════════════════════════════════════
 async function reOrder(oid) {
   const {data:o} = await sb.from('orders').select('*').eq('id', oid).maybeSingle();
   if (!o) return;
   closeDet();
-  // حفظ البيانات أولاً ثم إعادة التحميل
   localStorage.setItem('sh-reorder', JSON.stringify({name:o.name, phone:o.phone, region:o.region, color:o.color, side:o.side}));
   location.reload();
 }
-// Check for reorder data on load
 (function() {
   try {
     const ro = JSON.parse(localStorage.getItem('sh-reorder'));
@@ -1438,7 +1400,6 @@ async function reOrder(oid) {
   } catch {}
 })();
 
-// ══ POINTS UI ════════════════════════════════════
 function refreshPtsUI() {
   const p = uDoc?.loyalty_points || 0;
   document.getElementById('ptsnum').innerText = p.toLocaleString();
@@ -1473,12 +1434,10 @@ async function loadPtsTab() {
   } catch(e) { console.error('Points load error:', e); }
 }
 
-// ══ HELPERS ══════════════════════════════════════
 function showErr(m) { const e=document.getElementById('errbox'); e.innerText=m; e.style.display='block'; }
 function hideErr()  { document.getElementById('errbox').style.display='none'; }
 function showToast(m) { const t=document.getElementById('toast'); t.innerText=m; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(()=>t.style.display='none',4000); }
 
-// ══ BIG FILE EXTERNAL SEND ══════════════════════
 let _bigFileName = '', _bigFileSize = '';
 function showBigFileSheet(f) {
   _bigFileName = f.name;
@@ -1494,49 +1453,34 @@ async function sendViaExternal(platform) {
   const name   = document.getElementById('uName').value.trim();
   const phone  = document.getElementById('uPhone').value.trim();
   const region = document.getElementById('uRegion').value.trim();
-
   if (!name || name.length < 3) { closeBigFile(); return showErr('❌ يرجى كتابة الاسم (3 أحرف على الأقل) قبل إرسال الملف'); }
   if (phone.length !== 11 || isNaN(+phone)) { closeBigFile(); return showErr('❌ يرجى إدخال رقم هاتف صحيح (11 رقم)'); }
   if (!region) { closeBigFile(); return showErr('❌ يرجى إدخال اسم المنطقة'); }
-
   closeBigFile();
   const btn = document.getElementById('sendbtn');
   if (btn) { btn.disabled = true; btn.innerText = 'جاري التسجيل...'; }
-
   try {
     const oid = 'EXT-' + Date.now().toString(36).toUpperCase();
     const order = {
       id: oid, user_id: userId, telegram_id: userId,
       name, phone, region, loc_url: locUrl || '',
       files: [{ name: _bigFileName, pages: 0, copies: 1, type: 'ملف كبير' }],
-      zip_url: '',
-      color, side,
-      print_price: 0, delivery_fee: 0,
-      tier_discount: 0, pts_discount: 0,
-      coupon_discount: 0, coupon_code: null,
-      express_fee: 0, is_express: false,
-      pts_used: 0, total: 0,
-      loyalty_points_earned: 0,
-      is_first_order: !uDoc.first_order_done,
-      status: 'received',
-      notes: '\u26A0\uFE0F ملف كبير سيتم إرساله يدوياً — ' + esc(_bigFileName) + ' (' + esc(_bigFileSize) + ')',
+      zip_url: '', color, side, print_price: 0, delivery_fee: 0,
+      tier_discount: 0, pts_discount: 0, coupon_discount: 0, coupon_code: null,
+      express_fee: 0, is_express: false, pts_used: 0, total: 0,
+      loyalty_points_earned: 0, is_first_order: !uDoc.first_order_done,
+      status: 'received', notes: '⚠️ ملف كبير سيتم إرساله يدوياً — ' + esc(_bigFileName) + ' (' + esc(_bigFileSize) + ')',
       status_history: [{ status: 'received', time: new Date().toISOString() }]
     };
-
     const { error: dbErr } = await sb.from('orders').insert(order);
     if (dbErr) throw dbErr;
-
-    // إرسال إشعار للإدارة عبر تيليجرام
     await tgMsg(ADMIN,
-      '\u26A0\uFE0F طلب ملف كبير #' + oid + '\n' +
-      '\uD83D\uDC64 ' + name + '\n\uD83D\uDCDE ' + phone + '\n\uD83C\uDFE0 ' + region + '\n' +
-      '\uD83D\uDCC1 ' + _bigFileName + ' (' + _bigFileSize + ')\n' +
-      '\uD83D\uDCE8 سيتم إرساله عبر ' + (platform === 'whatsapp' ? 'واتساب' : 'تيليجرام')
+      '⚠️ طلب ملف كبير #' + oid + '\n' +
+      '👤 ' + name + '\n📞 ' + phone + '\n🏠 ' + region + '\n' +
+      '📁 ' + _bigFileName + ' (' + _bigFileSize + ')\n' +
+      '✉️ سيتم إرساله عبر ' + (platform === 'whatsapp' ? 'واتساب' : 'تيليجرام')
     );
-
     if (region) saveAddr(region);
-
-    // فتح رابط التواصل مع رسالة تلقائية
     const msg = encodeURIComponent(
       'مرحباً، لدي طلب طباعة #' + oid + '\n' +
       'الاسم: ' + name + '\n' +
@@ -1548,18 +1492,14 @@ async function sendViaExternal(platform) {
     } else {
       window.open('https://t.me/+' + contactNum + '?text=' + msg, '_blank');
     }
-
-    // عرض شاشة النجاح
     showSuccessUI(oid, 0, uDoc.loyalty_points || 0);
-
   } catch (e) {
     console.error('External send error:', e);
     showErr('❌ حدث خطأ أثناء تسجيل الطلب. حاول مجدداً.');
-    if (btn) { btn.disabled = false; btn.innerText = '\uD83D\uDE80 تأكيد وإرسال الطلب'; }
+    if (btn) { btn.disabled = false; btn.innerText = '🚀 تأكيد وإرسال الطلب'; }
   }
 }
 
-// ══ START ════════════════════════════════════════
 init();
 </script>
 </body>
