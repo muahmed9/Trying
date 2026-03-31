@@ -501,7 +501,10 @@ const ORDER_COOLDOWN = 60000; // 1 minute between orders
 // ══ SOUND NOTIFICATION ═══════════════════════════
 // AudioContext مشترك لتجنب إنشاء context جديد في كل مرة
 const _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
+// فك الحظر عن الصوت بمجرد أن ينقر المستخدم على الشاشة لأول مرة
+document.addEventListener('click', function() {
+  if (_audioCtx.state === 'suspended') _audioCtx.resume();
+}, { once: true });
 function _playNote(freq, startTime, duration, volume = 0.3) {
   if (_audioCtx.state === 'suspended') _audioCtx.resume();
   const osc  = _audioCtx.createOscillator();
