@@ -751,7 +751,48 @@ async function renderStaffList() {
 }
 
 async function createCustomAccount() {
-  showToast('⚠️ لدواعي أمنية، يرجى إضافة الموظفين من لوحة تحكم Supabase (قسم Authentication) مباشرة.');
+  const name  = document.getElementById('new-staff-name').value.trim();
+  const email = document.getElementById('new-staff-user').value.trim();
+  const pass  = document.getElementById('new-staff-pass').value;
+  const emoji = document.getElementById('new-staff-emoji').value;
+
+  if (!name || !email || !pass || pass.length < 6) {
+    alert('يرجى إدخال الاسم والبريد الإلكتروني وكلمة مرور (6 أحرف+)');
+    return;
+  }
+
+  const perms = ['perm-rp','perm-pd','perm-dd','perm-canc']
+    .map(id => document.getElementById(id))
+    .filter(el => el?.checked)
+    .map(el => el.value);
+
+  if (!perms.length) { alert('يرجى اختيار صلاحية واحدة على الأقل'); return; }
+
+  showToast('⏳ جاري إنشاء الحساب، يرجى الانتظار...');
+
+  try {
+    // الاتصال بالخادم الآمن الذي رفعته أنت للتو!
+    const { data, error } = await sb.functions.invoke('create-staff', {
+      body: { email, password: pass, name, emoji, permissions: perms }
+    });
+
+    if (error) throw new Error(error.message || 'حدث خطأ أثناء الاتصال بالخادم');
+    if (data && data.error) throw new Error(data.error);
+
+    // تصفير الحقول بعد النجاح
+    document.getElementById('new-staff-name').value = '';
+    document.getElementById('new-staff-user').value = '';
+    document.getElementById('new-staff-pass').value = '';
+    ['perm-rp','perm-pd','perm-dd','perm-canc'].forEach(id => {
+      const el = document.getElementById(id); if(el) el.checked = false;
+    });
+
+    renderStaffList();
+    showToast('✅ تم إنشاء حساب الموظف (' + name + ') بنجاح!');
+  } catch(e) {
+    console.error('Create staff error:', e);
+    showToast('❌ خطأ: ' + (e.message || 'يرجى المحاولة مجدداً'));
+  }
 }
 
 async function deleteCustomAccount(userId) {
