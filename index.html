@@ -1066,13 +1066,15 @@ async function sendOrder() {
     pendingR = null; appliedCoupon = null; refreshPtsUI();
     showSuccessUI(oid, pe, np);
 
-  } catch(e) {
+} catch(e) {
     console.error('Send order error:', e);
-    console.error('Order error:', e); showErr('❌ حدث خطأ. يرجى المحاولة مجدداً.');
+    showErr('❌ حدث خطأ. يرجى المحاولة مجدداً.');
     btn.disabled = false; btn.innerText = '🚀 تأكيد وإرسال الطلب';
     stxt.style.display = 'none';
+    // إخفاء شريط التحميل وتصفيره لكي يتمكن الزبون من المحاولة مجدداً
+    document.getElementById('pcon').style.display = 'none';
+    document.getElementById('pbar').style.width = '0%';
   }
-}
 
 // ══ SUCCESS SCREEN ═══════════════════════════════
 let _successOid = null, _successPe = 0, _successNp = 0, _successCancelReason = '';
