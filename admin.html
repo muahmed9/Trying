@@ -185,6 +185,7 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
       <button class="atab" id="tab-dash-btn"  onclick="switchPage('dash',this)"   style="display:none;">🏆 داشبورد</button>
       <button class="atab" id="tab-reports-btn" onclick="switchPage('reports',this)" style="display:none;">📥 تقارير Excel</button>
       <button class="atab" id="tab-coupons-btn" onclick="switchPage('coupons',this)" style="display:none;">🎟️ الكوبونات</button>
+      <button class="atab" id="tab-pricing-btn" onclick="switchPage('pricing',this)" style="display:none;">💰 التسعير</button>
     </div>
 
     <!-- Page: Orders -->
@@ -421,6 +422,28 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
       </div>
       <!-- Coupon list -->
       <div id="coupon-list" style="color:var(--text-muted);text-align:center;padding:20px;">جاري التحميل...</div>
+      <!-- Page: Pricing Management (manager only) -->
+    <div class="admin-page" id="page-pricing">
+      <h3 style="margin:0 0 18px;color:var(--navy);font-weight:800;">💰 إدارة أسعار الخدمات</h3>
+      <div style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.03);margin-bottom:18px;">
+        <h4 style="margin:0 0 14px;color:var(--navy);font-weight:800;">⚙️ الأسعار الحالية</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:15px;">
+          <div>
+            <label style="display:block;font-size:.85rem;color:var(--text-muted);margin-bottom:5px;">سعر الورقة (أسود) - د.ع</label>
+            <input type="number" id="price-bw" placeholder="100">
+          </div>
+          <div>
+            <label style="display:block;font-size:.85rem;color:var(--text-muted);margin-bottom:5px;">سعر الورقة (ملون) - د.ع</label>
+            <input type="number" id="price-color" placeholder="500">
+          </div>
+          <div>
+            <label style="display:block;font-size:.85rem;color:var(--text-muted);margin-bottom:5px;">سعر التوصيل الثابت - د.ع</label>
+            <input type="number" id="price-delivery" placeholder="3000">
+          </div>
+        </div>
+        <button class="bmain" style="background:var(--teal);color:#fff;" onclick="savePricing()">✅ حفظ وتحديث الأسعار</button>
+      </div>
+    </div>
     </div>
   </div>
 </div>
@@ -657,6 +680,7 @@ function enterDashboard(profile) {
       document.getElementById('tab-dash-btn').style.display  = '';
       document.getElementById('tab-reports-btn').style.display = '';
       document.getElementById('tab-coupons-btn').style.display = '';
+      document.getElementById('tab-pricing-btn').style.display = '';
     }
   }
   renderStaffList();
@@ -993,6 +1017,7 @@ function switchPage(name, el) {
   if (name === 'staff') renderStaffList();
   if (name === 'reports') renderReports();
   if (name === 'coupons') loadCoupons();
+  if (name === 'pricing') loadPricing();
 }
 
 // ══════════════════════════════════
@@ -1703,6 +1728,31 @@ async function deleteCoupon(id) {
     showToast('🗑️ تم حذف الكوبون');
     loadCoupons();
   } catch(e) { console.error(e); showToast('❌ حدث خطأ. يرجى المحاولة مجدداً.'); }
+}
+  async function loadPricing() {
+  try {
+    const { data, error } = await sb.from('site_settings').select('value').eq('key', 'pricing').single();
+    if (error) throw error;
+    if (data && data.value) {
+      const p = data.value;
+      document.getElementById('price-bw').value = p.black_white || 0;
+      document.getElementById('price-color').value = p.color || 0;
+      document.getElementById('price-delivery').value = p.delivery || 0;
+    }
+  } catch (e) { console.error('Error loading prices:', e); }
+}
+
+async function savePricing() {
+  const newPrices = {
+    black_white: parseInt(document.getElementById('price-bw').value) || 0,
+    color: parseInt(document.getElementById('price-color').value) || 0,
+    delivery: parseInt(document.getElementById('price-delivery').value) || 0
+  };
+  try {
+    const { error } = await sb.from('site_settings').update({ value: newPrices }).eq('key', 'pricing');
+    if (error) throw error;
+    showToast('✅ تم تحديث الأسعار بنجاح لدى جميع الزبائن');
+  } catch (e) { showToast('❌ فشل الحفظ، تأكد من جدول site_settings'); }
 }
 </script>
 </body>
