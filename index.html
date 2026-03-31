@@ -288,6 +288,24 @@ input:checked+.togs:before{transform:translateX(-24px);}
   </div>
 </div>
 
+<!-- ── BIG FILE SHEET ── -->
+<div id="bigfile-ov" class="shov" onclick="if(event.target===this)closeBigFile()">
+  <div class="sheet" style="max-width:500px;padding-bottom:30px;">
+    <div class="handle"></div>
+    <div style="text-align:center;padding:10px 10px 0;">
+      <div style="font-size:3.5rem;margin-bottom:8px;">📦</div>
+      <h3 style="color:var(--navy);margin:0 0 6px;font-weight:800;font-size:1.2rem;">الملف كبير الحجم</h3>
+      <p style="color:var(--text-muted);font-size:.9rem;margin:0 0 6px;line-height:1.7;" id="bigfile-desc"></p>
+      <p style="color:var(--orange);font-size:.85rem;font-weight:700;margin:0 0 18px;">يرجى إرسال الملف يدوياً عبر إحدى الوسيلتين:</p>
+      <div style="display:flex;gap:10px;margin-bottom:14px;">
+        <button onclick="sendViaExternal('whatsapp')" style="flex:1;background:#25D366;color:#fff;border:none;padding:16px 10px;border-radius:16px;font-weight:800;font-size:1rem;cursor:pointer;font-family:'Tajawal',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;">💬 واتساب</button>
+        <button onclick="sendViaExternal('telegram')" style="flex:1;background:#0088cc;color:#fff;border:none;padding:16px 10px;border-radius:16px;font-weight:800;font-size:1rem;cursor:pointer;font-family:'Tajawal',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;">✈️ تيليجرام</button>
+      </div>
+      <button onclick="closeBigFile()" style="width:100%;background:var(--input-bg);color:var(--text-muted);border:1.5px solid var(--border);padding:13px;border-radius:14px;font-weight:700;font-size:.95rem;cursor:pointer;font-family:'Tajawal',sans-serif;">إلغاء</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <!-- TAB 1 — طلب جديد -->
@@ -786,7 +804,7 @@ async function validateFileMagic(file) {
 document.getElementById('fileinp').onchange = async e => {
   const okExts = ['.pdf','.docx','.doc','.xlsx','.xls','.pptx','.ppt','.jpg','.jpeg','.png','.webp'];
   for (const f of e.target.files) {
-    if (f.size > 50 * 1024 * 1024) { showToast('❌ ' + f.name + ' يتجاوز 50MB'); continue; }
+    if (f.size > 50 * 1024 * 1024) { showBigFileSheet(f); continue; }
     const nm = f.name.toLowerCase(), ext = nm.substring(nm.lastIndexOf('.'));
     if (!okExts.includes(ext) && !f.type.startsWith('image/')) continue;
     // فحص magic bytes
@@ -1455,6 +1473,87 @@ async function loadPtsTab() {
 function showErr(m) { const e=document.getElementById('errbox'); e.innerText=m; e.style.display='block'; }
 function hideErr()  { document.getElementById('errbox').style.display='none'; }
 function showToast(m) { const t=document.getElementById('toast'); t.innerText=m; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(()=>t.style.display='none',4000); }
+
+// ══ BIG FILE EXTERNAL SEND ══════════════════════
+let _bigFileName = '', _bigFileSize = '';
+function showBigFileSheet(f) {
+  _bigFileName = f.name;
+  _bigFileSize = fmtSize(f.size);
+  document.getElementById('bigfile-desc').innerHTML =
+    'الملف <b style="color:var(--navy);">' + esc(f.name) + '</b> حجمه <b style="color:var(--red);">' + esc(_bigFileSize) + '</b> ويتجاوز الحد المسموح (50MB).';
+  document.getElementById('bigfile-ov').classList.add('open');
+}
+function closeBigFile() {
+  document.getElementById('bigfile-ov').classList.remove('open');
+}
+async function sendViaExternal(platform) {
+  const name   = document.getElementById('uName').value.trim();
+  const phone  = document.getElementById('uPhone').value.trim();
+  const region = document.getElementById('uRegion').value.trim();
+
+  if (!name || name.length < 3) { closeBigFile(); return showErr('❌ يرجى كتابة الاسم (3 أحرف على الأقل) قبل إرسال الملف'); }
+  if (phone.length !== 11 || isNaN(+phone)) { closeBigFile(); return showErr('❌ يرجى إدخال رقم هاتف صحيح (11 رقم)'); }
+  if (!region) { closeBigFile(); return showErr('❌ يرجى إدخال اسم المنطقة'); }
+
+  closeBigFile();
+  const btn = document.getElementById('sendbtn');
+  if (btn) { btn.disabled = true; btn.innerText = 'جاري التسجيل...'; }
+
+  try {
+    const oid = 'EXT-' + Date.now().toString(36).toUpperCase();
+    const order = {
+      id: oid, user_id: userId, telegram_id: userId,
+      name, phone, region, loc_url: locUrl || '',
+      files: [{ name: _bigFileName, pages: 0, copies: 1, type: 'ملف كبير' }],
+      zip_url: '',
+      color, side,
+      print_price: 0, delivery_fee: 0,
+      tier_discount: 0, pts_discount: 0,
+      coupon_discount: 0, coupon_code: null,
+      express_fee: 0, is_express: false,
+      pts_used: 0, total: 0,
+      loyalty_points_earned: 0,
+      is_first_order: !uDoc.first_order_done,
+      status: 'received',
+      notes: '\u26A0\uFE0F ملف كبير سيتم إرساله يدوياً — ' + esc(_bigFileName) + ' (' + esc(_bigFileSize) + ')',
+      status_history: [{ status: 'received', time: new Date().toISOString() }]
+    };
+
+    const { error: dbErr } = await sb.from('orders').insert(order);
+    if (dbErr) throw dbErr;
+
+    // إرسال إشعار للإدارة عبر تيليجرام
+    await tgMsg(ADMIN,
+      '\u26A0\uFE0F طلب ملف كبير #' + oid + '\n' +
+      '\uD83D\uDC64 ' + name + '\n\uD83D\uDCDE ' + phone + '\n\uD83C\uDFE0 ' + region + '\n' +
+      '\uD83D\uDCC1 ' + _bigFileName + ' (' + _bigFileSize + ')\n' +
+      '\uD83D\uDCE8 سيتم إرساله عبر ' + (platform === 'whatsapp' ? 'واتساب' : 'تيليجرام')
+    );
+
+    if (region) saveAddr(region);
+
+    // فتح رابط التواصل مع رسالة تلقائية
+    const msg = encodeURIComponent(
+      'مرحباً، لدي طلب طباعة #' + oid + '\n' +
+      'الاسم: ' + name + '\n' +
+      'سأرسل الملف: ' + _bigFileName + ' (' + _bigFileSize + ')'
+    );
+    const contactNum = '9647752564099';
+    if (platform === 'whatsapp') {
+      window.open('https://wa.me/' + contactNum + '?text=' + msg, '_blank');
+    } else {
+      window.open('https://t.me/+' + contactNum + '?text=' + msg, '_blank');
+    }
+
+    // عرض شاشة النجاح
+    showSuccessUI(oid, 0, uDoc.loyalty_points || 0);
+
+  } catch (e) {
+    console.error('External send error:', e);
+    showErr('❌ حدث خطأ أثناء تسجيل الطلب. حاول مجدداً.');
+    if (btn) { btn.disabled = false; btn.innerText = '\uD83D\uDE80 تأكيد وإرسال الطلب'; }
+  }
+}
 
 // ══ START ════════════════════════════════════════
 init();
