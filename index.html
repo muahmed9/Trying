@@ -13,8 +13,6 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
  
-<!-- ══════════════ 1. CSS ADDITIONS ══════════════ -->
-<style id="market-customer-css">
 /* ── Market Product Cards ──────────────────────── */
 .mkt-card{background:var(--card);border-radius:18px;padding:16px;border:1px solid var(--border);box-shadow:0 3px 10px var(--shadow);transition:transform .2s,box-shadow .2s;cursor:pointer;}
 .mkt-card:active{transform:scale(.97);}
@@ -554,7 +552,6 @@ input:checked+.togs:before{transform:translateX(-24px);}
     <span class="ni">🛒</span><span>المتجر</span>
     <span id="mkt-badge" style="display:none;background:var(--orange);color:#fff;border-radius:10px;font-size:.62rem;font-weight:800;padding:2px 6px;position:absolute;top:4px;margin-right:-14px;"></span>
   </button>
--->
   <button class="nbtn" id="nav-dm" onclick="toggleDark()">
     <span class="ni" id="dm-icon">🌙</span><span id="dm-lbl">ليلي</span>
   </button>
@@ -698,7 +695,7 @@ obTrack.addEventListener('touchend', e => {
 }, {passive:true});
 function obGo(n) {
   obIdx = Math.max(0, Math.min(OB_TOTAL - 1, n));
-  obTrack.style.transform = `translateX(${obIdx * 100}%)`;
+  obTrack.style.transform = `translateX(${obIdx * -100}%)`;
   document.querySelectorAll('.ob-dot').forEach((d,i) => d.classList.toggle('active', i === obIdx));
   document.getElementById('ob-btn').innerText = obIdx === OB_TOTAL - 1 ? 'ابدأ الآن 🚀' : 'التالي ←';
 }
@@ -833,6 +830,7 @@ function goTab(t) {
   document.getElementById('nav-' + t).classList.add('active');
   if (t === 'orders') loadOrders();
   if (t === 'points') loadPtsTab();
+  if (t === 'market') loadMktProducts();
   if (t === 'order' && _successOid) _refreshSuccessFromServer(_successOid);
 }
 
@@ -1681,7 +1679,10 @@ function hideErr()  { document.getElementById('errbox').style.display='none'; }
 function showToast(m) { const t=document.getElementById('toast'); t.innerText=m; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(()=>t.style.display='none',4000); }
 
 // ══ START ════════════════════════════════════════
-  <!-- ══════════════ 3. TAB: MARKET ══════════════ -->
+init();
+</script>
+
+<!-- ══════════════ 3. TAB: MARKET ══════════════ -->
 <div class="tab" id="tab-market">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
     <h2 style="color:var(--navy);margin:0;font-weight:800;">🛒 المتجر الطلابي</h2>
@@ -1713,8 +1714,8 @@ function showToast(m) { const t=document.getElementById('toast'); t.innerText=m;
     </div>
   </div>
 </div>
-init();
-  <script id="market-customer-js">
+
+<script>
 // ════════════════════════════════════════════════════════════
 //  🛒 CUSTOMER MARKET — أضف هذا قبل </script> في index.html
 // ════════════════════════════════════════════════════════════
@@ -2020,10 +2021,5 @@ async function checkoutMarket() {
   }
 }
 </script>
-</script>
 </body>
 </html>
-
-
-
-
