@@ -2303,6 +2303,321 @@ function _prMsg(text, type) {
   el.innerText = text;
   setTimeout(() => { el.style.display='none'; }, 5000);
 }
+
+// ══════════════════════════════════════════════════════════════
+//  🛒 MARKET ADMIN — إدارة المتجر الطلابي
+// ══════════════════════════════════════════════════════════════
+
+let _adminProducts = [];
+let _adminMktOrders = [];
+let _editingProdId = null;
+let _mktOrderFilter = 'all';
+
+// ── تبديل sub-tabs المتجر ──────────────────────────────────
+function switchMarketSubTab(tab, el) {
+  document.getElementById('mkt-products-section').style.display = tab === 'products' ? 'block' : 'none';
+  document.getElementById('mkt-orders-section').style.display   = tab === 'orders'   ? 'block' : 'none';
+  document.querySelectorAll('#page-market .ftab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  if (tab === 'orders') loadMarketOrders();
+}
+
+// ── تحميل المنتجات ────────────────────────────────────────
+async function loadAdminProducts() {
+  document.getElementById('products-list').innerHTML =
+    '<div style="text-align:center;padding:30px;color:var(--teal);"><b>جاري التحميل...</b></div>';
+  try {
+    const { data, error } = await sb.from('market_products')
+      .select('*').order('category').order('name');
+    if (error) throw error;
+    _adminProducts = data || [];
+    updateMktStats();
+    filterProducts();
+  } catch(e) {
+    document.getElementById('products-list').innerHTML =
+      `<div style="text-align:center;padding:30px;color:var(--red);"><b>❌ خطأ: ${esc(e.message)}</b></div>`;
+  }
+}
+
+// ── إحصائيات سريعة ───────────────────────────────────────
+function updateMktStats() {
+  const total  = _adminProducts.length;
+  const active = _adminProducts.filter(p => p.active).length;
+  const low    = _adminProducts.filter(p => p.active && p.stock > 0 && p.stock <= 5).length;
+  const zero   = _adminProducts.filter(p => p.stock === 0).length;
+  document.getElementById('mkt-s-total').innerText = total;
+  document.getElementById('mkt-s-active').innerText = active;
+  document.getElementById('mkt-s-low').innerText = low;
+  document.getElementById('mkt-s-zero').innerText = zero;
+}
+
+// ── فلترة وعرض المنتجات ──────────────────────────────────
+function filterProducts() {
+  const search = (document.getElementById('prod-search')?.value || '').toLowerCase();
+  const cat    = document.getElementById('prod-cat-filter')?.value || 'all';
+  let list = _adminProducts;
+  if (cat !== 'all') list = list.filter(p => p.category === cat);
+  if (search) list = list.filter(p =>
+    (p.name||'').toLowerCase().includes(search) ||
+    (p.description||'').toLowerCase().includes(search)
+  );
+  renderAdminProducts(list);
+}
+
+const CAT_LABELS = { notebooks:'📓 دفاتر', books:'📚 كتب', stationery:'✏️ قرطاسية', other:'📦 أخرى' };
+
+function renderAdminProducts(list) {
+  const box = document.getElementById('products-list');
+  if (!list.length) {
+    box.innerHTML = '<div style="text-align:center;padding:30px;color:#94a3b8;"><div style="font-size:2.5rem;opacity:.3;">📦</div><p>لا توجد منتجات</p></div>';
+    return;
+  }
+  box.innerHTML = list.map(p => {
+    const stockColor = p.stock === 0 ? 'var(--red)' : p.stock <= 5 ? 'var(--orange)' : 'var(--green)';
+    const stockPct = Math.min(100, (p.stock / Math.max(p.stock, 20)) * 100);
+    return `
+    <div class="prod-card">
+      <div style="display:flex;gap:12px;align-items:flex-start;">
+        <div style="width:60px;height:60px;border-radius:10px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:1.8rem;flex-shrink:0;overflow:hidden;border:1.5px solid var(--border);">
+          ${p.image_url ? `<img src="${esc(p.image_url)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerText='📦'">` : (CAT_LABELS[p.category]?.charAt(0)||'📦')}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
+            <b style="color:var(--navy);font-size:.95rem;">${esc(p.name)}</b>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;">
+              <span class="cat-pill cat-${esc(p.category||'other')}">${CAT_LABELS[p.category]||'📦 أخرى'}</span>
+              <span class="${p.active ? 'ok-badge' : 'low-badge'}">${p.active ? 'نشط' : 'مخفي'}</span>
+            </div>
+          </div>
+          ${p.description ? `<p style="margin:4px 0 0;font-size:.78rem;color:var(--text-muted);line-height:1.5;">${esc(p.description.substring(0,80))}${p.description.length>80?'...':''}</p>` : ''}
+          <div style="display:flex;gap:16px;margin-top:8px;flex-wrap:wrap;">
+            <span style="font-size:.85rem;font-weight:800;color:var(--orange);">${(p.price||0).toLocaleString()} د.ع / ${esc(p.unit||'قطعة')}</span>
+            <span style="font-size:.82rem;font-weight:700;color:${stockColor};">مخزون: ${p.stock} ${esc(p.unit||'قطعة')}</span>
+          </div>
+          <div class="stock-bar-wrap" style="margin-top:6px;">
+            <div class="stock-bar" style="width:${stockPct}%;background:${stockColor};"></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:7px;margin-top:12px;flex-wrap:wrap;">
+        <button onclick="editProduct('${esc(p.id)}')" class="abtn" style="background:#dbeafe;color:#1e40af;">✏️ تعديل</button>
+        <button onclick="openAdjProdModal('${esc(p.id)}')" class="abtn" style="background:#dcfce7;color:#166534;">📦 مخزون</button>
+        <button onclick="toggleProductActive('${esc(p.id)}',${!p.active})" class="abtn" style="background:${p.active?'#fef3c7':'#f0fdf4'};color:${p.active?'#b45309':'#166534'};">${p.active?'🙈 إخفاء':'👁️ إظهار'}</button>
+        <button onclick="deleteProduct('${esc(p.id)}')" class="abtn" style="background:#fee2e2;color:#991b1b;">🗑️ حذف</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── حفظ منتج (إضافة أو تعديل) ────────────────────────────
+async function saveProduct() {
+  const name  = document.getElementById('prod-name').value.trim();
+  const cat   = document.getElementById('prod-cat').value;
+  const unit  = document.getElementById('prod-unit').value.trim() || 'قطعة';
+  const price = parseFloat(document.getElementById('prod-price').value) || 0;
+  const stock = parseInt(document.getElementById('prod-stock').value) || 0;
+  const desc  = document.getElementById('prod-desc').value.trim();
+  const img   = document.getElementById('prod-img').value.trim();
+
+  if (!name) return showToast('❌ أدخل اسم المنتج');
+  if (!price) return showToast('❌ أدخل سعراً صحيحاً');
+
+  const btn = document.getElementById('save-prod-btn');
+  btn.disabled = true; btn.innerText = '⏳ جاري الحفظ...';
+
+  try {
+    const payload = { name, category: cat, unit, price, stock,
+      description: desc || null, image_url: img || null, active: true };
+
+    if (_editingProdId) {
+      const { error } = await sb.from('market_products').update(payload).eq('id', _editingProdId);
+      if (error) throw error;
+      showToast('✅ تم تحديث المنتج');
+    } else {
+      const { error } = await sb.from('market_products').insert(payload);
+      if (error) throw error;
+      showToast('✅ تم إضافة المنتج');
+    }
+    clearProductForm();
+    await loadAdminProducts();
+  } catch(e) {
+    showToast('❌ خطأ: ' + e.message);
+  }
+  btn.disabled = false;
+  btn.innerText = _editingProdId ? '💾 حفظ التعديلات' : '✅ إضافة المنتج';
+}
+
+// ── تعديل منتج ────────────────────────────────────────────
+function editProduct(id) {
+  const p = _adminProducts.find(x => x.id === id);
+  if (!p) return;
+  _editingProdId = id;
+  document.getElementById('prod-name').value  = p.name || '';
+  document.getElementById('prod-cat').value   = p.category || 'other';
+  document.getElementById('prod-unit').value  = p.unit || '';
+  document.getElementById('prod-price').value = p.price || 0;
+  document.getElementById('prod-stock').value = p.stock || 0;
+  document.getElementById('prod-desc').value  = p.description || '';
+  document.getElementById('prod-img').value   = p.image_url || '';
+  document.getElementById('prod-form-title').innerText = '✏️ تعديل المنتج';
+  document.getElementById('save-prod-btn').innerText   = '💾 حفظ التعديلات';
+  document.getElementById('cancel-edit-prod').style.display = 'inline-block';
+  document.getElementById('product-form-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+function clearProductForm() {
+  _editingProdId = null;
+  ['prod-name','prod-unit','prod-desc','prod-img'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('prod-price').value = '';
+  document.getElementById('prod-stock').value = '';
+  document.getElementById('prod-cat').value   = 'notebooks';
+  document.getElementById('prod-form-title').innerText = '➕ إضافة منتج جديد';
+  document.getElementById('save-prod-btn').innerText   = '✅ إضافة المنتج';
+  document.getElementById('cancel-edit-prod').style.display = 'none';
+}
+
+// ── تغيير حالة إظهار/إخفاء ────────────────────────────────
+async function toggleProductActive(id, active) {
+  await sb.from('market_products').update({ active }).eq('id', id);
+  showToast(active ? '👁️ تم إظهار المنتج' : '🙈 تم إخفاء المنتج');
+  await loadAdminProducts();
+}
+
+// ── حذف منتج ──────────────────────────────────────────────
+async function deleteProduct(id) {
+  const p = _adminProducts.find(x => x.id === id);
+  if (!confirm(`حذف المنتج "${p?.name}"؟ لا يمكن التراجع.`)) return;
+  const { error } = await sb.from('market_products').delete().eq('id', id);
+  if (error) return showToast('❌ خطأ في الحذف: ' + error.message);
+  showToast('🗑️ تم حذف المنتج');
+  await loadAdminProducts();
+}
+
+// ── تعديل مخزون المنتج ────────────────────────────────────
+let _adjProdId = null;
+function openAdjProdModal(id) {
+  const p = _adminProducts.find(x => x.id === id);
+  if (!p) return;
+  _adjProdId = id;
+  document.getElementById('adj-prod-name').innerText    = p.name;
+  document.getElementById('adj-prod-current').innerText = p.stock;
+  document.getElementById('adj-prod-unit').innerText    = p.unit || 'قطعة';
+  document.getElementById('adj-prod-qty').value = '';
+  document.querySelector('input[name="adj-type"][value="set"]').checked = true;
+  document.getElementById('adj-prod-modal').classList.add('open');
+}
+
+async function confirmAdjProductStock() {
+  const qty  = parseFloat(document.getElementById('adj-prod-qty').value);
+  const type = document.querySelector('input[name="adj-type"]:checked')?.value || 'set';
+  if (isNaN(qty) || qty < 0) return showToast('❌ أدخل كمية صحيحة');
+  const p = _adminProducts.find(x => x.id === _adjProdId);
+  if (!p) return;
+  let newStock;
+  if (type === 'set') newStock = qty;
+  else if (type === 'add') newStock = p.stock + qty;
+  else newStock = Math.max(0, p.stock - qty);
+  const { error } = await sb.from('market_products').update({ stock: newStock }).eq('id', _adjProdId);
+  if (error) return showToast('❌ ' + error.message);
+  showToast(`✅ تم تعديل المخزون إلى ${newStock}`);
+  document.getElementById('adj-prod-modal').classList.remove('open');
+  await loadAdminProducts();
+}
+
+// ── تحميل طلبات المتجر ────────────────────────────────────
+async function loadMarketOrders() {
+  document.getElementById('market-orders-list').innerHTML =
+    '<div style="text-align:center;padding:30px;color:var(--teal);"><b>جاري التحميل...</b></div>';
+  try {
+    const { data, error } = await sb.from('market_orders')
+      .select('*').order('created_at', { ascending: false }).limit(100);
+    if (error) throw error;
+    _adminMktOrders = data || [];
+    renderMarketOrders();
+  } catch(e) {
+    document.getElementById('market-orders-list').innerHTML =
+      `<div style="text-align:center;padding:30px;color:var(--red);"><b>❌ ${esc(e.message)}</b></div>`;
+  }
+}
+
+function setMktOrderFilter(f, el) {
+  _mktOrderFilter = f;
+  document.querySelectorAll('#mkt-order-filter .ftab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderMarketOrders();
+}
+
+const MKT_STATUS_MAP = {
+  pending:    { l:'معلق',    c:'sp', i:'🕐' },
+  confirmed:  { l:'مؤكد',   c:'sr', i:'✅' },
+  delivering: { l:'توصيل',  c:'sd', i:'🛵' },
+  delivered:  { l:'مسلّم',  c:'sv', i:'✔' },
+  cancelled:  { l:'ملغى',   c:'sc', i:'❌' },
+};
+
+function renderMarketOrders() {
+  const box = document.getElementById('market-orders-list');
+  let list = _adminMktOrders;
+  if (_mktOrderFilter !== 'all') list = list.filter(o => o.status === _mktOrderFilter);
+  if (!list.length) {
+    box.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;"><div style="font-size:2.5rem;opacity:.3;">📋</div><p>لا توجد طلبات</p></div>';
+    return;
+  }
+  box.innerHTML = list.map(o => {
+    const s = MKT_STATUS_MAP[o.status] || MKT_STATUS_MAP.pending;
+    const dt = new Date(o.created_at).toLocaleString('ar-IQ', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+    const itemsTxt = (o.items||[]).map(i => `${esc(i.name)} ×${i.qty}`).join(' · ');
+    return `
+    <div class="ocard">
+      <div class="ohdr">
+        <b style="color:var(--navy);">#${esc(o.id)}</b>
+        <span class="sbdg ${s.c}">${s.i} ${s.l}</span>
+      </div>
+      <div class="infogrid">
+        <div class="ii">👤 ${esc(o.name)}</div>
+        <div class="ii">📞 ${esc(o.phone)}</div>
+        <div class="ii">🏠 ${esc(o.region)}</div>
+        <div class="ii">💰 ${(o.total||0).toLocaleString()} د.ع</div>
+      </div>
+      <div style="font-size:.82rem;color:var(--text-muted);background:#f8fafc;padding:8px;border-radius:8px;margin-bottom:10px;">
+        🛍️ ${itemsTxt}
+      </div>
+      <div style="font-size:.78rem;color:#94a3b8;margin-bottom:8px;">📅 ${dt}${o.loc_url ? ` · <a href="${esc(o.loc_url)}" target="_blank" style="color:var(--teal);">📍 الموقع</a>` : ''}</div>
+      <div class="arow">
+        ${o.status==='pending' ? `
+          <button onclick="updateMktOrderStatus('${esc(o.id)}','confirmed')" class="abtn adeliv">✅ تأكيد</button>
+          <button onclick="updateMktOrderStatus('${esc(o.id)}','delivering')" class="abtn aprint">🛵 إرسال للتوصيل</button>
+        ` : ''}
+        ${o.status==='confirmed' ? `
+          <button onclick="updateMktOrderStatus('${esc(o.id)}','delivering')" class="abtn adeliv">🛵 إرسال للتوصيل</button>
+        ` : ''}
+        ${o.status==='delivering' ? `
+          <button onclick="updateMktOrderStatus('${esc(o.id)}','delivered')" class="abtn adone">✔ تأكيد التسليم</button>
+        ` : ''}
+        ${!['delivered','cancelled'].includes(o.status) ? `
+          <button onclick="cancelMktOrder('${esc(o.id)}')" class="abtn acanc">❌ إلغاء</button>
+        ` : ''}
+        ${o.notes ? `<div style="width:100%;font-size:.8rem;color:var(--text-muted);padding:6px 8px;background:#f8fafc;border-radius:8px;margin-top:4px;">📝 ${esc(o.notes)}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function updateMktOrderStatus(id, status) {
+  const history = (_adminMktOrders.find(o=>o.id===id)?.status_history || []);
+  history.push({ status, time: new Date().toISOString() });
+  const { error } = await sb.from('market_orders').update({
+    status, status_history: history
+  }).eq('id', id);
+  if (error) return showToast('❌ ' + error.message);
+  showToast('✅ تم تحديث حالة الطلب');
+  await loadMarketOrders();
+}
+
+async function cancelMktOrder(id) {
+  if (!confirm('إلغاء هذا الطلب؟')) return;
+  await updateMktOrderStatus(id, 'cancelled');
+}
 </script>
 </body>
 </html>
