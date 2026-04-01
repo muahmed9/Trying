@@ -7,6 +7,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
 <!-- ══════════════ 1. CSS ADDITIONS ══════════════ -->
 <style id="market-supplies-css-additions">
 /* ── Market & Supplies ─────────────────────────── */
@@ -45,7 +46,6 @@
 .low-badge{background:#fef2f2;color:#991b1b;border-radius:8px;font-size:.65rem;padding:2px 7px;font-weight:800;vertical-align:middle;margin-right:5px;border:1px solid #fecaca;}
 .ok-badge{background:#dcfce7;color:#166534;border-radius:8px;font-size:.65rem;padding:2px 7px;font-weight:800;vertical-align:middle;}
 
-@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
 :root {
   --navy:#0d3b66; --teal:#5ab3c4; --orange:#e86b24;
   --bg:#f4f7f9; --card:#fff; --text-main:#1e293b; --text-muted:#64748b;
@@ -1395,6 +1395,8 @@ function switchPage(name, el) {
   if (name === 'reports') renderReports();
   if (name === 'coupons') loadCoupons();
   if (name === 'pricing') loadPricingAdmin();
+  if (name === 'market')  loadAdminProducts();
+  if (name === 'supplies') loadSupplies();
 }
 
 // ══════════════════════════════════
@@ -2304,5 +2306,6 @@ function _prMsg(text, type) {
 </script>
 </body>
 </html>
+
 
 
