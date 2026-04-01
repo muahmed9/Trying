@@ -6,10 +6,8 @@
 <title>لوحة تحكم الشاطر</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
-<!-- ══════════════ 1. CSS ADDITIONS ══════════════ -->
-<style id="market-supplies-css-additions">
+
 /* ── Market & Supplies ─────────────────────────── */
 .cat-pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:800;margin:2px;}
 .cat-books{background:#dbeafe;color:#1e40af;}
@@ -73,8 +71,6 @@ body { background:var(--bg); color:var(--text-main); min-height:100vh; }
 .atab.active { background:var(--navy); color:#fff; border-color:var(--navy); }
 .admin-page { display:none; }
 .admin-page.active { display:block; }
-<button class="atab" id="tab-market-btn"   onclick="switchPage('market',this)"   style="display:none;">🛒 المتجر</button>
-<button class="atab" id="tab-supplies-btn" onclick="switchPage('supplies',this)" style="display:none;">🗄️ المخزن</button>
 
 /* ── STATS ── */
 .sgrid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-bottom:22px; }
@@ -324,6 +320,8 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
       <button class="atab" id="tab-reports-btn" onclick="switchPage('reports',this)" style="display:none;">📥 تقارير Excel</button>
       <button class="atab" id="tab-coupons-btn" onclick="switchPage('coupons',this)" style="display:none;">🎟️ الكوبونات</button>
       <button class="atab" id="tab-pricing-btn" onclick="switchPage('pricing',this)" style="display:none;">💰 التسعير</button>
+      <button class="atab" id="tab-market-btn"   onclick="switchPage('market',this)"   style="display:none;">🛒 المتجر</button>
+      <button class="atab" id="tab-supplies-btn" onclick="switchPage('supplies',this)" style="display:none;">🗄️ المخزن</button>
     </div>
 
     <!-- Page: Orders -->
@@ -586,20 +584,22 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
             <input type="number" id="pr-min-price" value="1000" min="0" step="250" style="margin-bottom:0;">
           </div>
         </div>
-<!-- ══════════════ 4. PAGE: MARKET ══════════════ -->
-<div class="admin-page" id="page-market">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+    </div><!-- end page-pricing -->
+
+    <!-- ══════════════ 4. PAGE: MARKET ══════════════ -->
+    <div class="admin-page" id="page-market">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
     <h3 style="margin:0;color:var(--navy);font-weight:800;">🛒 إدارة المتجر الطلابي</h3>
-  </div>
+      </div>
  
-  <!-- Market sub-tabs -->
-  <div style="display:flex;gap:8px;margin-bottom:18px;">
+      <!-- Market sub-tabs -->
+      <div style="display:flex;gap:8px;margin-bottom:18px;">
     <button class="ftab active" id="mkt-tab-products" onclick="switchMarketSubTab('products',this)">📦 المنتجات</button>
     <button class="ftab" id="mkt-tab-orders" onclick="switchMarketSubTab('orders',this)">📋 طلبات المتجر</button>
-  </div>
+      </div>
  
-  <!-- PRODUCTS SUB-PAGE -->
-  <div id="mkt-products-section">
+      <!-- PRODUCTS SUB-PAGE -->
+      <div id="mkt-products-section">
     <!-- Add / Edit Product Form -->
     <div id="product-form-section" style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.03);margin-bottom:18px;">
       <h4 id="prod-form-title" style="margin:0 0 16px;color:var(--navy);font-weight:800;">➕ إضافة منتج جديد</h4>
@@ -670,10 +670,10 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
  
     <!-- Products List -->
     <div id="products-list"><div style="text-align:center;padding:40px;color:var(--text-muted);">جاري التحميل...</div></div>
-  </div>
+      </div>
  
-  <!-- ORDERS SUB-PAGE -->
-  <div id="mkt-orders-section" style="display:none;">
+      <!-- ORDERS SUB-PAGE -->
+      <div id="mkt-orders-section" style="display:none;">
     <div class="fbar" id="mkt-order-filter" style="margin-bottom:14px;">
       <button class="ftab active" onclick="setMktOrderFilter('all',this)">الكل</button>
       <button class="ftab" onclick="setMktOrderFilter('pending',this)">🕐 معلق</button>
@@ -683,33 +683,33 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
       <button class="ftab" onclick="setMktOrderFilter('cancelled',this)">❌ ملغى</button>
     </div>
     <div id="market-orders-list"><div style="text-align:center;padding:40px;color:var(--text-muted);">جاري التحميل...</div></div>
-  </div>
+      </div>
 </div>
  
 <!-- ══════════════ 5. PAGE: SUPPLIES ══════════════ -->
-<div class="admin-page" id="page-supplies">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:10px;">
+    <div class="admin-page" id="page-supplies">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:10px;">
     <h3 style="margin:0;color:var(--navy);font-weight:800;">🗄️ مخزن مواد الاستنساخ</h3>
     <button onclick="exportSuppliesReport()" style="background:var(--green);color:#fff;border:none;padding:10px 16px;border-radius:12px;font-weight:800;cursor:pointer;font-family:'Tajawal',sans-serif;font-size:.85rem;">⬇️ تصدير تقرير</button>
-  </div>
-  <p style="margin:0 0 18px;color:var(--text-muted);font-size:.88rem;">إدارة مواد الورق والأحبار والسبايرول والكلبس وغيرها</p>
+      </div>
+      <p style="margin:0 0 18px;color:var(--text-muted);font-size:.88rem;">إدارة مواد الورق والأحبار والسبايرول والكلبس وغيرها</p>
  
-  <!-- Low Stock Alert -->
-  <div id="low-stock-alert" style="display:none;" class="alert-low">
+      <!-- Low Stock Alert -->
+      <div id="low-stock-alert" style="display:none;" class="alert-low">
     <p class="alert-low-title">⚠️ مواد تحت الحد الأدنى</p>
     <div id="low-stock-items"></div>
-  </div>
+      </div>
  
-  <!-- Summary stats -->
-  <div class="sgrid" style="margin-bottom:18px;">
+      <!-- Summary stats -->
+      <div class="sgrid" style="margin-bottom:18px;">
     <div class="scard"><div class="snum" id="sup-s-total"  style="color:var(--navy);">—</div><div class="slbl">إجمالي المواد</div></div>
     <div class="scard"><div class="snum" id="sup-s-low"    style="color:var(--orange);">—</div><div class="slbl">منخفضة المخزون</div></div>
     <div class="scard"><div class="snum" id="sup-s-ok"     style="color:var(--green);">—</div><div class="slbl">مخزون كافي</div></div>
     <div class="scard"><div class="snum" id="sup-s-cost"   style="color:var(--teal);">—</div><div class="slbl">قيمة المخزن (ألف)</div></div>
-  </div>
+      </div>
  
-  <!-- Category filter -->
-  <div class="fbar" id="sup-cat-filter-bar" style="margin-bottom:14px;">
+      <!-- Category filter -->
+      <div class="fbar" id="sup-cat-filter-bar" style="margin-bottom:14px;">
     <button class="ftab active" onclick="setSupCatFilter('all',this)">الكل</button>
     <button class="ftab" onclick="setSupCatFilter('paper',this)">📄 ورق</button>
     <button class="ftab" onclick="setSupCatFilter('ink',this)">🖨️ أحبار</button>
@@ -717,13 +717,13 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
     <button class="ftab" onclick="setSupCatFilter('clips',this)">📎 كلبس</button>
     <button class="ftab" onclick="setSupCatFilter('cover',this)">📋 أغلفة</button>
     <button class="ftab" onclick="setSupCatFilter('other',this)">📦 أخرى</button>
-  </div>
+      </div>
  
-  <!-- Supplies list -->
-  <div id="supplies-list"><div style="text-align:center;padding:40px;color:var(--text-muted);">جاري التحميل...</div></div>
+      <!-- Supplies list -->
+      <div id="supplies-list"><div style="text-align:center;padding:40px;color:var(--text-muted);">جاري التحميل...</div></div>
  
-  <!-- Add Supply Form -->
-  <div style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.03);margin-top:18px;">
+      <!-- Add Supply Form -->
+      <div style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.03);margin-top:18px;">
     <h4 style="margin:0 0 16px;color:var(--navy);font-weight:800;">➕ إضافة مادة جديدة للمخزن</h4>
     <input type="text" id="sup-name" placeholder="✍️ اسم المادة (مثال: ورق A4 80g)">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0;">
@@ -765,7 +765,7 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
       </div>
     </div>
     <button class="bmain" style="background:var(--navy);color:#fff;margin-top:14px;" onclick="createSupply()">✅ إضافة للمخزن</button>
-  </div>
+      </div>
 </div>
         <p style="margin:0 0 10px;font-size:.85rem;font-weight:800;color:var(--navy);">🌈 شرائح الطباعة الملونة (سعر/صفحة):</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
@@ -848,8 +848,12 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
       <div id="pr-msg" style="display:none;margin-top:12px;padding:12px;border-radius:12px;font-weight:700;text-align:center;font-size:.9rem;"></div>
     </div>
 
-  </div>
+      </div>
 </div>
+
+  </div><!-- end div.main -->
+</div><!-- end div.dash -->
+
 <div class="detov" id="detov" onclick="closeDet()"></div>
 <div class="detpan" id="detpan">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;border-bottom:2px solid #f1f5f9;padding-bottom:15px;">
@@ -1077,12 +1081,12 @@ function enterDashboard(profile) {
     const r = ROLES[currentRole] || ROLES.operator;
     document.getElementById('role-badge-top').innerText = `${profile?.emoji||r.emoji} ${profile?.name||r.label}`;
     if (r.mgr) {
-      document.getElementById('tab-staff-btn').style.display   = '';
-      document.getElementById('tab-dash-btn').style.display    = '';
-      document.getElementById('tab-reports-btn').style.display = '';
-      document.getElementById('tab-coupons-btn').style.display = '';
-      document.getElementById('tab-pricing-btn').style.display = '';
-      document.getElementById('tab-market-btn').style.display  = '';
+      document.getElementById('tab-staff-btn').style.display    = '';
+      document.getElementById('tab-dash-btn').style.display     = '';
+      document.getElementById('tab-reports-btn').style.display  = '';
+      document.getElementById('tab-coupons-btn').style.display  = '';
+      document.getElementById('tab-pricing-btn').style.display  = '';
+      document.getElementById('tab-market-btn').style.display   = '';
       document.getElementById('tab-supplies-btn').style.display = '';
       loadPricingAdmin();
     }
@@ -1396,8 +1400,8 @@ function switchPage(name, el) {
   if (name === 'staff')   renderStaffList();
   if (name === 'reports') renderReports();
   if (name === 'coupons') loadCoupons();
-  if (name === 'pricing') loadPricingAdmin();
-  if (name === 'market')  loadAdminProducts();
+  if (name === 'pricing')  loadPricingAdmin();
+  if (name === 'market')   loadAdminProducts();
   if (name === 'supplies') loadSupplies();
 }
 
@@ -2315,7 +2319,6 @@ let _adminMktOrders = [];
 let _editingProdId = null;
 let _mktOrderFilter = 'all';
 
-// ── تبديل sub-tabs المتجر ──────────────────────────────────
 function switchMarketSubTab(tab, el) {
   document.getElementById('mkt-products-section').style.display = tab === 'products' ? 'block' : 'none';
   document.getElementById('mkt-orders-section').style.display   = tab === 'orders'   ? 'block' : 'none';
@@ -2324,36 +2327,30 @@ function switchMarketSubTab(tab, el) {
   if (tab === 'orders') loadMarketOrders();
 }
 
-// ── تحميل المنتجات ────────────────────────────────────────
 async function loadAdminProducts() {
-  document.getElementById('products-list').innerHTML =
-    '<div style="text-align:center;padding:30px;color:var(--teal);"><b>جاري التحميل...</b></div>';
+  const box = document.getElementById('products-list');
+  if (!box) return;
+  box.innerHTML = '<div style="text-align:center;padding:30px;color:var(--teal);"><b>جاري التحميل...</b></div>';
   try {
-    const { data, error } = await sb.from('market_products')
-      .select('*').order('category').order('name');
+    const { data, error } = await sb.from('market_products').select('*').order('category').order('name');
     if (error) throw error;
     _adminProducts = data || [];
     updateMktStats();
     filterProducts();
   } catch(e) {
-    document.getElementById('products-list').innerHTML =
-      `<div style="text-align:center;padding:30px;color:var(--red);"><b>❌ خطأ: ${esc(e.message)}</b></div>`;
+    box.innerHTML = `<div style="text-align:center;padding:30px;color:var(--red);"><b>❌ ${esc(e.message)}</b></div>`;
   }
 }
 
-// ── إحصائيات سريعة ───────────────────────────────────────
 function updateMktStats() {
   const total  = _adminProducts.length;
   const active = _adminProducts.filter(p => p.active).length;
   const low    = _adminProducts.filter(p => p.active && p.stock > 0 && p.stock <= 5).length;
   const zero   = _adminProducts.filter(p => p.stock === 0).length;
-  document.getElementById('mkt-s-total').innerText = total;
-  document.getElementById('mkt-s-active').innerText = active;
-  document.getElementById('mkt-s-low').innerText = low;
-  document.getElementById('mkt-s-zero').innerText = zero;
+  const s = (id, v) => { const el = document.getElementById(id); if(el) el.innerText = v; };
+  s('mkt-s-total', total); s('mkt-s-active', active); s('mkt-s-low', low); s('mkt-s-zero', zero);
 }
 
-// ── فلترة وعرض المنتجات ──────────────────────────────────
 function filterProducts() {
   const search = (document.getElementById('prod-search')?.value || '').toLowerCase();
   const cat    = document.getElementById('prod-cat-filter')?.value || 'all';
@@ -2370,13 +2367,14 @@ const CAT_LABELS = { notebooks:'📓 دفاتر', books:'📚 كتب', stationer
 
 function renderAdminProducts(list) {
   const box = document.getElementById('products-list');
+  if (!box) return;
   if (!list.length) {
-    box.innerHTML = '<div style="text-align:center;padding:30px;color:#94a3b8;"><div style="font-size:2.5rem;opacity:.3;">📦</div><p>لا توجد منتجات</p></div>';
+    box.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;"><div style="font-size:3rem;opacity:.3;">📦</div><p style="font-weight:600;">لا توجد منتجات</p></div>';
     return;
   }
   box.innerHTML = list.map(p => {
     const stockColor = p.stock === 0 ? 'var(--red)' : p.stock <= 5 ? 'var(--orange)' : 'var(--green)';
-    const stockPct = Math.min(100, (p.stock / Math.max(p.stock, 20)) * 100);
+    const stockPct   = Math.min(100, (p.stock / Math.max(p.stock, 20)) * 100);
     return `
     <div class="prod-card">
       <div style="display:flex;gap:12px;align-items:flex-start;">
@@ -2384,34 +2382,31 @@ function renderAdminProducts(list) {
           ${p.image_url ? `<img src="${esc(p.image_url)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerText='📦'">` : (CAT_LABELS[p.category]?.charAt(0)||'📦')}
         </div>
         <div style="flex:1;min-width:0;">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;flex-wrap:wrap;">
             <b style="color:var(--navy);font-size:.95rem;">${esc(p.name)}</b>
-            <div style="display:flex;gap:5px;flex-wrap:wrap;">
-              <span class="cat-pill cat-${esc(p.category||'other')}">${CAT_LABELS[p.category]||'📦 أخرى'}</span>
-              <span class="${p.active ? 'ok-badge' : 'low-badge'}">${p.active ? 'نشط' : 'مخفي'}</span>
+            <div style="display:flex;gap:5px;flex-shrink:0;">
+              <span class="cat-pill cat-${esc(p.category||'other')}">${CAT_LABELS[p.category]||'📦'}</span>
+              <span class="${p.active?'ok-badge':'low-badge'}">${p.active?'نشط':'مخفي'}</span>
             </div>
           </div>
-          ${p.description ? `<p style="margin:4px 0 0;font-size:.78rem;color:var(--text-muted);line-height:1.5;">${esc(p.description.substring(0,80))}${p.description.length>80?'...':''}</p>` : ''}
-          <div style="display:flex;gap:16px;margin-top:8px;flex-wrap:wrap;">
+          ${p.description?`<p style="margin:4px 0 0;font-size:.78rem;color:var(--text-muted);">${esc(p.description.substring(0,80))}${p.description.length>80?'...':''}</p>`:''}
+          <div style="display:flex;gap:14px;margin-top:6px;flex-wrap:wrap;">
             <span style="font-size:.85rem;font-weight:800;color:var(--orange);">${(p.price||0).toLocaleString()} د.ع / ${esc(p.unit||'قطعة')}</span>
             <span style="font-size:.82rem;font-weight:700;color:${stockColor};">مخزون: ${p.stock} ${esc(p.unit||'قطعة')}</span>
           </div>
-          <div class="stock-bar-wrap" style="margin-top:6px;">
-            <div class="stock-bar" style="width:${stockPct}%;background:${stockColor};"></div>
-          </div>
+          <div class="stock-bar-wrap"><div class="stock-bar" style="width:${stockPct}%;background:${stockColor};"></div></div>
         </div>
       </div>
-      <div style="display:flex;gap:7px;margin-top:12px;flex-wrap:wrap;">
+      <div class="arow" style="margin-top:10px;">
         <button onclick="editProduct('${esc(p.id)}')" class="abtn" style="background:#dbeafe;color:#1e40af;">✏️ تعديل</button>
         <button onclick="openAdjProdModal('${esc(p.id)}')" class="abtn" style="background:#dcfce7;color:#166534;">📦 مخزون</button>
-        <button onclick="toggleProductActive('${esc(p.id)}',${!p.active})" class="abtn" style="background:${p.active?'#fef3c7':'#f0fdf4'};color:${p.active?'#b45309':'#166534'};">${p.active?'🙈 إخفاء':'👁️ إظهار'}</button>
-        <button onclick="deleteProduct('${esc(p.id)}')" class="abtn" style="background:#fee2e2;color:#991b1b;">🗑️ حذف</button>
+        <button onclick="toggleProductActive('${esc(p.id)}',${!p.active})" class="abtn" style="background:${p.active?'#fef3c7':'#f0fdf4'};color:${p.active?'#b45309':'#166634'};">${p.active?'🙈 إخفاء':'👁️ إظهار'}</button>
+        <button onclick="deleteProduct('${esc(p.id)}')" class="abtn acanc">🗑️ حذف</button>
       </div>
     </div>`;
   }).join('');
 }
 
-// ── حفظ منتج (إضافة أو تعديل) ────────────────────────────
 async function saveProduct() {
   const name  = document.getElementById('prod-name').value.trim();
   const cat   = document.getElementById('prod-cat').value;
@@ -2420,56 +2415,48 @@ async function saveProduct() {
   const stock = parseInt(document.getElementById('prod-stock').value) || 0;
   const desc  = document.getElementById('prod-desc').value.trim();
   const img   = document.getElementById('prod-img').value.trim();
-
   if (!name) return showToast('❌ أدخل اسم المنتج');
   if (!price) return showToast('❌ أدخل سعراً صحيحاً');
-
   const btn = document.getElementById('save-prod-btn');
   btn.disabled = true; btn.innerText = '⏳ جاري الحفظ...';
-
   try {
-    const payload = { name, category: cat, unit, price, stock,
-      description: desc || null, image_url: img || null, active: true };
-
+    const payload = { name, category:cat, unit, price, stock, description:desc||null, image_url:img||null, active:true };
     if (_editingProdId) {
-      const { error } = await sb.from('market_products').update(payload).eq('id', _editingProdId);
+      const {error} = await sb.from('market_products').update(payload).eq('id', _editingProdId);
       if (error) throw error;
       showToast('✅ تم تحديث المنتج');
     } else {
-      const { error } = await sb.from('market_products').insert(payload);
+      const {error} = await sb.from('market_products').insert(payload);
       if (error) throw error;
       showToast('✅ تم إضافة المنتج');
     }
     clearProductForm();
     await loadAdminProducts();
-  } catch(e) {
-    showToast('❌ خطأ: ' + e.message);
-  }
+  } catch(e) { showToast('❌ ' + e.message); }
   btn.disabled = false;
   btn.innerText = _editingProdId ? '💾 حفظ التعديلات' : '✅ إضافة المنتج';
 }
 
-// ── تعديل منتج ────────────────────────────────────────────
 function editProduct(id) {
   const p = _adminProducts.find(x => x.id === id);
   if (!p) return;
   _editingProdId = id;
-  document.getElementById('prod-name').value  = p.name || '';
-  document.getElementById('prod-cat').value   = p.category || 'other';
-  document.getElementById('prod-unit').value  = p.unit || '';
-  document.getElementById('prod-price').value = p.price || 0;
-  document.getElementById('prod-stock').value = p.stock || 0;
-  document.getElementById('prod-desc').value  = p.description || '';
-  document.getElementById('prod-img').value   = p.image_url || '';
+  document.getElementById('prod-name').value  = p.name||'';
+  document.getElementById('prod-cat').value   = p.category||'other';
+  document.getElementById('prod-unit').value  = p.unit||'';
+  document.getElementById('prod-price').value = p.price||0;
+  document.getElementById('prod-stock').value = p.stock||0;
+  document.getElementById('prod-desc').value  = p.description||'';
+  document.getElementById('prod-img').value   = p.image_url||'';
   document.getElementById('prod-form-title').innerText = '✏️ تعديل المنتج';
   document.getElementById('save-prod-btn').innerText   = '💾 حفظ التعديلات';
   document.getElementById('cancel-edit-prod').style.display = 'inline-block';
-  document.getElementById('product-form-section').scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('product-form-section').scrollIntoView({behavior:'smooth'});
 }
 
 function clearProductForm() {
   _editingProdId = null;
-  ['prod-name','prod-unit','prod-desc','prod-img'].forEach(id => document.getElementById(id).value = '');
+  ['prod-name','prod-unit','prod-desc','prod-img'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('prod-price').value = '';
   document.getElementById('prod-stock').value = '';
   document.getElementById('prod-cat').value   = 'notebooks';
@@ -2478,24 +2465,21 @@ function clearProductForm() {
   document.getElementById('cancel-edit-prod').style.display = 'none';
 }
 
-// ── تغيير حالة إظهار/إخفاء ────────────────────────────────
 async function toggleProductActive(id, active) {
-  await sb.from('market_products').update({ active }).eq('id', id);
+  await sb.from('market_products').update({active}).eq('id', id);
   showToast(active ? '👁️ تم إظهار المنتج' : '🙈 تم إخفاء المنتج');
   await loadAdminProducts();
 }
 
-// ── حذف منتج ──────────────────────────────────────────────
 async function deleteProduct(id) {
   const p = _adminProducts.find(x => x.id === id);
   if (!confirm(`حذف المنتج "${p?.name}"؟ لا يمكن التراجع.`)) return;
-  const { error } = await sb.from('market_products').delete().eq('id', id);
-  if (error) return showToast('❌ خطأ في الحذف: ' + error.message);
-  showToast('🗑️ تم حذف المنتج');
+  const {error} = await sb.from('market_products').delete().eq('id', id);
+  if (error) return showToast('❌ خطأ: ' + error.message);
+  showToast('🗑️ تم الحذف');
   await loadAdminProducts();
 }
 
-// ── تعديل مخزون المنتج ────────────────────────────────────
 let _adjProdId = null;
 function openAdjProdModal(id) {
   const p = _adminProducts.find(x => x.id === id);
@@ -2503,7 +2487,7 @@ function openAdjProdModal(id) {
   _adjProdId = id;
   document.getElementById('adj-prod-name').innerText    = p.name;
   document.getElementById('adj-prod-current').innerText = p.stock;
-  document.getElementById('adj-prod-unit').innerText    = p.unit || 'قطعة';
+  document.getElementById('adj-prod-unit').innerText    = p.unit||'قطعة';
   document.getElementById('adj-prod-qty').value = '';
   document.querySelector('input[name="adj-type"][value="set"]').checked = true;
   document.getElementById('adj-prod-modal').classList.add('open');
@@ -2515,30 +2499,25 @@ async function confirmAdjProductStock() {
   if (isNaN(qty) || qty < 0) return showToast('❌ أدخل كمية صحيحة');
   const p = _adminProducts.find(x => x.id === _adjProdId);
   if (!p) return;
-  let newStock;
-  if (type === 'set') newStock = qty;
-  else if (type === 'add') newStock = p.stock + qty;
-  else newStock = Math.max(0, p.stock - qty);
-  const { error } = await sb.from('market_products').update({ stock: newStock }).eq('id', _adjProdId);
+  const newStock = type==='set' ? qty : type==='add' ? p.stock+qty : Math.max(0, p.stock-qty);
+  const {error} = await sb.from('market_products').update({stock:newStock}).eq('id', _adjProdId);
   if (error) return showToast('❌ ' + error.message);
-  showToast(`✅ تم تعديل المخزون إلى ${newStock}`);
+  showToast(`✅ المخزون الجديد: ${newStock}`);
   document.getElementById('adj-prod-modal').classList.remove('open');
   await loadAdminProducts();
 }
 
-// ── تحميل طلبات المتجر ────────────────────────────────────
 async function loadMarketOrders() {
-  document.getElementById('market-orders-list').innerHTML =
-    '<div style="text-align:center;padding:30px;color:var(--teal);"><b>جاري التحميل...</b></div>';
+  const box = document.getElementById('market-orders-list');
+  if (!box) return;
+  box.innerHTML = '<div style="text-align:center;padding:30px;color:var(--teal);"><b>جاري التحميل...</b></div>';
   try {
-    const { data, error } = await sb.from('market_orders')
-      .select('*').order('created_at', { ascending: false }).limit(100);
+    const {data, error} = await sb.from('market_orders').select('*').order('created_at',{ascending:false}).limit(100);
     if (error) throw error;
-    _adminMktOrders = data || [];
+    _adminMktOrders = data||[];
     renderMarketOrders();
   } catch(e) {
-    document.getElementById('market-orders-list').innerHTML =
-      `<div style="text-align:center;padding:30px;color:var(--red);"><b>❌ ${esc(e.message)}</b></div>`;
+    box.innerHTML = `<div style="text-align:center;padding:30px;color:var(--red);"><b>❌ ${esc(e.message)}</b></div>`;
   }
 }
 
@@ -2549,12 +2528,9 @@ function setMktOrderFilter(f, el) {
   renderMarketOrders();
 }
 
-const MKT_STATUS_MAP = {
-  pending:    { l:'معلق',    c:'sp', i:'🕐' },
-  confirmed:  { l:'مؤكد',   c:'sr', i:'✅' },
-  delivering: { l:'توصيل',  c:'sd', i:'🛵' },
-  delivered:  { l:'مسلّم',  c:'sv', i:'✔' },
-  cancelled:  { l:'ملغى',   c:'sc', i:'❌' },
+const MKT_ST = {
+  pending:{l:'معلق',c:'sp',i:'🕐'}, confirmed:{l:'مؤكد',c:'sr',i:'✅'},
+  delivering:{l:'توصيل',c:'sd',i:'🛵'}, delivered:{l:'مسلّم',c:'sv',i:'✔'}, cancelled:{l:'ملغى',c:'sc',i:'❌'}
 };
 
 function renderMarketOrders() {
@@ -2562,13 +2538,13 @@ function renderMarketOrders() {
   let list = _adminMktOrders;
   if (_mktOrderFilter !== 'all') list = list.filter(o => o.status === _mktOrderFilter);
   if (!list.length) {
-    box.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;"><div style="font-size:2.5rem;opacity:.3;">📋</div><p>لا توجد طلبات</p></div>';
+    box.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;"><div style="font-size:3rem;opacity:.3;">📋</div><p style="font-weight:600;">لا توجد طلبات</p></div>';
     return;
   }
   box.innerHTML = list.map(o => {
-    const s = MKT_STATUS_MAP[o.status] || MKT_STATUS_MAP.pending;
-    const dt = new Date(o.created_at).toLocaleString('ar-IQ', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
-    const itemsTxt = (o.items||[]).map(i => `${esc(i.name)} ×${i.qty}`).join(' · ');
+    const s  = MKT_ST[o.status]||MKT_ST.pending;
+    const dt = new Date(o.created_at).toLocaleString('ar-IQ',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    const items = (o.items||[]).map(i=>`${esc(i.name)} ×${i.qty}`).join(' · ');
     return `
     <div class="ocard">
       <div class="ohdr">
@@ -2581,37 +2557,31 @@ function renderMarketOrders() {
         <div class="ii">🏠 ${esc(o.region)}</div>
         <div class="ii">💰 ${(o.total||0).toLocaleString()} د.ع</div>
       </div>
-      <div style="font-size:.82rem;color:var(--text-muted);background:#f8fafc;padding:8px;border-radius:8px;margin-bottom:10px;">
-        🛍️ ${itemsTxt}
-      </div>
-      <div style="font-size:.78rem;color:#94a3b8;margin-bottom:8px;">📅 ${dt}${o.loc_url ? ` · <a href="${esc(o.loc_url)}" target="_blank" style="color:var(--teal);">📍 الموقع</a>` : ''}</div>
+      <div style="font-size:.82rem;color:var(--text-muted);background:#f8fafc;padding:8px;border-radius:8px;margin-bottom:8px;">🛍️ ${items}</div>
+      ${o.notes?`<div style="font-size:.8rem;color:var(--text-muted);padding:6px 8px;background:#f1f5f9;border-radius:8px;margin-bottom:8px;">📝 ${esc(o.notes)}</div>`:''}
+      <div style="font-size:.78rem;color:#94a3b8;margin-bottom:8px;">📅 ${dt}${o.loc_url?` · <a href="${esc(o.loc_url)}" target="_blank" style="color:var(--teal);">📍 الموقع</a>`:''}</div>
       <div class="arow">
-        ${o.status==='pending' ? `
-          <button onclick="updateMktOrderStatus('${esc(o.id)}','confirmed')" class="abtn adeliv">✅ تأكيد</button>
-          <button onclick="updateMktOrderStatus('${esc(o.id)}','delivering')" class="abtn aprint">🛵 إرسال للتوصيل</button>
-        ` : ''}
-        ${o.status==='confirmed' ? `
-          <button onclick="updateMktOrderStatus('${esc(o.id)}','delivering')" class="abtn adeliv">🛵 إرسال للتوصيل</button>
-        ` : ''}
-        ${o.status==='delivering' ? `
-          <button onclick="updateMktOrderStatus('${esc(o.id)}','delivered')" class="abtn adone">✔ تأكيد التسليم</button>
-        ` : ''}
-        ${!['delivered','cancelled'].includes(o.status) ? `
-          <button onclick="cancelMktOrder('${esc(o.id)}')" class="abtn acanc">❌ إلغاء</button>
-        ` : ''}
-        ${o.notes ? `<div style="width:100%;font-size:.8rem;color:var(--text-muted);padding:6px 8px;background:#f8fafc;border-radius:8px;margin-top:4px;">📝 ${esc(o.notes)}</div>` : ''}
+        ${o.status==='pending'?`<button onclick="updateMktOrderStatus('${esc(o.id)}','confirmed')" class="abtn adeliv">✅ تأكيد</button><button onclick="updateMktOrderStatus('${esc(o.id)}','delivering')" class="abtn aprint">🛵 توصيل</button>`:''}
+        ${o.status==='confirmed'?`<button onclick="updateMktOrderStatus('${esc(o.id)}','delivering')" class="abtn adeliv">🛵 إرسال للتوصيل</button>`:''}
+        ${o.status==='delivering'?`<button onclick="updateMktOrderStatus('${esc(o.id)}','delivered')" class="abtn adone">✔ تأكيد التسليم</button>`:''}
+        ${!['delivered','cancelled'].includes(o.status)?`<button onclick="cancelMktOrder('${esc(o.id)}')" class="abtn acanc">❌ إلغاء</button>`:''}
       </div>
     </div>`;
   }).join('');
 }
 
 async function updateMktOrderStatus(id, status) {
-  const history = (_adminMktOrders.find(o=>o.id===id)?.status_history || []);
-  history.push({ status, time: new Date().toISOString() });
-  const { error } = await sb.from('market_orders').update({
-    status, status_history: history
-  }).eq('id', id);
+  const o = _adminMktOrders.find(x=>x.id===id);
+  const history = [...(o?.status_history||[]), {status, time:new Date().toISOString()}];
+  const {error} = await sb.from('market_orders').update({status, status_history:history}).eq('id', id);
   if (error) return showToast('❌ ' + error.message);
+  // إشعار الزبون
+  const chatId = o?.telegram_id;
+  const msgMap = {confirmed:'✅ تم تأكيد طلب المتجر', delivering:'🛵 طلبك في الطريق إليك', delivered:'🎉 تم تسليم طلب المتجر بنجاح!'};
+  if (chatId && msgMap[status]) {
+    await sb.functions.invoke('send-tg', {body:{chatId:String(chatId), message:`${msgMap[status]}
+رقم الطلب: #${id}`}}).catch(()=>{});
+  }
   showToast('✅ تم تحديث حالة الطلب');
   await loadMarketOrders();
 }
@@ -2620,8 +2590,10 @@ async function cancelMktOrder(id) {
   if (!confirm('إلغاء هذا الطلب؟')) return;
   await updateMktOrderStatus(id, 'cancelled');
 }
+
 </script>
 </body>
 </html>
+
 
 
