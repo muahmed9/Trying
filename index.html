@@ -12,7 +12,42 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
-
+ 
+<!-- ══════════════ 1. CSS ADDITIONS ══════════════ -->
+<style id="market-customer-css">
+/* ── Market Product Cards ──────────────────────── */
+.mkt-card{background:var(--card);border-radius:18px;padding:16px;border:1px solid var(--border);box-shadow:0 3px 10px var(--shadow);transition:transform .2s,box-shadow .2s;cursor:pointer;}
+.mkt-card:active{transform:scale(.97);}
+.mkt-card:hover{transform:translateY(-3px);box-shadow:0 8px 20px var(--shadow);}
+.mkt-img{width:100%;height:140px;border-radius:12px;object-fit:cover;background:var(--input-bg);display:flex;align-items:center;justify-content:center;font-size:3rem;margin-bottom:10px;overflow:hidden;}
+.mkt-img img{width:100%;height:100%;object-fit:cover;}
+.mkt-price{color:var(--orange);font-weight:800;font-size:1.05rem;}
+.mkt-stock-low{color:var(--red);font-size:.72rem;font-weight:700;}
+.mkt-stock-ok{color:var(--green);font-size:.72rem;font-weight:700;}
+.add-cart-btn{width:100%;padding:11px;border:none;border-radius:12px;background:var(--navy);color:#fff;font-weight:800;cursor:pointer;font-family:'Tajawal',sans-serif;margin-top:10px;font-size:.95rem;transition:all .2s;}
+.add-cart-btn:active{transform:scale(.97);}
+.add-cart-btn:disabled{background:#e2e8f0;color:#94a3b8;cursor:not-allowed;}
+.add-cart-btn.in-cart{background:var(--green);}
+ 
+/* ── Cart Drawer ─────────────────────────────── */
+#cart-drawer .sheet{padding:20px 16px 30px;}
+.cart-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);}
+.cart-qty-ctrl{display:flex;align-items:center;gap:8px;}
+.cqbtn{border:none;background:var(--light-teal);width:30px;height:30px;border-radius:8px;cursor:pointer;font-weight:800;font-size:1rem;color:var(--navy);}
+.cart-total-box{background:linear-gradient(135deg,var(--navy),#1e40af);color:#fff;border-radius:16px;padding:16px;margin:14px 0;}
+ 
+/* ── Cart FAB ──────────────────────────────── */
+#cart-fab{position:fixed;bottom:95px;left:16px;background:var(--orange);color:#fff;width:56px;height:56px;border-radius:50%;border:none;display:none;align-items:center;justify-content:center;font-size:1.5rem;cursor:pointer;box-shadow:0 6px 18px rgba(232,107,36,.4);z-index:150;animation:pulseGlow 2s infinite;}
+#cart-count{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;border-radius:10px;font-size:.65rem;font-weight:800;padding:2px 6px;min-width:20px;text-align:center;}
+ 
+/* ── Category Tabs ────────────────────────────── */
+.mkt-cats{display:flex;gap:6px;overflow-x:auto;margin-bottom:16px;padding-bottom:4px;}
+.mkt-cats::-webkit-scrollbar{display:none;}
+.mkt-cat-btn{padding:8px 16px;border-radius:20px;border:1.5px solid #e2e8f0;background:var(--card);cursor:pointer;font-size:.82rem;font-weight:700;color:var(--text-muted);font-family:'Tajawal',sans-serif;white-space:nowrap;}
+.mkt-cat-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+[data-theme="dark"] .mkt-cat-btn{border-color:#334155;background:#1e293b;}
+[data-theme="dark"] .add-cart-btn{background:var(--teal);}
+[data-theme="dark"] .add-cart-btn.in-cart{background:var(--green);}
 :root {
   --navy:#0d3b66; --teal:#5ab3c4; --orange:#e86b24;
   --bg:#f4f7f9; --card:#ffffff; --text-main:#1e293b;
@@ -466,7 +501,47 @@ input:checked+.togs:before{transform:translateX(-24px);}
     <div id="ptshist"><p style="color:#94a3b8;font-size:.9rem;text-align:center;padding:10px;">لا يوجد سجل بعد</p></div>
   </div>
 </div>
-
+<!-- ══════════════ 2. CART DRAWER ══════════════ -->
+<button id="cart-fab" onclick="openCart()">
+  🛒<span id="cart-count" style="position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;border-radius:10px;font-size:.65rem;font-weight:800;padding:2px 6px;min-width:20px;text-align:center;display:none;"></span>
+</button>
+ 
+<div class="shov" id="cart-drawer">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="margin:0;color:var(--navy);font-weight:800;">🛒 سلة المشتريات</h3>
+      <button onclick="document.getElementById('cart-drawer').classList.remove('open')" style="border:none;background:#f1f5f9;width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:1.1rem;color:var(--text-muted);">✕</button>
+    </div>
+    <div id="cart-items-list">
+      <div style="text-align:center;padding:40px;color:#94a3b8;"><div style="font-size:3rem;opacity:.3;">🛒</div><p>السلة فارغة</p></div>
+    </div>
+    <div id="cart-checkout-area" style="display:none;">
+      <div class="cart-total-box">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:.9rem;opacity:.9;">
+          <span>قيمة المنتجات:</span><b id="cart-items-total">0 د.ع</b>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:.9rem;opacity:.9;">
+          <span>🚚 التوصيل:</span><b id="cart-del-fee">1,000 د.ع</b>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px dashed rgba(255,255,255,.3);padding-top:10px;margin-top:4px;">
+          <span style="font-weight:800;">المجموع:</span><b id="cart-grand-total" style="font-size:1.3rem;color:#4eff4e;">0 د.ع</b>
+        </div>
+      </div>
+ 
+      <!-- Checkout Form -->
+      <div id="cart-form-area">
+        <input type="text" id="cart-name" placeholder="✍️ الاسم الكامل">
+        <input type="tel" id="cart-phone" placeholder="📞 رقم الهاتف (11 رقم)" maxlength="11">
+        <input type="text" id="cart-region" placeholder="🏠 المنطقة / الحي">
+        <textarea id="cart-notes" placeholder="📝 ملاحظات (اختياري)..." rows="2" style="resize:none;"></textarea>
+        <button id="cart-loc-btn" class="bmain" style="background:#64748b;color:#fff;margin-bottom:12px;" onclick="getCartLoc()">📍 تحديد موقعي</button>
+        <div id="cart-err" style="display:none;background:#fef2f2;color:var(--red);padding:10px;border-radius:10px;font-size:.88rem;font-weight:700;margin-bottom:12px;text-align:center;"></div>
+        <button onclick="checkoutMarket()" class="bmain btn-action" id="checkout-btn">🛒 تأكيد الطلب</button>
+      </div>
+    </div>
+  </div>
+</div>
 <!-- BOTTOM NAV -->
 <nav class="bnav">
   <button class="nbtn active" id="nav-order" onclick="goTab('order')"><span class="ni">🖨️</span><span>الرئيسية</span></button>
@@ -475,6 +550,11 @@ input:checked+.togs:before{transform:translateX(-24px);}
     <span id="ordbadge" style="display:none;background:var(--orange);color:#fff;border-radius:10px;font-size:.62rem;font-weight:800;padding:2px 6px;position:absolute;top:4px;margin-right:-14px;"></span>
   </button>
   <button class="nbtn" id="nav-points" onclick="goTab('points')"><span class="ni">🏆</span><span>المكافآت</span></button>
+  <button class="nbtn" id="nav-market" onclick="goTab('market')" style="position:relative;">
+    <span class="ni">🛒</span><span>المتجر</span>
+    <span id="mkt-badge" style="display:none;background:var(--orange);color:#fff;border-radius:10px;font-size:.62rem;font-weight:800;padding:2px 6px;position:absolute;top:4px;margin-right:-14px;"></span>
+  </button>
+-->
   <button class="nbtn" id="nav-dm" onclick="toggleDark()">
     <span class="ni" id="dm-icon">🌙</span><span id="dm-lbl">ليلي</span>
   </button>
@@ -1601,7 +1681,345 @@ function hideErr()  { document.getElementById('errbox').style.display='none'; }
 function showToast(m) { const t=document.getElementById('toast'); t.innerText=m; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(()=>t.style.display='none',4000); }
 
 // ══ START ════════════════════════════════════════
+  <!-- ══════════════ 3. TAB: MARKET ══════════════ -->
+<div class="tab" id="tab-market">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+    <h2 style="color:var(--navy);margin:0;font-weight:800;">🛒 المتجر الطلابي</h2>
+    <button onclick="openCart()" style="position:relative;border:none;background:var(--navy);color:#fff;padding:10px 16px;border-radius:12px;cursor:pointer;font-weight:800;font-size:.88rem;font-family:'Tajawal',sans-serif;display:flex;align-items:center;gap:6px;">
+      🛒 السلة <span id="nav-cart-badge" style="background:var(--orange);border-radius:10px;font-size:.7rem;padding:1px 6px;display:none;"></span>
+    </button>
+  </div>
+  <p style="color:var(--text-muted);font-size:.88rem;font-weight:500;margin:0 0 14px;">أدوات ومستلزمات دراسية موصلة لبابك</p>
+ 
+  <!-- Category Filter -->
+  <div class="mkt-cats" id="mkt-cat-bar">
+    <button class="mkt-cat-btn active" onclick="setMktCat('all',this)">الكل 🗂️</button>
+    <button class="mkt-cat-btn" onclick="setMktCat('notebooks',this)">📓 دفاتر</button>
+    <button class="mkt-cat-btn" onclick="setMktCat('books',this)">📚 كتب</button>
+    <button class="mkt-cat-btn" onclick="setMktCat('stationery',this)">✏️ قرطاسية</button>
+    <button class="mkt-cat-btn" onclick="setMktCat('other',this)">📦 أخرى</button>
+  </div>
+ 
+  <!-- Search -->
+  <div style="margin-bottom:14px;">
+    <input type="text" id="mkt-search" placeholder="🔍 بحث في المنتجات..." style="margin-bottom:0;" oninput="filterMktProducts()">
+  </div>
+ 
+  <!-- Products Grid -->
+  <div id="mkt-products-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
+    <div style="grid-column:span 2;text-align:center;padding:50px;color:#94a3b8;">
+      <div style="font-size:3rem;opacity:.3;margin-bottom:10px;">🛒</div>
+      <p style="font-weight:500;">جاري تحميل المنتجات...</p>
+    </div>
+  </div>
+</div>
 init();
+  <script id="market-customer-js">
+// ════════════════════════════════════════════════════════════
+//  🛒 CUSTOMER MARKET — أضف هذا قبل </script> في index.html
+// ════════════════════════════════════════════════════════════
+ 
+let cart         = [];        // [{id, name, price, qty, unit, stock}]
+let _mktProducts = [];        // all active products from DB
+let _mktCat      = 'all';     // current category filter
+let _cartLocUrl  = '';        // selected delivery location
+const MKT_DELIVERY_FEE = 1000; // د.ع
+ 
+// ── تحميل المنتجات عند فتح تاب المتجر ──
+// أضف هذا في دالة goTab():
+// if (t === 'market') loadMktProducts();
+ 
+async function loadMktProducts() {
+  const grid = document.getElementById('mkt-products-grid');
+  if (!grid) return;
+  grid.innerHTML = `<div style="grid-column:span 2;text-align:center;padding:40px;color:var(--teal);"><b>جاري التحميل...</b></div>`;
+  try {
+    const { data, error } = await sb.from('market_products')
+      .select('*').eq('active', true).order('category').order('name');
+    if (error) throw error;
+    _mktProducts = data || [];
+    filterMktProducts();
+  } catch(e) {
+    grid.innerHTML = `<div style="grid-column:span 2;text-align:center;padding:30px;color:var(--red);"><b>❌ تعذّر تحميل المنتجات</b></div>`;
+  }
+}
+ 
+// ── فلترة بالفئة ──
+function setMktCat(cat, el) {
+  _mktCat = cat;
+  document.querySelectorAll('.mkt-cat-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  filterMktProducts();
+}
+ 
+// ── فلترة + بحث ──
+function filterMktProducts() {
+  const grid   = document.getElementById('mkt-products-grid');
+  const search = (document.getElementById('mkt-search')?.value || '').toLowerCase();
+  let list = _mktProducts;
+  if (_mktCat !== 'all') list = list.filter(p => p.category === _mktCat);
+  if (search) list = list.filter(p => (p.name||'').toLowerCase().includes(search) || (p.description||'').toLowerCase().includes(search));
+ 
+  if (!list.length) {
+    grid.innerHTML = `<div style="grid-column:span 2;text-align:center;padding:40px;color:#94a3b8;"><div style="font-size:3rem;opacity:.3;margin-bottom:8px;">🔍</div><p style="font-weight:500;">لا توجد منتجات مطابقة</p></div>`;
+    return;
+  }
+ 
+  const catIcons = { books:'📚', notebooks:'📓', stationery:'✏️', other:'📦' };
+  grid.innerHTML = list.map(p => {
+    const inCart = cart.find(c => c.id === p.id);
+    const hasStock = p.stock > 0;
+    return `<div class="mkt-card" onclick="openProductDetail('${p.id}')">
+      <div class="mkt-img">
+        ${p.image_url ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" onerror="this.parentElement.innerHTML='${catIcons[p.category]||'📦'}'">` : catIcons[p.category]||'📦'}
+      </div>
+      <b style="font-size:.92rem;color:var(--navy);display:block;margin-bottom:4px;line-height:1.4;">${esc(p.name)}</b>
+      ${p.description ? `<p style="font-size:.75rem;color:var(--text-muted);margin:0 0 6px;line-height:1.5;">${esc(p.description.substring(0,50))}${p.description.length>50?'...':''}</p>` : ''}
+      <div class="mkt-price" style="margin-bottom:4px;">${(p.price||0).toLocaleString()} د.ع<span style="font-size:.72rem;color:var(--text-muted);font-weight:500;">/${esc(p.unit||'قطعة')}</span></div>
+      <div class="${hasStock?'mkt-stock-ok':'mkt-stock-low'}" style="margin-bottom:6px;">${hasStock?`✅ متوفر (${p.stock} ${esc(p.unit||'قطعة')})`:'❌ نفد المخزون'}</div>
+      <button class="add-cart-btn ${inCart?'in-cart':''}" onclick="event.stopPropagation();addToCart('${p.id}')" ${!hasStock?'disabled':''}>
+        ${inCart ? `✅ في السلة (${inCart.qty})` : hasStock ? '🛒 أضف للسلة' : '❌ نفد'}
+      </button>
+    </div>`;
+  }).join('');
+}
+ 
+// ── تفاصيل المنتج (sheet) ──
+function openProductDetail(id) {
+  const p = _mktProducts.find(x => x.id === id);
+  if (!p) return;
+  const inCart = cart.find(c => c.id === id);
+  const hasStock = p.stock > 0;
+  const catIcons = { books:'📚', notebooks:'📓', stationery:'✏️', other:'📦' };
+  document.getElementById('det-title').innerText = p.name;
+  document.getElementById('det-body').innerHTML = `
+    <div style="text-align:center;margin-bottom:16px;">
+      <div class="mkt-img" style="height:180px;margin:0 auto 12px;max-width:260px;">
+        ${p.image_url ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;" onerror="this.parentElement.innerHTML='${catIcons[p.category]||'📦'}'">` : catIcons[p.category]||'📦'}
+      </div>
+      <div class="mkt-price" style="font-size:1.4rem;">${(p.price||0).toLocaleString()} د.ع <span style="font-size:.82rem;color:var(--text-muted);font-weight:500;">/ ${esc(p.unit||'قطعة')}</span></div>
+      <div class="${hasStock?'mkt-stock-ok':'mkt-stock-low'}" style="margin-top:4px;font-size:.85rem;">${hasStock?`✅ متوفر — ${p.stock} ${esc(p.unit||'قطعة')}`:'❌ نفد المخزون'}</div>
+    </div>
+    ${p.description ? `<div style="background:var(--input-bg);border-radius:14px;padding:14px;margin-bottom:14px;"><b style="color:var(--navy);font-size:.88rem;">📝 الوصف:</b><p style="margin:8px 0 0;color:var(--text-muted);font-size:.9rem;line-height:1.7;">${esc(p.description)}</p></div>` : ''}
+    ${inCart ? `
+    <div style="background:var(--light-teal);border-radius:14px;padding:14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
+      <b style="color:var(--navy);">الكمية في السلة:</b>
+      <div class="cart-qty-ctrl">
+        <button class="cqbtn" onclick="changeCartQty('${p.id}',-1)">−</button>
+        <b style="color:var(--orange);font-size:1.1rem;">${inCart.qty}</b>
+        <button class="cqbtn" onclick="changeCartQty('${p.id}',1)">+</button>
+      </div>
+    </div>` : ''}
+    <button class="add-cart-btn ${inCart?'in-cart':''}" ${!hasStock?'disabled':''} onclick="addToCart('${p.id}');closeDet()">
+      ${inCart ? '✅ موجود في السلة — إضافة المزيد' : hasStock ? '🛒 إضافة للسلة' : '❌ نفد المخزون'}
+    </button>
+    ${inCart ? `<button onclick="removeFromCart('${p.id}');closeDet()" class="bmain" style="background:#fef2f2;color:var(--red);margin-top:10px;">🗑️ إزالة من السلة</button>` : ''}
+  `;
+  document.getElementById('det-ov').classList.add('open');
+}
+ 
+// ── إضافة للسلة ──
+function addToCart(pid) {
+  const p = _mktProducts.find(x => x.id === pid);
+  if (!p || p.stock <= 0) return;
+  const existing = cart.find(c => c.id === pid);
+  if (existing) {
+    if (existing.qty >= p.stock) { showToast('⚠️ لا يوجد مخزون كافٍ'); return; }
+    existing.qty++;
+  } else {
+    cart.push({ id: p.id, name: p.name, price: p.price, qty: 1, unit: p.unit||'قطعة', stock: p.stock });
+  }
+  updateCartUI();
+  showToast(`✅ تمت إضافة ${p.name} للسلة`);
+}
+ 
+// ── تغيير الكمية ──
+function changeCartQty(pid, delta) {
+  const item = cart.find(c => c.id === pid);
+  if (!item) return;
+  item.qty = Math.max(1, Math.min(item.stock, item.qty + delta));
+  updateCartUI();
+  filterMktProducts();
+  openProductDetail(pid);
+}
+ 
+// ── إزالة من السلة ──
+function removeFromCart(pid) {
+  cart = cart.filter(c => c.id !== pid);
+  updateCartUI();
+  filterMktProducts();
+}
+ 
+// ── تحديث عداد السلة ──
+function updateCartUI() {
+  const total = cart.reduce((s, c) => s + c.qty, 0);
+  const fab = document.getElementById('cart-fab');
+  const countEl = document.getElementById('cart-count');
+  const navBadge = document.getElementById('nav-cart-badge');
+  const mktBadge = document.getElementById('mkt-badge');
+ 
+  if (fab)    { fab.style.display = total > 0 ? 'flex' : 'none'; }
+  if (countEl){ countEl.style.display = total > 0 ? 'block' : 'none'; countEl.innerText = total; }
+  if (navBadge){ navBadge.style.display = total > 0 ? 'inline' : 'none'; navBadge.innerText = total; }
+  if (mktBadge){ mktBadge.style.display = total > 0 ? 'inline' : 'none'; mktBadge.innerText = total; }
+  filterMktProducts();
+}
+ 
+// ── فتح السلة ──
+function openCart() {
+  document.getElementById('cart-drawer').classList.add('open');
+  renderCartDrawer();
+}
+ 
+function renderCartDrawer() {
+  const box = document.getElementById('cart-items-list');
+  const area = document.getElementById('cart-checkout-area');
+ 
+  if (!cart.length) {
+    box.innerHTML = `<div style="text-align:center;padding:40px;color:#94a3b8;"><div style="font-size:3rem;opacity:.3;">🛒</div><p>السلة فارغة — أضف بعض المنتجات!</p></div>`;
+    area.style.display = 'none';
+    return;
+  }
+ 
+  box.innerHTML = cart.map(item => `
+    <div class="cart-item">
+      <div style="flex:1;min-width:0;">
+        <b style="color:var(--navy);font-size:.92rem;">${esc(item.name)}</b>
+        <div style="font-size:.82rem;color:var(--orange);font-weight:700;">${(item.price * item.qty).toLocaleString()} د.ع</div>
+        <div style="font-size:.76rem;color:var(--text-muted);">${item.price.toLocaleString()} د.ع × ${item.qty} ${esc(item.unit)}</div>
+      </div>
+      <div class="cart-qty-ctrl">
+        <button class="cqbtn" onclick="changeCartQtyDirect('${item.id}',-1)">−</button>
+        <b style="color:var(--orange);font-size:1rem;min-width:24px;text-align:center;">${item.qty}</b>
+        <button class="cqbtn" onclick="changeCartQtyDirect('${item.id}',1)">+</button>
+        <button onclick="removeFromCart('${item.id}');renderCartDrawer();" style="border:none;background:#fef2f2;color:var(--red);width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:.8rem;font-weight:700;margin-right:4px;">✕</button>
+      </div>
+    </div>`).join('');
+ 
+  const subtotal = cart.reduce((s, c) => s + c.price * c.qty, 0);
+  const delFee   = subtotal >= 10000 ? 0 : MKT_DELIVERY_FEE;
+  const grand    = subtotal + delFee;
+ 
+  document.getElementById('cart-items-total').innerText = subtotal.toLocaleString() + ' د.ع';
+  document.getElementById('cart-del-fee').innerText     = delFee === 0 ? '🎁 مجاني' : delFee.toLocaleString() + ' د.ع';
+  document.getElementById('cart-grand-total').innerText = grand.toLocaleString() + ' د.ع';
+ 
+  // Auto-fill from last print order info
+  const savedName  = document.getElementById('uName')?.value;
+  const savedPhone = document.getElementById('uPhone')?.value;
+  const savedReg   = document.getElementById('uRegion')?.value;
+  if (savedName  && !document.getElementById('cart-name').value)   document.getElementById('cart-name').value   = savedName;
+  if (savedPhone && !document.getElementById('cart-phone').value)  document.getElementById('cart-phone').value  = savedPhone;
+  if (savedReg   && !document.getElementById('cart-region').value) document.getElementById('cart-region').value = savedReg;
+ 
+  area.style.display = 'block';
+}
+ 
+function changeCartQtyDirect(pid, delta) {
+  const item = cart.find(c => c.id === pid);
+  if (!item) return;
+  item.qty = Math.max(1, Math.min(item.stock, item.qty + delta));
+  renderCartDrawer();
+  updateCartUI();
+}
+ 
+// ── تحديد الموقع للسلة ──
+function getCartLoc() {
+  navigator.geolocation.getCurrentPosition(
+    p => {
+      _cartLocUrl = `https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`;
+      const btn = document.getElementById('cart-loc-btn');
+      btn.innerText = '✅ تم حفظ الموقع'; btn.style.background = 'var(--green)';
+    },
+    () => {
+      const e = document.getElementById('cart-err');
+      e.style.display = 'block'; e.innerText = '❌ يرجى السماح بالوصول للموقع';
+    }
+  );
+}
+ 
+// ── تأكيد طلب المتجر ──
+let _lastMktOrder = 0;
+async function checkoutMarket() {
+  const name   = document.getElementById('cart-name').value.trim();
+  const phone  = document.getElementById('cart-phone').value.trim();
+  const region = document.getElementById('cart-region').value.trim();
+  const notes  = document.getElementById('cart-notes').value.trim();
+  const errEl  = document.getElementById('cart-err');
+ 
+  const showErr = msg => { errEl.style.display='block'; errEl.innerText=msg; };
+  errEl.style.display = 'none';
+ 
+  if (!name || name.length < 3) return showErr('❌ أدخل اسمك الكامل (3 أحرف+)');
+  if (!phone || phone.length !== 11 || isNaN(+phone)) return showErr('❌ رقم الهاتف يجب أن يكون 11 رقماً');
+  if (!region) return showErr('❌ أدخل المنطقة/الحي');
+  if (!_cartLocUrl) return showErr('❌ يرجى تحديد موقعك على الخريطة');
+  if (!cart.length) return showErr('❌ السلة فارغة');
+ 
+  // Rate limiting
+  if (Date.now() - _lastMktOrder < 30000) return showErr('❌ انتظر قليلاً قبل إرسال طلب جديد');
+ 
+  const btn = document.getElementById('checkout-btn');
+  btn.disabled = true; btn.innerText = 'جاري الإرسال...';
+ 
+  try {
+    const subtotal = cart.reduce((s, c) => s + c.price * c.qty, 0);
+    const delFee   = subtotal >= 10000 ? 0 : MKT_DELIVERY_FEE;
+    const total    = subtotal + delFee;
+    const oid      = 'MKT-' + Date.now().toString(36).toUpperCase();
+    const items    = cart.map(c => ({ id: c.id, name: c.name, qty: c.qty, price: c.price, unit: c.unit }));
+ 
+    const { error } = await sb.from('market_orders').insert({
+      id: oid, user_id: userId, telegram_id: userId,
+      items, total, delivery_fee: delFee,
+      name, phone, region, loc_url: _cartLocUrl,
+      notes: notes||null, status: 'pending',
+      status_history: [{ status:'pending', time: new Date().toISOString() }]
+    });
+    if (error) throw error;
+ 
+    // Update product stock
+    await Promise.all(cart.map(c =>
+      sb.from('market_products').update({ stock: Math.max(0, c.stock - c.qty) }).eq('id', c.id)
+    ));
+ 
+    // إشعار المدير
+    const itemsTxt = items.map(i => `• ${i.name} ×${i.qty} = ${(i.price*i.qty).toLocaleString()} د.ع`).join('\n');
+    await sb.functions?.invoke('send-tg', { body: {
+      chatId: ADMIN,
+      message: `🛒 طلب متجر جديد #${oid}\n👤 ${name}\n📞 ${phone}\n🏠 ${region}\n\nالمنتجات:\n${itemsTxt}\n\n💰 المجموع: ${total.toLocaleString()} د.ع\n📍 ${_cartLocUrl}${notes?'\n📝 '+notes:''}`
+    }}).catch(()=>{});
+ 
+    // إشعار الزبون
+    if (tgU?.id) {
+      await sb.functions?.invoke('send-tg', { body: {
+        chatId: String(tgU.id),
+        message: `✅ تم استلام طلب المتجر #${oid}!\n💰 ${total.toLocaleString()} د.ع\n\nسيتم التواصل معك قريباً لتأكيد الطلب 🔔`
+      }}).catch(()=>{});
+    }
+ 
+    _lastMktOrder = Date.now();
+    cart = [];
+    updateCartUI();
+    showToast('✅ تم إرسال طلب المتجر بنجاح!');
+ 
+    // Success screen in cart
+    document.getElementById('cart-items-list').innerHTML = `
+      <div style="text-align:center;padding:30px;">
+        <div style="font-size:4rem;margin-bottom:10px;">🎉</div>
+        <h3 style="color:var(--navy);font-weight:800;margin:0 0 6px;">تم إرسال طلبك!</h3>
+        <p style="color:var(--text-muted);font-size:.9rem;margin:0 0 14px;">رقم طلب المتجر: <b style="color:var(--orange);">#${oid}</b></p>
+        <p style="color:var(--teal);font-size:.85rem;font-weight:600;">ستصلك رسالة تأكيد على تيليجرام 📱</p>
+      </div>`;
+    document.getElementById('cart-checkout-area').style.display = 'none';
+ 
+  } catch(e) {
+    console.error('Market checkout error:', e);
+    showErr('❌ حدث خطأ: ' + (e.message || 'يرجى المحاولة مجدداً'));
+    btn.disabled = false; btn.innerText = '🛒 تأكيد الطلب';
+  }
+}
+</script>
 </script>
 </body>
 </html>
