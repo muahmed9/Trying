@@ -6,6 +6,45 @@
 <title>لوحة تحكم الشاطر</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
+  
+<!-- ══════════════ 1. CSS ADDITIONS ══════════════ -->
+<style id="market-supplies-css-additions">
+/* ── Market & Supplies ─────────────────────────── */
+.cat-pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:800;margin:2px;}
+.cat-books{background:#dbeafe;color:#1e40af;}
+.cat-notebooks{background:#dcfce7;color:#166534;}
+.cat-stationery{background:#fef3c7;color:#b45309;}
+.cat-other{background:#f1f5f9;color:#64748b;}
+.cat-paper{background:#e0f2fe;color:#0369a1;}
+.cat-ink{background:#ede9fe;color:#6d28d9;}
+.cat-binding{background:#fef3c7;color:#b45309;}
+.cat-clips{background:#f0fdf4;color:#166534;}
+.cat-cover{background:#fdf4ff;color:#9333ea;}
+ 
+.prod-card{background:var(--card);border-radius:16px;padding:15px;margin-bottom:12px;box-shadow:0 3px 10px rgba(0,0,0,.04);border:1px solid #edf0f4;transition:transform .15s;}
+.prod-card:hover{transform:translateY(-2px);}
+.prod-img{width:60px;height:60px;border-radius:10px;object-fit:cover;border:1.5px solid var(--border);flex-shrink:0;}
+.stock-bar-wrap{background:#f1f5f9;border-radius:4px;height:7px;overflow:hidden;margin:5px 0;}
+.stock-bar{height:100%;border-radius:4px;transition:width .5s;}
+ 
+.sup-card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:10px;border:1px solid #edf0f4;box-shadow:0 2px 8px rgba(0,0,0,.03);}
+.alert-low{background:#fef2f2;border:1.5px solid #fecaca;border-radius:12px;padding:14px;margin-bottom:16px;}
+.alert-low-title{color:#991b1b;font-weight:800;font-size:.92rem;margin:0 0 8px;}
+ 
+/* ── Modals (shared style) ──────────────────────── */
+.mmodal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:450;backdrop-filter:blur(4px);}
+.mmodal.open{display:flex;}
+.mbox2{background:var(--card);border-radius:22px;padding:26px 22px;width:93%;max-width:430px;box-shadow:0 20px 40px rgba(0,0,0,.2);}
+.mbox2 h3{color:var(--navy);font-weight:800;margin:0 0 18px;}
+ 
+/* ── Search / Filter bar ──────────────────────────── */
+.mkt-search{display:flex;gap:8px;margin-bottom:14px;align-items:center;}
+.mkt-search input{flex:1;margin-bottom:0;padding:11px 14px;font-size:.9rem;}
+ 
+/* ── Stock warning badge ────────────────────────── */
+.low-badge{background:#fef2f2;color:#991b1b;border-radius:8px;font-size:.65rem;padding:2px 7px;font-weight:800;vertical-align:middle;margin-right:5px;border:1px solid #fecaca;}
+.ok-badge{background:#dcfce7;color:#166534;border-radius:8px;font-size:.65rem;padding:2px 7px;font-weight:800;vertical-align:middle;}
+
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
 :root {
   --navy:#0d3b66; --teal:#5ab3c4; --orange:#e86b24;
@@ -34,6 +73,8 @@ body { background:var(--bg); color:var(--text-main); min-height:100vh; }
 .atab.active { background:var(--navy); color:#fff; border-color:var(--navy); }
 .admin-page { display:none; }
 .admin-page.active { display:block; }
+<button class="atab" id="tab-market-btn"   onclick="switchPage('market',this)"   style="display:none;">🛒 المتجر</button>
+<button class="atab" id="tab-supplies-btn" onclick="switchPage('supplies',this)" style="display:none;">🗄️ المخزن</button>
 
 /* ── STATS ── */
 .sgrid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-bottom:22px; }
@@ -140,6 +181,103 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
   </div>
 </div>
 
+  
+<!-- ══════════════ 2. MODALS ══════════════ -->
+ 
+<!-- Supply TX Modal -->
+<div id="supply-tx-modal" class="mmodal">
+  <div class="mbox2">
+    <h3 id="tx-type-label">➕ إضافة مخزون</h3>
+    <p style="color:var(--text-muted);font-size:.88rem;margin:0 0 16px;">المادة: <b id="tx-supply-name" style="color:var(--navy);"></b></p>
+    <label style="font-size:.82rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:6px;">الكمية</label>
+    <input type="number" id="tx-qty" placeholder="أدخل الكمية..." min="0.1" step="0.5">
+    <label style="font-size:.82rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:6px;">ملاحظة (اختياري)</label>
+    <textarea id="tx-notes" placeholder="مثال: فاتورة رقم 123 / استخدام يومي..." rows="2" style="resize:none;"></textarea>
+    <div style="display:flex;gap:10px;margin-top:4px;">
+      <button class="bmain" id="tx-confirm-btn" style="background:var(--green);color:#fff;flex:2;" onclick="confirmSupplyTx()">✅ تأكيد</button>
+      <button class="bmain" style="background:#f1f5f9;color:var(--text-muted);flex:1;" onclick="document.getElementById('supply-tx-modal').classList.remove('open')">إلغاء</button>
+    </div>
+  </div>
+</div>
+ 
+<!-- Supply Log Modal -->
+<div id="supply-log-modal" class="mmodal">
+  <div class="mbox2" style="max-height:85vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="margin:0;color:var(--navy);">📋 سجل المخزن</h3>
+      <button onclick="document.getElementById('supply-log-modal').classList.remove('open')" style="border:none;background:#f1f5f9;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1.1rem;color:var(--text-muted);">✕</button>
+    </div>
+    <p style="margin:0 0 14px;font-size:.85rem;color:var(--teal);font-weight:700;" id="log-supply-name"></p>
+    <div id="supply-log-body"><div style="text-align:center;padding:20px;color:var(--text-muted);">جاري التحميل...</div></div>
+  </div>
+</div>
+ 
+<!-- Product Stock Adjust Modal -->
+<div id="adj-prod-modal" class="mmodal">
+  <div class="mbox2">
+    <h3>📦 تعديل مخزون المنتج</h3>
+    <p style="color:var(--text-muted);font-size:.88rem;margin:0 0 6px;">المنتج: <b id="adj-prod-name" style="color:var(--navy);"></b></p>
+    <p style="color:var(--text-muted);font-size:.85rem;margin:0 0 14px;">المخزون الحالي: <b id="adj-prod-current" style="color:var(--orange);font-size:1.1rem;"></b> <span id="adj-prod-unit"></span></p>
+    <div style="display:flex;gap:10px;margin-bottom:14px;">
+      <label style="flex:1;display:flex;align-items:center;gap:8px;background:#f0fdf4;padding:11px;border-radius:12px;cursor:pointer;border:1.5px solid #86efac;">
+        <input type="radio" name="adj-type" value="set" style="width:auto;padding:0;margin:0;accent-color:var(--green);" checked> <span style="font-weight:700;color:#166534;font-size:.9rem;">📝 ضبط مباشر</span>
+      </label>
+      <label style="flex:1;display:flex;align-items:center;gap:8px;background:#f0fdf4;padding:11px;border-radius:12px;cursor:pointer;border:1.5px solid #86efac;">
+        <input type="radio" name="adj-type" value="add" style="width:auto;padding:0;margin:0;accent-color:var(--green);"> <span style="font-weight:700;color:#166534;font-size:.9rem;">➕ إضافة</span>
+      </label>
+      <label style="flex:1;display:flex;align-items:center;gap:8px;background:#fef2f2;padding:11px;border-radius:12px;cursor:pointer;border:1.5px solid #fecaca;">
+        <input type="radio" name="adj-type" value="sub" style="width:auto;padding:0;margin:0;accent-color:var(--red);"> <span style="font-weight:700;color:#991b1b;font-size:.9rem;">➖ خصم</span>
+      </label>
+    </div>
+    <input type="number" id="adj-prod-qty" placeholder="الكمية..." min="0" step="1">
+    <div style="display:flex;gap:10px;margin-top:4px;">
+      <button class="bmain" style="background:var(--teal);color:#fff;flex:2;" onclick="confirmAdjProductStock()">💾 حفظ</button>
+      <button class="bmain" style="background:#f1f5f9;color:var(--text-muted);flex:1;" onclick="document.getElementById('adj-prod-modal').classList.remove('open')">إلغاء</button>
+    </div>
+  </div>
+</div>
+ 
+<!-- Edit Supply Modal -->
+<div id="edit-supply-modal" class="mmodal">
+  <div class="mbox2">
+    <h3>✏️ تعديل مادة المخزن</h3>
+    <input type="hidden" id="edit-sup-id">
+    <input type="text" id="edit-sup-name" placeholder="اسم المادة">
+    <select id="edit-sup-cat" style="margin-bottom:12px;">
+      <option value="paper">📄 ورق</option>
+      <option value="ink">🖨️ أحبار</option>
+      <option value="binding">🔩 تجليد/سبايرول</option>
+      <option value="clips">📎 كلبس وتدبيس</option>
+      <option value="cover">📋 أغلفة</option>
+      <option value="other">📦 أخرى</option>
+    </select>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div>
+        <label style="font-size:.78rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">الوحدة</label>
+        <input type="text" id="edit-sup-unit" list="unit-options-list" style="margin-bottom:0;" placeholder="مثال: رزمة، قطعة، لتر">
+        <datalist id="unit-options-list">
+          <option value="قطعة"><option value="رزمة"><option value="لتر"><option value="خرطوشة">
+          <option value="تونر"><option value="علبة"><option value="ورقة"><option value="حبة">
+          <option value="كيس"><option value="كرتون"><option value="بكرة">
+        </datalist>
+      </div>
+      <div>
+        <label style="font-size:.78rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">الحد الأدنى للتنبيه</label>
+        <input type="number" id="edit-sup-min" min="0" step="0.5" style="margin-bottom:0;">
+      </div>
+    </div>
+    <div>
+      <label style="font-size:.78rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">التكلفة لكل وحدة (د.ع)</label>
+      <input type="number" id="edit-sup-cost" min="0" step="100" placeholder="0">
+    </div>
+    <textarea id="edit-sup-notes" placeholder="ملاحظات..." rows="2" style="resize:none;"></textarea>
+    <div style="display:flex;gap:10px;margin-top:4px;">
+      <button class="bmain" style="background:var(--navy);color:#fff;flex:2;" onclick="saveSupplyEdit()">💾 حفظ التعديلات</button>
+      <button class="bmain" style="background:#f1f5f9;color:var(--text-muted);flex:1;" onclick="document.getElementById('edit-supply-modal').classList.remove('open')">إلغاء</button>
+    </div>
+  </div>
+</div>
+  
 <!-- ════════════════════════════
      LOGIN
 ════════════════════════════ -->
@@ -448,7 +586,187 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
             <input type="number" id="pr-min-price" value="1000" min="0" step="250" style="margin-bottom:0;">
           </div>
         </div>
-
+<!-- ══════════════ 4. PAGE: MARKET ══════════════ -->
+<div class="admin-page" id="page-market">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+    <h3 style="margin:0;color:var(--navy);font-weight:800;">🛒 إدارة المتجر الطلابي</h3>
+  </div>
+ 
+  <!-- Market sub-tabs -->
+  <div style="display:flex;gap:8px;margin-bottom:18px;">
+    <button class="ftab active" id="mkt-tab-products" onclick="switchMarketSubTab('products',this)">📦 المنتجات</button>
+    <button class="ftab" id="mkt-tab-orders" onclick="switchMarketSubTab('orders',this)">📋 طلبات المتجر</button>
+  </div>
+ 
+  <!-- PRODUCTS SUB-PAGE -->
+  <div id="mkt-products-section">
+    <!-- Add / Edit Product Form -->
+    <div id="product-form-section" style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.03);margin-bottom:18px;">
+      <h4 id="prod-form-title" style="margin:0 0 16px;color:var(--navy);font-weight:800;">➕ إضافة منتج جديد</h4>
+ 
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0;">
+        <div style="grid-column:span 2;">
+          <input type="text" id="prod-name" placeholder="✍️ اسم المنتج (مثال: دفتر جامعي 100 ورقة)">
+        </div>
+        <div>
+          <label style="font-size:.78rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">الفئة</label>
+          <select id="prod-cat" style="margin-bottom:0;">
+            <option value="notebooks">📓 دفاتر</option>
+            <option value="books">📚 كتب</option>
+            <option value="stationery">✏️ قرطاسية وأدوات</option>
+            <option value="other">📦 أخرى</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:.78rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">وحدة المنتج</label>
+          <input type="text" id="prod-unit" list="prod-unit-list" placeholder="قطعة / علبة / حزمة..." style="margin-bottom:0;">
+          <datalist id="prod-unit-list">
+            <option value="قطعة"><option value="علبة"><option value="حزمة"><option value="نسخة"><option value="زوج">
+          </datalist>
+        </div>
+        <div>
+          <label style="font-size:.78rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">السعر (د.ع)</label>
+          <input type="number" id="prod-price" placeholder="0" min="0" step="250" style="margin-bottom:0;">
+        </div>
+        <div>
+          <label style="font-size:.78rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">الكمية في المخزون</label>
+          <input type="number" id="prod-stock" placeholder="0" min="0" style="margin-bottom:0;">
+        </div>
+        <div style="grid-column:span 2;">
+          <label style="font-size:.78rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">الوصف (اختياري)</label>
+          <textarea id="prod-desc" placeholder="وصف مختصر للمنتج..." rows="2" style="resize:none;margin-bottom:0;"></textarea>
+        </div>
+        <div style="grid-column:span 2;">
+          <label style="font-size:.78rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">رابط الصورة (اختياري)</label>
+          <input type="text" id="prod-img" placeholder="https://..." style="margin-bottom:0;">
+        </div>
+      </div>
+ 
+      <div style="display:flex;gap:10px;margin-top:14px;">
+        <button id="save-prod-btn" class="bmain" style="background:var(--navy);color:#fff;flex:2;" onclick="saveProduct()">✅ إضافة المنتج</button>
+        <button id="cancel-edit-prod" class="bmain" style="background:#f1f5f9;color:var(--text-muted);flex:1;display:none;" onclick="clearProductForm()">❌ إلغاء</button>
+      </div>
+    </div>
+ 
+    <!-- Products Search -->
+    <div class="mkt-search">
+      <input type="text" id="prod-search" placeholder="🔍 بحث في المنتجات..." oninput="filterProducts()">
+      <select id="prod-cat-filter" onchange="filterProducts()" style="margin-bottom:0;width:auto;padding:11px 12px;font-size:.85rem;">
+        <option value="all">كل الفئات</option>
+        <option value="notebooks">📓 دفاتر</option>
+        <option value="books">📚 كتب</option>
+        <option value="stationery">✏️ قرطاسية</option>
+        <option value="other">📦 أخرى</option>
+      </select>
+    </div>
+ 
+    <!-- Stats quick summary -->
+    <div class="sgrid" style="margin-bottom:16px;" id="mkt-stats-grid">
+      <div class="scard"><div class="snum" id="mkt-s-total" style="color:var(--navy);">—</div><div class="slbl">إجمالي المنتجات</div></div>
+      <div class="scard"><div class="snum" id="mkt-s-active" style="color:var(--green);">—</div><div class="slbl">نشط</div></div>
+      <div class="scard"><div class="snum" id="mkt-s-low" style="color:var(--orange);">—</div><div class="slbl">مخزون منخفض</div></div>
+      <div class="scard"><div class="snum" id="mkt-s-zero" style="color:var(--red);">—</div><div class="slbl">نفد المخزون</div></div>
+    </div>
+ 
+    <!-- Products List -->
+    <div id="products-list"><div style="text-align:center;padding:40px;color:var(--text-muted);">جاري التحميل...</div></div>
+  </div>
+ 
+  <!-- ORDERS SUB-PAGE -->
+  <div id="mkt-orders-section" style="display:none;">
+    <div class="fbar" id="mkt-order-filter" style="margin-bottom:14px;">
+      <button class="ftab active" onclick="setMktOrderFilter('all',this)">الكل</button>
+      <button class="ftab" onclick="setMktOrderFilter('pending',this)">🕐 معلق</button>
+      <button class="ftab" onclick="setMktOrderFilter('confirmed',this)">✅ مؤكد</button>
+      <button class="ftab" onclick="setMktOrderFilter('delivering',this)">🛵 توصيل</button>
+      <button class="ftab" onclick="setMktOrderFilter('delivered',this)">✔ مسلّم</button>
+      <button class="ftab" onclick="setMktOrderFilter('cancelled',this)">❌ ملغى</button>
+    </div>
+    <div id="market-orders-list"><div style="text-align:center;padding:40px;color:var(--text-muted);">جاري التحميل...</div></div>
+  </div>
+</div>
+ 
+<!-- ══════════════ 5. PAGE: SUPPLIES ══════════════ -->
+<div class="admin-page" id="page-supplies">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:10px;">
+    <h3 style="margin:0;color:var(--navy);font-weight:800;">🗄️ مخزن مواد الاستنساخ</h3>
+    <button onclick="exportSuppliesReport()" style="background:var(--green);color:#fff;border:none;padding:10px 16px;border-radius:12px;font-weight:800;cursor:pointer;font-family:'Tajawal',sans-serif;font-size:.85rem;">⬇️ تصدير تقرير</button>
+  </div>
+  <p style="margin:0 0 18px;color:var(--text-muted);font-size:.88rem;">إدارة مواد الورق والأحبار والسبايرول والكلبس وغيرها</p>
+ 
+  <!-- Low Stock Alert -->
+  <div id="low-stock-alert" style="display:none;" class="alert-low">
+    <p class="alert-low-title">⚠️ مواد تحت الحد الأدنى</p>
+    <div id="low-stock-items"></div>
+  </div>
+ 
+  <!-- Summary stats -->
+  <div class="sgrid" style="margin-bottom:18px;">
+    <div class="scard"><div class="snum" id="sup-s-total"  style="color:var(--navy);">—</div><div class="slbl">إجمالي المواد</div></div>
+    <div class="scard"><div class="snum" id="sup-s-low"    style="color:var(--orange);">—</div><div class="slbl">منخفضة المخزون</div></div>
+    <div class="scard"><div class="snum" id="sup-s-ok"     style="color:var(--green);">—</div><div class="slbl">مخزون كافي</div></div>
+    <div class="scard"><div class="snum" id="sup-s-cost"   style="color:var(--teal);">—</div><div class="slbl">قيمة المخزن (ألف)</div></div>
+  </div>
+ 
+  <!-- Category filter -->
+  <div class="fbar" id="sup-cat-filter-bar" style="margin-bottom:14px;">
+    <button class="ftab active" onclick="setSupCatFilter('all',this)">الكل</button>
+    <button class="ftab" onclick="setSupCatFilter('paper',this)">📄 ورق</button>
+    <button class="ftab" onclick="setSupCatFilter('ink',this)">🖨️ أحبار</button>
+    <button class="ftab" onclick="setSupCatFilter('binding',this)">🔩 سبايرول</button>
+    <button class="ftab" onclick="setSupCatFilter('clips',this)">📎 كلبس</button>
+    <button class="ftab" onclick="setSupCatFilter('cover',this)">📋 أغلفة</button>
+    <button class="ftab" onclick="setSupCatFilter('other',this)">📦 أخرى</button>
+  </div>
+ 
+  <!-- Supplies list -->
+  <div id="supplies-list"><div style="text-align:center;padding:40px;color:var(--text-muted);">جاري التحميل...</div></div>
+ 
+  <!-- Add Supply Form -->
+  <div style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.03);margin-top:18px;">
+    <h4 style="margin:0 0 16px;color:var(--navy);font-weight:800;">➕ إضافة مادة جديدة للمخزن</h4>
+    <input type="text" id="sup-name" placeholder="✍️ اسم المادة (مثال: ورق A4 80g)">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0;">
+      <div>
+        <label style="font-size:.78rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">الفئة</label>
+        <select id="sup-cat" style="margin-bottom:0;">
+          <option value="paper">📄 ورق</option>
+          <option value="ink">🖨️ أحبار</option>
+          <option value="binding">🔩 سبايرول/تجليد</option>
+          <option value="clips">📎 كلبس وتدبيس</option>
+          <option value="cover">📋 أغلفة</option>
+          <option value="other">📦 أخرى</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:.78rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">الوحدة</label>
+        <input type="text" id="sup-unit" list="sup-unit-list" placeholder="رزمة / قطعة / لتر..." style="margin-bottom:0;">
+        <datalist id="sup-unit-list">
+          <option value="رزمة"><option value="قطعة"><option value="لتر"><option value="خرطوشة">
+          <option value="تونر"><option value="علبة"><option value="ورقة"><option value="بكرة">
+          <option value="كرتون"><option value="كيس"><option value="حبة">
+        </datalist>
+      </div>
+      <div>
+        <label style="font-size:.78rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">الكمية الحالية</label>
+        <input type="number" id="sup-stock" placeholder="0" min="0" step="0.5" style="margin-bottom:0;">
+      </div>
+      <div>
+        <label style="font-size:.78rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">حد التنبيه (الحد الأدنى)</label>
+        <input type="number" id="sup-min" placeholder="5" min="0" step="0.5" style="margin-bottom:0;">
+      </div>
+      <div style="grid-column:span 2;">
+        <label style="font-size:.78rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">التكلفة لكل وحدة (د.ع)</label>
+        <input type="number" id="sup-cost" placeholder="0" min="0" step="100" style="margin-bottom:0;">
+      </div>
+      <div style="grid-column:span 2;">
+        <label style="font-size:.78rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">ملاحظات (اختياري)</label>
+        <textarea id="sup-notes" placeholder="مثال: يُشترى من مستودع الأمانة..." rows="2" style="resize:none;margin-bottom:0;"></textarea>
+      </div>
+    </div>
+    <button class="bmain" style="background:var(--navy);color:#fff;margin-top:14px;" onclick="createSupply()">✅ إضافة للمخزن</button>
+  </div>
+</div>
         <p style="margin:0 0 10px;font-size:.85rem;font-weight:800;color:var(--navy);">🌈 شرائح الطباعة الملونة (سعر/صفحة):</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
           <div style="background:#fef9c3;border-radius:12px;padding:12px;">
