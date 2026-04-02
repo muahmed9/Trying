@@ -814,7 +814,9 @@ function startRT() {
 
           // ④ عرض تقييم عند التسليم
           if (st === 'delivered') {
-            init();
+            // تحديث خفيف لبيانات المستخدم بدلاً من إعادة init() كاملاً
+            sb.from('users').select('loyalty_points,total_orders,total_spent').eq('id',userId).maybeSingle()
+              .then(({data})=>{ if(data){ Object.assign(uDoc,data); refreshPtsUI(); } });
             setTimeout(() => showRateModal(p.new.id), 1500);
           }
         })
@@ -864,6 +866,7 @@ function goTab(t) {
   document.getElementById('nav-' + t).classList.add('active');
   if (t === 'orders') loadOrders();
   if (t === 'points') loadPtsTab();
+  if (t === 'market') { if(!_mktProducts.length) loadMktProducts(); }
   if (t === 'order' && _successOid) _refreshSuccessFromServer(_successOid);
 }
 
@@ -1720,11 +1723,11 @@ let cart         = [];        // [{id, name, price, qty, unit, stock}]
 let _mktProducts = [];        // all active products from DB
 let _mktCat      = 'all';     // current category filter
 let _cartLocUrl  = '';        // selected delivery location
-const MKT_DELIVERY_FEE = 1000; // د.ع
- 
+// رسوم توصيل المتجر — تُقرأ دائماً من PRICING (مُحدَّث من لوحة التحكم)
+const getMktFee  = () => PRICING.delivery_fee             || 1000;
+const getMktFree = () => PRICING.delivery_free_threshold  || 10000;
+
 // ── تحميل المنتجات عند فتح تاب المتجر ──
-// أضف هذا في دالة goTab():
-// if (t === 'market') loadMktProducts();
  
 async function loadMktProducts() {
   const grid = document.getElementById('mkt-products-grid');
@@ -1894,7 +1897,7 @@ function renderCartDrawer() {
     </div>`).join('');
  
   const subtotal = cart.reduce((s, c) => s + c.price * c.qty, 0);
-  const delFee   = subtotal >= 10000 ? 0 : MKT_DELIVERY_FEE;
+  const delFee   = subtotal >= getMktFree() ? 0 : getMktFee();
   const grand    = subtotal + delFee;
  
   document.getElementById('cart-items-total').innerText = subtotal.toLocaleString() + ' د.ع';
@@ -1961,7 +1964,7 @@ async function checkoutMarket() {
  
   try {
     const subtotal = cart.reduce((s, c) => s + c.price * c.qty, 0);
-    const delFee   = subtotal >= 10000 ? 0 : MKT_DELIVERY_FEE;
+    const delFee   = subtotal >= getMktFree() ? 0 : getMktFee();
     const total    = subtotal + delFee;
     const oid      = 'MKT-' + Date.now().toString(36).toUpperCase();
     const items    = cart.map(c => ({ id: c.id, name: c.name, qty: c.qty, price: c.price, unit: c.unit }));
@@ -2022,4 +2025,5 @@ init();
 </script>
 </body>
 </html>
+
 
