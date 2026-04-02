@@ -584,7 +584,86 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
             <input type="number" id="pr-min-price" value="1000" min="0" step="250" style="margin-bottom:0;">
           </div>
         </div>
-    </div><!-- end page-pricing -->
+        <p style="margin:0 0 10px;font-size:.85rem;font-weight:800;color:var(--navy);">🌈 شرائح الطباعة الملونة (سعر/صفحة):</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+          <div style="background:#fef9c3;border-radius:12px;padding:12px;">
+            <label style="font-size:.78rem;color:#854d0e;font-weight:800;display:block;margin-bottom:6px;">≤ 25 صفحة</label>
+            <input type="number" id="pr-c1" value="150" min="0" style="margin-bottom:0;background:#fffbeb;">
+          </div>
+          <div style="background:#fef9c3;border-radius:12px;padding:12px;">
+            <label style="font-size:.78rem;color:#854d0e;font-weight:800;display:block;margin-bottom:6px;">26 – 40 صفحة</label>
+            <input type="number" id="pr-c2" value="130" min="0" style="margin-bottom:0;background:#fffbeb;">
+          </div>
+          <div style="background:#fef9c3;border-radius:12px;padding:12px;">
+            <label style="font-size:.78rem;color:#854d0e;font-weight:800;display:block;margin-bottom:6px;">41 – 70 صفحة</label>
+            <input type="number" id="pr-c3" value="120" min="0" style="margin-bottom:0;background:#fffbeb;">
+          </div>
+          <div style="background:#fef9c3;border-radius:12px;padding:12px;">
+            <label style="font-size:.78rem;color:#854d0e;font-weight:800;display:block;margin-bottom:6px;">> 70 صفحة</label>
+            <input type="number" id="pr-c4" value="100" min="0" style="margin-bottom:0;background:#fffbeb;">
+          </div>
+        </div>
+
+        <p style="margin:0 0 10px;font-size:.85rem;font-weight:800;color:var(--navy);">⚪ الطباعة بالأبيض والأسود (سعر/صفحة):</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="background:#f1f5f9;border-radius:12px;padding:12px;">
+            <label style="font-size:.78rem;color:var(--text-muted);font-weight:800;display:block;margin-bottom:6px;">📄 وجه واحد</label>
+            <input type="number" id="pr-bw1" value="90" min="0" style="margin-bottom:0;background:#f8fafc;">
+          </div>
+          <div style="background:#f1f5f9;border-radius:12px;padding:12px;">
+            <label style="font-size:.78rem;color:var(--text-muted);font-weight:800;display:block;margin-bottom:6px;">📖 وجهين</label>
+            <input type="number" id="pr-bw2" value="75" min="0" style="margin-bottom:0;background:#f8fafc;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Delivery & fees -->
+      <div style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.03);margin-bottom:16px;">
+        <h4 style="margin:0 0 16px;color:var(--navy);font-weight:800;">🚚 رسوم التوصيل والخدمات</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label style="font-size:.8rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">رسوم التوصيل (د.ع)</label>
+            <input type="number" id="pr-del" value="1000" min="0" step="250" style="margin-bottom:0;">
+          </div>
+          <div>
+            <label style="font-size:.8rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">حد التوصيل المجاني (د.ع)</label>
+            <input type="number" id="pr-del-free" value="10000" min="0" step="500" style="margin-bottom:0;">
+          </div>
+          <div>
+            <label style="font-size:.8rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">⚡ رسوم الطلب العاجل (د.ع)</label>
+            <input type="number" id="pr-express" value="1500" min="0" step="250" style="margin-bottom:0;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Packaging fees -->
+      <div style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.03);margin-bottom:20px;">
+        <h4 style="margin:0 0 16px;color:var(--navy);font-weight:800;">📦 رسوم التغليف</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+          <div style="background:#f0fdf4;border-radius:12px;padding:12px;">
+            <label style="font-size:.78rem;color:#166534;font-weight:800;display:block;margin-bottom:6px;">🗜️ كبس فقط</label>
+            <input type="number" id="pr-pkg-none" value="0" min="0" step="250" style="margin-bottom:0;background:#dcfce7;">
+          </div>
+          <div style="background:#fff7ed;border-radius:12px;padding:12px;">
+            <label style="font-size:.78rem;color:#9a3412;font-weight:800;display:block;margin-bottom:6px;">📦 مقوى ونايلون</label>
+            <input type="number" id="pr-pkg-cardboard" value="500" min="0" step="250" style="margin-bottom:0;background:#ffedd5;">
+          </div>
+          <div style="background:#faf5ff;border-radius:12px;padding:12px;">
+            <label style="font-size:.78rem;color:#6b21a8;font-weight:800;display:block;margin-bottom:6px;">🔩 سبايرول</label>
+            <input type="number" id="pr-pkg-spiral" value="1500" min="0" step="250" style="margin-bottom:0;background:#f3e8ff;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview & Save -->
+      <div style="background:linear-gradient(135deg,var(--navy),#1e40af);border-radius:18px;padding:20px;margin-bottom:16px;color:#fff;">
+        <h4 style="margin:0 0 14px;font-weight:800;font-size:.95rem;">👁️ معاينة مباشرة — مثال 30 صفحة ملون وجه واحد</h4>
+        <div id="pr-preview" style="font-size:.9rem;line-height:2;opacity:.9;">—</div>
+      </div>
+
+      <button class="bmain" style="background:var(--green);color:#fff;" onclick="savePricing()">💾 حفظ التسعير وتطبيقه فوراً</button>
+      <div id="pr-msg" style="display:none;margin-top:12px;padding:12px;border-radius:12px;font-weight:700;text-align:center;font-size:.9rem;"></div>
+    </div>
 
     <!-- ══════════════ 4. PAGE: MARKET ══════════════ -->
     <div class="admin-page" id="page-market">
@@ -765,89 +844,6 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
       </div>
     </div>
     <button class="bmain" style="background:var(--navy);color:#fff;margin-top:14px;" onclick="createSupply()">✅ إضافة للمخزن</button>
-      </div>
-</div>
-        <p style="margin:0 0 10px;font-size:.85rem;font-weight:800;color:var(--navy);">🌈 شرائح الطباعة الملونة (سعر/صفحة):</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
-          <div style="background:#fef9c3;border-radius:12px;padding:12px;">
-            <label style="font-size:.78rem;color:#854d0e;font-weight:800;display:block;margin-bottom:6px;">≤ 25 صفحة</label>
-            <input type="number" id="pr-c1" value="150" min="0" style="margin-bottom:0;background:#fffbeb;">
-          </div>
-          <div style="background:#fef9c3;border-radius:12px;padding:12px;">
-            <label style="font-size:.78rem;color:#854d0e;font-weight:800;display:block;margin-bottom:6px;">26 – 40 صفحة</label>
-            <input type="number" id="pr-c2" value="130" min="0" style="margin-bottom:0;background:#fffbeb;">
-          </div>
-          <div style="background:#fef9c3;border-radius:12px;padding:12px;">
-            <label style="font-size:.78rem;color:#854d0e;font-weight:800;display:block;margin-bottom:6px;">41 – 70 صفحة</label>
-            <input type="number" id="pr-c3" value="120" min="0" style="margin-bottom:0;background:#fffbeb;">
-          </div>
-          <div style="background:#fef9c3;border-radius:12px;padding:12px;">
-            <label style="font-size:.78rem;color:#854d0e;font-weight:800;display:block;margin-bottom:6px;">> 70 صفحة</label>
-            <input type="number" id="pr-c4" value="100" min="0" style="margin-bottom:0;background:#fffbeb;">
-          </div>
-        </div>
-
-        <p style="margin:0 0 10px;font-size:.85rem;font-weight:800;color:var(--navy);">⚪ الطباعة بالأبيض والأسود (سعر/صفحة):</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div style="background:#f1f5f9;border-radius:12px;padding:12px;">
-            <label style="font-size:.78rem;color:var(--text-muted);font-weight:800;display:block;margin-bottom:6px;">📄 وجه واحد</label>
-            <input type="number" id="pr-bw1" value="90" min="0" style="margin-bottom:0;background:#f8fafc;">
-          </div>
-          <div style="background:#f1f5f9;border-radius:12px;padding:12px;">
-            <label style="font-size:.78rem;color:var(--text-muted);font-weight:800;display:block;margin-bottom:6px;">📖 وجهين</label>
-            <input type="number" id="pr-bw2" value="75" min="0" style="margin-bottom:0;background:#f8fafc;">
-          </div>
-        </div>
-      </div>
-
-      <!-- Delivery & fees -->
-      <div style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.03);margin-bottom:16px;">
-        <h4 style="margin:0 0 16px;color:var(--navy);font-weight:800;">🚚 رسوم التوصيل والخدمات</h4>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div>
-            <label style="font-size:.8rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">رسوم التوصيل (د.ع)</label>
-            <input type="number" id="pr-del" value="1000" min="0" step="250" style="margin-bottom:0;">
-          </div>
-          <div>
-            <label style="font-size:.8rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">حد التوصيل المجاني (د.ع)</label>
-            <input type="number" id="pr-del-free" value="10000" min="0" step="500" style="margin-bottom:0;">
-          </div>
-          <div>
-            <label style="font-size:.8rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">⚡ رسوم الطلب العاجل (د.ع)</label>
-            <input type="number" id="pr-express" value="1500" min="0" step="250" style="margin-bottom:0;">
-          </div>
-        </div>
-      </div>
-
-      <!-- Packaging fees -->
-      <div style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.03);margin-bottom:20px;">
-        <h4 style="margin:0 0 16px;color:var(--navy);font-weight:800;">📦 رسوم التغليف</h4>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
-          <div style="background:#f0fdf4;border-radius:12px;padding:12px;">
-            <label style="font-size:.78rem;color:#166534;font-weight:800;display:block;margin-bottom:6px;">🗜️ كبس فقط</label>
-            <input type="number" id="pr-pkg-none" value="0" min="0" step="250" style="margin-bottom:0;background:#dcfce7;">
-          </div>
-          <div style="background:#fff7ed;border-radius:12px;padding:12px;">
-            <label style="font-size:.78rem;color:#9a3412;font-weight:800;display:block;margin-bottom:6px;">📦 مقوى ونايلون</label>
-            <input type="number" id="pr-pkg-cardboard" value="500" min="0" step="250" style="margin-bottom:0;background:#ffedd5;">
-          </div>
-          <div style="background:#faf5ff;border-radius:12px;padding:12px;">
-            <label style="font-size:.78rem;color:#6b21a8;font-weight:800;display:block;margin-bottom:6px;">🔩 سبايرول</label>
-            <input type="number" id="pr-pkg-spiral" value="1500" min="0" step="250" style="margin-bottom:0;background:#f3e8ff;">
-          </div>
-        </div>
-      </div>
-
-      <!-- Preview & Save -->
-      <div style="background:linear-gradient(135deg,var(--navy),#1e40af);border-radius:18px;padding:20px;margin-bottom:16px;color:#fff;">
-        <h4 style="margin:0 0 14px;font-weight:800;font-size:.95rem;">👁️ معاينة مباشرة — مثال 30 صفحة ملون وجه واحد</h4>
-        <div id="pr-preview" style="font-size:.9rem;line-height:2;opacity:.9;">—</div>
-      </div>
-
-      <button class="bmain" style="background:var(--green);color:#fff;" onclick="savePricing()">💾 حفظ التسعير وتطبيقه فوراً</button>
-      <div id="pr-msg" style="display:none;margin-top:12px;padding:12px;border-radius:12px;font-weight:700;text-align:center;font-size:.9rem;"></div>
-    </div>
-
       </div>
 </div>
 
@@ -2594,6 +2590,7 @@ async function cancelMktOrder(id) {
 </script>
 </body>
 </html>
+
 
 
 
