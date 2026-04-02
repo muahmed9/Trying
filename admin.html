@@ -1,4 +1,16 @@
 <!DOCTYPE html>
+<!--
+  ══ REQUIRED DB MIGRATIONS ══════════════════════════════════
+  Run in Supabase SQL Editor:
+
+  ALTER TABLE market_products ADD COLUMN IF NOT EXISTS is_suggested BOOLEAN DEFAULT false;
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_type TEXT DEFAULT 'print';
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS suggested_items JSONB;
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS suggested_total INTEGER DEFAULT 0;
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS is_ready BOOLEAN DEFAULT false;
+  ALTER TABLE market_orders ADD COLUMN IF NOT EXISTS is_ready BOOLEAN DEFAULT false;
+  ══════════════════════════════════════════════════════════
+-->
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -137,14 +149,46 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
 .rbtn-reason { padding:11px 8px; border:1.5px solid #e2e8f0; border-radius:12px; cursor:pointer; font-size:.82rem; font-weight:700; color:var(--text-muted); background:#f8fafc; text-align:center; }
 .rbtn-reason.active { border-color:var(--red); background:#fef2f2; color:var(--red); }
 
-/* ── STAFF MANAGEMENT ── */
-.staff-card { background:var(--card); border-radius:16px; padding:18px; margin-bottom:14px; border:1px solid #edf0f4; box-shadow:0 3px 10px rgba(0,0,0,.03); }
-.role-badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:.78rem; font-weight:800; }
+/* ── Staff roles ── */
 .rb-admin  { background:#dbeafe; color:#1e40af; }
 .rb-oper   { background:#dcfce7; color:#166534; }
 .rb-driver { background:#ffedd5; color:var(--orange); }
+.rb-prep   { background:#f3e8ff; color:#7c3aed; }
+.rb-store  { background:#fef3c7; color:#b45309; }
 
-/* ── LIVE DOT ── */
+/* ── Settings icon tab in topbar ── */
+#settings-fab{position:fixed;bottom:20px;left:20px;background:var(--navy);color:#fff;width:50px;height:50px;border-radius:50%;border:none;display:none;align-items:center;justify-content:center;font-size:1.4rem;cursor:pointer;box-shadow:0 4px 14px rgba(13,59,102,.3);z-index:200;transition:transform .2s;}
+#settings-fab:hover{transform:scale(1.08);}
+
+/* ── Clickable stat cards ── */
+.scard{cursor:pointer;transition:transform .15s,box-shadow .15s;}
+.scard:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,.08);}
+.scard:active{transform:scale(.97);}
+
+/* ── Stats detail modal ── */
+#stats-modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:500;backdrop-filter:blur(4px);}
+#stats-modal.open{display:flex;}
+.stats-modal-box{background:var(--card);border-radius:22px;padding:26px 22px;width:94%;max-width:440px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 40px rgba(0,0,0,.22);}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:.9rem;}
+.stat-row:last-child{border-bottom:none;}
+
+/* ── Orders unified filter ── */
+.order-type-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.68rem;font-weight:800;vertical-align:middle;margin-right:4px;}
+.otb-print{background:#dbeafe;color:#1e40af;}
+.otb-market{background:#dcfce7;color:#166534;}
+.otb-combined{background:linear-gradient(135deg,#5ab3c4,#0d3b66);color:#fff;}
+
+/* ── Ready status badge ── */
+.sready{background:#f3e8ff;color:#7c3aed;border:1px solid #e9d5ff;}
+
+/* ── Settings page ── */
+.settings-section{background:var(--card);border-radius:18px;padding:20px;margin-bottom:18px;box-shadow:0 4px 12px rgba(0,0,0,.03);}
+.settings-section h4{margin:0 0 16px;color:var(--navy);font-weight:800;font-size:.95rem;border-bottom:2px solid var(--light-teal);padding-bottom:10px;}
+
+
+/* ── STAFF MANAGEMENT ── */
+.staff-card { background:var(--card); border-radius:16px; padding:18px; margin-bottom:14px; border:1px solid #edf0f4; box-shadow:0 3px 10px rgba(0,0,0,.03); }
+.role-badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:.78rem; font-weight:800; }
 .ldot { width:9px; height:9px; background:#4eff4e; border-radius:50%; display:inline-block; margin-left:6px; animation:pulse 1.5s infinite; }
 @keyframes pulse { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.3);} }
 
@@ -315,13 +359,9 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
     <div class="admin-tabs" id="admin-tabs">
       <button class="atab active" onclick="switchPage('orders',this)">📋 الطلبات</button>
       <button class="atab" onclick="switchPage('stats',this)">📊 الإحصائيات</button>
-      <button class="atab" id="tab-staff-btn" onclick="switchPage('staff',this)"  style="display:none;">👥 الموظفون</button>
       <button class="atab" id="tab-dash-btn"  onclick="switchPage('dash',this)"   style="display:none;">🏆 داشبورد</button>
       <button class="atab" id="tab-reports-btn" onclick="switchPage('reports',this)" style="display:none;">📥 تقارير Excel</button>
-      <button class="atab" id="tab-coupons-btn" onclick="switchPage('coupons',this)" style="display:none;">🎟️ الكوبونات</button>
-      <button class="atab" id="tab-pricing-btn" onclick="switchPage('pricing',this)" style="display:none;">💰 التسعير</button>
-      <button class="atab" id="tab-market-btn"   onclick="switchPage('market',this)"   style="display:none;">🛒 المتجر</button>
-      <button class="atab" id="tab-supplies-btn" onclick="switchPage('supplies',this)" style="display:none;">🗄️ المخزن</button>
+      <button class="atab" id="tab-settings-btn" onclick="switchPage('settings',this)" style="display:none;">⚙️ الإعدادات</button>
     </div>
 
     <!-- Page: Orders -->
@@ -330,6 +370,14 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
       <div style="margin-bottom:14px;">
         <input type="text" id="order-search" placeholder="🔍 بحث برقم الطلب، اسم الزبون، أو الهاتف..." style="margin-bottom:0;">
       </div>
+      <!-- Type filter: الكل / استنساخ / متجر / مشترك -->
+      <div class="fbar" id="type-filter-bar" style="margin-bottom:8px;">
+        <button class="ftab active" onclick="setTypeFilter('all',this)">الكل</button>
+        <button class="ftab" onclick="setTypeFilter('print',this)">🖨️ استنساخ</button>
+        <button class="ftab" onclick="setTypeFilter('market',this)">🛍️ متجر</button>
+        <button class="ftab" onclick="setTypeFilter('combined',this)">🔀 مشترك</button>
+      </div>
+      <!-- Status sub-filter (shown for print/combined) -->
       <div class="fbar" id="filter-bar">
         <button class="ftab active" onclick="setFilter('all',this)">الكل</button>
         <button class="ftab" onclick="setFilter('received',this)">📥 مستلم</button>
@@ -338,16 +386,29 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
         <button class="ftab" onclick="setFilter('delivered',this)">✅ مسلَّم</button>
         <button class="ftab" onclick="setFilter('cancelled',this)">❌ ملغى</button>
       </div>
+      <!-- Market status sub-filter (shown for market type) -->
+      <div class="fbar" id="mkt-filter-bar" style="display:none;">
+        <button class="ftab active" onclick="setMktStatusFilter('all',this)">الكل</button>
+        <button class="ftab" onclick="setMktStatusFilter('pending',this)">🕐 معلق</button>
+        <button class="ftab" onclick="setMktStatusFilter('ready',this)">✅ جاهز</button>
+        <button class="ftab" onclick="setMktStatusFilter('delivering',this)">🛵 توصيل</button>
+        <button class="ftab" onclick="setMktStatusFilter('delivered',this)">✔ مسلّم</button>
+        <button class="ftab" onclick="setMktStatusFilter('cancelled',this)">❌ ملغى</button>
+      </div>
       <div id="olist"><div style="text-align:center;padding:50px;color:var(--text-muted);">جاري التحميل...</div></div>
     </div>
 
     <!-- Page: Stats -->
     <div class="admin-page" id="page-stats">
       <div class="sgrid">
-        <div class="scard"><div class="snum" id="s-today"   style="color:var(--navy);">—</div><div class="slbl">طلبات اليوم</div></div>
-        <div class="scard"><div class="snum" id="s-pending" style="color:var(--orange);">—</div><div class="slbl">قيد التنفيذ</div></div>
-        <div class="scard"><div class="snum" id="s-revenue" style="color:var(--green);">—</div><div class="slbl">إيرادات اليوم</div></div>
-        <div class="scard"><div class="snum" id="s-total"   style="color:var(--teal);">—</div><div class="slbl">إجمالي الطلبات</div></div>
+        <div class="scard" onclick="showStatDetail('today')"><div class="snum" id="s-today"   style="color:var(--navy);">—</div><div class="slbl">طلبات اليوم</div></div>
+        <div class="scard" onclick="showStatDetail('pending')"><div class="snum" id="s-pending" style="color:var(--orange);">—</div><div class="slbl">قيد التنفيذ</div></div>
+        <div class="scard" onclick="showStatDetail('revenue')"><div class="snum" id="s-revenue" style="color:var(--green);">—</div><div class="slbl">إيرادات اليوم</div></div>
+        <div class="scard" onclick="showStatDetail('total')"><div class="snum" id="s-total"   style="color:var(--teal);">—</div><div class="slbl">إجمالي الطلبات</div></div>
+        <div class="scard" onclick="showStatDetail('market')"><div class="snum" id="s-market"  style="color:var(--green);">—</div><div class="slbl">طلبات المتجر</div></div>
+        <div class="scard" onclick="showStatDetail('combined')"><div class="snum" id="s-combined" style="color:#7c3aed;">—</div><div class="slbl">الطلبات المشتركة</div></div>
+        <div class="scard" onclick="showStatDetail('delivered')"><div class="snum" id="s-delivered" style="color:var(--green);">—</div><div class="slbl">تم التسليم</div></div>
+        <div class="scard" onclick="showStatDetail('cancelled')"><div class="snum" id="s-cancelled" style="color:var(--red);">—</div><div class="slbl">ملغاة</div></div>
       </div>
       <div style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.04);">
         <h3 style="margin:0 0 16px;color:var(--navy);font-weight:800;">📈 ملخص الطلبات</h3>
@@ -892,8 +953,222 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
       </div>
 </div>
 
-  </div><!-- end div.main -->
-</div><!-- end div.dash -->
+<!-- ══════════════ PAGE: SETTINGS (موحدة) ══════════════ -->
+<div class="admin-page" id="page-settings">
+  <!-- ① إدارة الموظفين -->
+  <div class="settings-section">
+    <h4>👥 إدارة الموظفين</h4>
+    <div id="staff-list"></div>
+    <div style="margin-top:14px;">
+      <h4 style="margin:0 0 12px;border-bottom:none;padding-bottom:0;font-size:.88rem;">➕ إضافة حساب موظف جديد</h4>
+      <input type="text"     id="new-staff-name"  placeholder="✍️ اسم الموظف">
+      <input type="text"     id="new-staff-user"  placeholder="📧 البريد الإلكتروني">
+      <input type="password" id="new-staff-pass"  placeholder="🔑 كلمة المرور (6+ أحرف)">
+      <p style="margin:0 0 8px;font-size:.88rem;color:var(--text-muted);font-weight:700;">الصلاحيات:</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;padding:8px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
+          <input type="checkbox" id="perm-rp" value="received→printing"> تأكيد استلام وطباعة
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;padding:8px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
+          <input type="checkbox" id="perm-pd" value="printing→delivering"> إرسال للتوصيل
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;padding:8px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
+          <input type="checkbox" id="perm-dd" value="delivering→delivered"> تأكيد التسليم
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;padding:8px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
+          <input type="checkbox" id="perm-canc" value="any→cancelled"> إلغاء الطلبات
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;padding:8px;background:#f0fdf4;border-radius:10px;border:1px solid #86efac;">
+          <input type="checkbox" id="perm-market" value="manage_market"> إدارة المتجر 🛒
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;padding:8px;background:#fef3c7;border-radius:10px;border:1px solid #fde68a;">
+          <input type="checkbox" id="perm-supplies" value="manage_supplies"> إدارة المخزن 🗄️
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;padding:8px;background:#f3e8ff;border-radius:10px;border:1px solid #e9d5ff;">
+          <input type="checkbox" id="perm-ready" value="confirm_ready"> تأكيد التجهيز ✅
+        </label>
+      </div>
+      <select id="new-staff-emoji" style="margin-bottom:12px;">
+        <option value="👤">👤 موظف عام</option>
+        <option value="🖨️">🖨️ موظف استنساخ</option>
+        <option value="🛵">🛵 مندوب توصيل</option>
+        <option value="🎁">🎁 مجهّز طلبات</option>
+        <option value="🏪">🏪 أمين مخزن</option>
+        <option value="☎️">☎️ خدمة عملاء</option>
+      </select>
+      <button class="bmain" style="background:var(--navy);color:#fff;margin-bottom:10px;" onclick="createCustomAccount()">✅ إنشاء الحساب</button>
+      <div id="custom-accounts-list"></div>
+    </div>
+  </div>
+
+  <!-- ② إدارة المتجر -->
+  <div class="settings-section">
+    <h4>🛒 إدارة المتجر الطلابي</h4>
+    <!-- Add Product Form at TOP -->
+    <div id="product-form-section-s" style="margin-bottom:18px;">
+      <h4 id="prod-form-title-s" style="margin:0 0 14px;font-size:.88rem;border-bottom:none;padding-bottom:0;">➕ إضافة منتج جديد</h4>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="grid-column:span 2;">
+          <input type="text" id="prod-name-s" placeholder="✍️ اسم المنتج">
+        </div>
+        <div>
+          <label style="font-size:.75rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:4px;">الفئة</label>
+          <select id="prod-cat-s" style="margin-bottom:0;">
+            <option value="notebooks">📓 دفاتر</option>
+            <option value="books">📚 كتب</option>
+            <option value="stationery">✏️ قرطاسية</option>
+            <option value="other">📦 أخرى</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:.75rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:4px;">الوحدة</label>
+          <input type="text" id="prod-unit-s" placeholder="قطعة / علبة..." style="margin-bottom:0;">
+        </div>
+        <div>
+          <label style="font-size:.75rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:4px;">السعر (د.ع)</label>
+          <input type="number" id="prod-price-s" placeholder="0" min="0" style="margin-bottom:0;">
+        </div>
+        <div>
+          <label style="font-size:.75rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:4px;">الكمية</label>
+          <input type="number" id="prod-stock-s" placeholder="0" min="0" style="margin-bottom:0;">
+        </div>
+        <div style="grid-column:span 2;">
+          <textarea id="prod-desc-s" placeholder="وصف (اختياري)..." rows="2" style="resize:none;margin-bottom:0;"></textarea>
+        </div>
+        <div style="grid-column:span 2;">
+          <label style="display:flex;align-items:center;gap:8px;font-size:.85rem;cursor:pointer;padding:10px;background:#fff7ed;border-radius:10px;border:1px solid #fed7aa;">
+            <input type="checkbox" id="prod-suggested-s"> <span style="font-weight:700;color:#c2410c;">⭐ منتج مقترح (يظهر في صفحة الطلب)</span>
+          </label>
+        </div>
+        <div style="grid-column:span 2;">
+          <label style="font-size:.75rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:4px;">📷 رابط صورة (اختياري)</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <div id="prod-img-preview-s" style="width:60px;height:60px;border-radius:10px;background:#f1f5f9;border:1.5px dashed #cbd5e1;display:flex;align-items:center;justify-content:center;font-size:1.8rem;flex-shrink:0;overflow:hidden;">📦</div>
+            <div style="flex:1;">
+              <label style="display:block;background:var(--teal);color:#fff;padding:8px 12px;border-radius:10px;cursor:pointer;text-align:center;font-weight:700;font-size:.82rem;margin-bottom:6px;">
+                📤 رفع صورة
+                <input type="file" id="prod-img-file-s" accept="image/*" style="display:none;" onchange="handleProdImgUploadS(this)">
+              </label>
+              <input type="text" id="prod-img-s" placeholder="أو الصق رابط https://..." style="margin-bottom:0;font-size:.82rem;" oninput="updateProdImgPreview(this.value,'prod-img-preview-s')">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:12px;">
+        <button id="save-prod-btn-s" class="bmain" style="background:var(--navy);color:#fff;flex:2;" onclick="saveProductS()">✅ إضافة المنتج</button>
+        <button id="cancel-edit-prod-s" class="bmain" style="background:#f1f5f9;color:var(--text-muted);flex:1;display:none;" onclick="clearProductFormS()">❌ إلغاء</button>
+      </div>
+    </div>
+    <!-- Products list -->
+    <div id="products-list-s"><div style="text-align:center;padding:30px;color:var(--text-muted);">جاري التحميل...</div></div>
+  </div>
+
+  <!-- ③ إدارة المخزن -->
+  <div class="settings-section">
+    <h4>🗄️ مخزن مواد الاستنساخ</h4>
+    <!-- Add Supply at TOP -->
+    <div style="margin-bottom:18px;">
+      <h4 style="margin:0 0 12px;font-size:.88rem;border-bottom:none;padding-bottom:0;">➕ إضافة مادة جديدة</h4>
+      <input type="text" id="sup-name-s" placeholder="✍️ اسم المادة">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0;">
+        <div>
+          <label style="font-size:.75rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:4px;">الفئة</label>
+          <select id="sup-cat-s" style="margin-bottom:0;">
+            <option value="paper">📄 ورق</option>
+            <option value="ink">🖨️ أحبار</option>
+            <option value="binding">🔩 سبايرول/تجليد</option>
+            <option value="clips">📎 كلبس وتدبيس</option>
+            <option value="cover">📋 أغلفة</option>
+            <option value="other">📦 أخرى</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:.75rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:4px;">الوحدة</label>
+          <input type="text" id="sup-unit-s" placeholder="رزمة / قطعة..." style="margin-bottom:0;">
+        </div>
+        <div>
+          <label style="font-size:.75rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:4px;">الكمية الحالية</label>
+          <input type="number" id="sup-stock-s" placeholder="0" min="0" style="margin-bottom:0;">
+        </div>
+        <div>
+          <label style="font-size:.75rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:4px;">حد التنبيه</label>
+          <input type="number" id="sup-min-s" placeholder="5" min="0" style="margin-bottom:0;">
+        </div>
+        <div style="grid-column:span 2;">
+          <label style="font-size:.75rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:4px;">التكلفة/وحدة (د.ع)</label>
+          <input type="number" id="sup-cost-s" placeholder="0" min="0" style="margin-bottom:0;">
+        </div>
+      </div>
+      <button class="bmain" style="background:var(--navy);color:#fff;margin-top:12px;" onclick="createSupplyS()">✅ إضافة للمخزن</button>
+    </div>
+    <!-- Supplies list summary -->
+    <div class="sgrid" style="margin-bottom:14px;">
+      <div class="scard"><div class="snum" id="sup-s-total-s" style="color:var(--navy);">—</div><div class="slbl">إجمالي المواد</div></div>
+      <div class="scard"><div class="snum" id="sup-s-low-s" style="color:var(--orange);">—</div><div class="slbl">منخفضة</div></div>
+    </div>
+    <div id="supplies-list-s"><div style="text-align:center;padding:20px;color:var(--text-muted);">جاري التحميل...</div></div>
+  </div>
+
+  <!-- ④ التسعير -->
+  <div class="settings-section" id="pricing-settings-section">
+    <h4>💰 إدارة التسعير</h4>
+    <p style="margin:0 0 14px;color:var(--text-muted);font-size:.85rem;">أي تغيير يؤثر فوراً على ما يراه الزبون</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div>
+        <label style="font-size:.75rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:4px;">حد أدنى للصفحات</label>
+        <input type="number" id="pr-min-pages" value="5" min="1" style="margin-bottom:0;">
+      </div>
+      <div>
+        <label style="font-size:.75rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:4px;">سعر الحد الأدنى</label>
+        <input type="number" id="pr-min-price" value="1000" min="0" style="margin-bottom:0;">
+      </div>
+    </div>
+    <p style="font-size:.82rem;font-weight:800;color:var(--navy);margin:0 0 8px;">🌈 ملون (سعر/صفحة):</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+      <div style="background:#fef9c3;border-radius:10px;padding:10px;"><label style="font-size:.72rem;color:#854d0e;font-weight:800;display:block;margin-bottom:4px;">≤25ص</label><input type="number" id="pr-c1" value="150" style="margin-bottom:0;background:#fffbeb;"></div>
+      <div style="background:#fef9c3;border-radius:10px;padding:10px;"><label style="font-size:.72rem;color:#854d0e;font-weight:800;display:block;margin-bottom:4px;">26-40ص</label><input type="number" id="pr-c2" value="130" style="margin-bottom:0;background:#fffbeb;"></div>
+      <div style="background:#fef9c3;border-radius:10px;padding:10px;"><label style="font-size:.72rem;color:#854d0e;font-weight:800;display:block;margin-bottom:4px;">41-70ص</label><input type="number" id="pr-c3" value="120" style="margin-bottom:0;background:#fffbeb;"></div>
+      <div style="background:#fef9c3;border-radius:10px;padding:10px;"><label style="font-size:.72rem;color:#854d0e;font-weight:800;display:block;margin-bottom:4px;">&gt;70ص</label><input type="number" id="pr-c4" value="100" style="margin-bottom:0;background:#fffbeb;"></div>
+    </div>
+    <p style="font-size:.82rem;font-weight:800;color:var(--navy);margin:0 0 8px;">⚪ أبيض وأسود:</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+      <div style="background:#f1f5f9;border-radius:10px;padding:10px;"><label style="font-size:.72rem;color:var(--text-muted);font-weight:800;display:block;margin-bottom:4px;">وجه واحد</label><input type="number" id="pr-bw1" value="90" style="margin-bottom:0;background:#f8fafc;"></div>
+      <div style="background:#f1f5f9;border-radius:10px;padding:10px;"><label style="font-size:.72rem;color:var(--text-muted);font-weight:800;display:block;margin-bottom:4px;">وجهين</label><input type="number" id="pr-bw2" value="75" style="margin-bottom:0;background:#f8fafc;"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+      <div><label style="font-size:.75rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:4px;">🚚 رسوم التوصيل</label><input type="number" id="pr-del" value="1000" style="margin-bottom:0;"></div>
+      <div><label style="font-size:.75rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:4px;">حد التوصيل المجاني</label><input type="number" id="pr-del-free" value="10000" style="margin-bottom:0;"></div>
+      <div><label style="font-size:.75rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:4px;">⚡ رسوم العاجل</label><input type="number" id="pr-express" value="1500" style="margin-bottom:0;"></div>
+    </div>
+    <p style="font-size:.82rem;font-weight:800;color:var(--navy);margin:0 0 8px;">📦 رسوم التغليف:</p>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">
+      <div style="background:#f0fdf4;border-radius:10px;padding:10px;"><label style="font-size:.7rem;color:#166534;font-weight:800;display:block;margin-bottom:4px;">كبس</label><input type="number" id="pr-pkg-none" value="0" style="margin-bottom:0;background:#dcfce7;"></div>
+      <div style="background:#fff7ed;border-radius:10px;padding:10px;"><label style="font-size:.7rem;color:#9a3412;font-weight:800;display:block;margin-bottom:4px;">مقوى+نايلون</label><input type="number" id="pr-pkg-cardboard" value="500" style="margin-bottom:0;background:#ffedd5;"></div>
+      <div style="background:#faf5ff;border-radius:10px;padding:10px;"><label style="font-size:.7rem;color:#6b21a8;font-weight:800;display:block;margin-bottom:4px;">سبايرول</label><input type="number" id="pr-pkg-spiral" value="1500" style="margin-bottom:0;background:#f3e8ff;"></div>
+    </div>
+    <button class="bmain" style="background:var(--green);color:#fff;" onclick="savePricing()">💾 حفظ التسعير فوراً</button>
+    <div id="pr-msg" style="display:none;margin-top:10px;padding:10px;border-radius:10px;font-weight:700;text-align:center;font-size:.88rem;"></div>
+  </div>
+
+  <!-- ⑤ الكوبونات -->
+  <div class="settings-section">
+    <h4>🎟️ إدارة الكوبونات</h4>
+    <div style="margin-bottom:16px;">
+      <h4 style="margin:0 0 12px;font-size:.88rem;border-bottom:none;padding-bottom:0;">➕ إنشاء كوبون جديد</h4>
+      <input type="text" id="cpn-code" placeholder="🎟️ كود الكوبون (مثل: WELCOME50)" style="text-transform:uppercase;">
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <select id="cpn-type" style="flex:1;"><option value="percent">خصم نسبة %</option><option value="fixed">خصم مبلغ ثابت</option></select>
+        <input type="text" id="cpn-value" placeholder="القيمة" style="flex:1;margin-bottom:0;">
+      </div>
+      <input type="text" id="cpn-max" placeholder="الحد الأقصى للاستخدام (0=غير محدود)">
+      <input type="number" id="cpn-min-order" placeholder="الحد الأدنى للطلب بالدينار (0=بدون حد)">
+      <input type="date" id="cpn-expires">
+      <button class="bmain" style="background:var(--teal);color:#fff;" onclick="createCoupon()">✅ إنشاء الكوبون</button>
+    </div>
+    <div id="coupon-list-s"></div>
+  </div>
+</div>
+<!-- ══ END PAGE: SETTINGS ══ -->
 
 <div class="detov" id="detov" onclick="closeDet()"></div>
 <div class="detpan" id="detpan">
@@ -905,6 +1180,20 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
 </div>
 
 <div id="toast"></div>
+
+<!-- ══ STATS DETAIL MODAL ══ -->
+<div id="stats-modal">
+  <div class="stats-modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <h3 id="stats-modal-title" style="margin:0;color:var(--navy);font-weight:800;">تفاصيل الإحصاء</h3>
+      <button onclick="document.getElementById('stats-modal').classList.remove('open')" style="border:none;background:#f1f5f9;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1.1rem;color:var(--text-muted);">✕</button>
+    </div>
+    <div id="stats-modal-body"></div>
+  </div>
+</div>
+
+<!-- ══ SETTINGS FAB ══ -->
+<button id="settings-fab" onclick="switchPage('settings',document.querySelector('[onclick*=settings]'))" title="الإعدادات">⚙️</button>
 
 <script>
 // ══════════════════════════════════
@@ -983,7 +1272,8 @@ const SB_KEY    = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIs
 const ADMIN_ID  = '7618746133';
 
 const sb = window.supabase.createClient(SB_URL, SB_KEY);
-let allOrders = [], curFilter = 'all', rtCh = null, currentRole = '';
+let allOrders = [], curFilter = 'all', curTypeFilter = 'all', curMktStatusFilter = 'all', rtCh = null, currentRole = '';
+let allMktOrders = [];  // market_orders from DB
 let _detOrderId = null, _detOrderTgId = null;
 
 // ══ DEBOUNCE البحث ════════════════════════════════
@@ -998,7 +1288,7 @@ document.getElementById('order-search').addEventListener('input', () => {
 // ══════════════════════════════════
 const ROLES = {
   admin: {
-    label:'مدير', badge:'rb-admin', defaultUser:'admin', defaultPass:'shater2024', emoji:'🏢', mgr:true,
+    label:'مدير عام', badge:'rb-admin', defaultUser:'admin', defaultPass:'shater2024', emoji:'🏢', mgr:true,
     can:  ['received→printing','printing→delivering','delivering→delivered','any→cancelled'],
     sees: null
   },
@@ -1011,6 +1301,18 @@ const ROLES = {
     label:'مندوب توصيل', badge:'rb-driver', defaultUser:'driver', defaultPass:'driver2024', emoji:'🛵', mgr:false,
     can:  ['delivering→delivered'],
     sees: ['printing','delivering','delivered','cancelled']
+  },
+  preparer: {
+    label:'مجهّز طلبات', badge:'rb-prep', emoji:'🎁', mgr:false,
+    can:  [],
+    sees: ['received','printing'],
+    extra: ['confirm_ready']
+  },
+  storekeeper: {
+    label:'أمين مخزن', badge:'rb-store', emoji:'🏪', mgr:false,
+    can:  [],
+    sees: null,
+    extra: ['manage_supplies']
   }
 };
 
@@ -1122,20 +1424,19 @@ function enterDashboard(profile) {
     const r = ROLES[currentRole] || ROLES.operator;
     document.getElementById('role-badge-top').innerText = `${profile?.emoji||r.emoji} ${profile?.name||r.label}`;
     if (r.mgr) {
-      document.getElementById('tab-staff-btn').style.display    = '';
       document.getElementById('tab-dash-btn').style.display     = '';
       document.getElementById('tab-reports-btn').style.display  = '';
-      document.getElementById('tab-coupons-btn').style.display  = '';
-      document.getElementById('tab-pricing-btn').style.display  = '';
-      document.getElementById('tab-market-btn').style.display   = '';
-      document.getElementById('tab-supplies-btn').style.display = '';
+      document.getElementById('tab-settings-btn').style.display = '';
+      document.getElementById('settings-fab').style.display     = 'flex';
       loadPricingAdmin();
     }
   }
-  // Show market/supply tabs for custom accounts with permissions
+  // Show settings tab for custom accounts with market/supply perms
   if (currentRole !== 'admin') {
-    if (canManageMarket())   document.getElementById('tab-market-btn').style.display   = '';
-    if (canManageSupplies()) document.getElementById('tab-supplies-btn').style.display = '';
+    if (canManageMarket() || canManageSupplies()) {
+      document.getElementById('tab-settings-btn').style.display = '';
+      document.getElementById('settings-fab').style.display     = 'flex';
+    }
   }
   renderStaffList();
   startListening();
@@ -1434,16 +1735,20 @@ function renderStaffDashboard() {
 function switchPage(name, el) {
   document.querySelectorAll('.admin-page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.atab').forEach(b => b.classList.remove('active'));
-  document.getElementById('page-' + name).classList.add('active');
-  el.classList.add('active');
-  if (name === 'stats')   calcStats();
-  if (name === 'dash')    renderStaffDashboard();
-  if (name === 'staff')   renderStaffList();
-  if (name === 'reports') renderReports();
-  if (name === 'coupons') loadCoupons();
-  if (name === 'pricing')  loadPricingAdmin();
-  if (name === 'market')   loadAdminProducts();
-  if (name === 'supplies') loadSupplies();
+  const pg = document.getElementById('page-' + name);
+  if (pg) pg.classList.add('active');
+  if (el) el.classList.add('active');
+  if (name === 'stats')    calcStats();
+  if (name === 'dash')     renderStaffDashboard();
+  if (name === 'reports')  renderReports();
+  if (name === 'settings') {
+    renderStaffList();
+    loadAdminProductsS();
+    loadSuppliesS();
+    loadCouponsS();
+    loadPricingAdmin();
+  }
+  if (name === 'orders')   { fetchAllOrders(); }
 }
 
 // ══════════════════════════════════
@@ -1715,7 +2020,7 @@ function exportAnalysisExcel() {
 let _prevOrderCount = 0;
 
 async function startListening() {
-  await fetchOrders();
+  await fetchAllOrders();
   _prevOrderCount = allOrders.length;
   rtCh = sb.channel('admin-rt-v2')
     .on('postgres_changes', {event:'*', schema:'public', table:'orders'}, (payload) => {
@@ -1736,7 +2041,6 @@ async function startListening() {
 
 async function fetchOrders() {
   let query = sb.from('orders').select('*').order('created_at', {ascending:false});
-  // Role-based pre-filter: each role sees only relevant statuses
   const sees = (currentRole === '__custom__') ? null : ROLES[currentRole]?.sees;
   if (sees) query = query.in('status', sees);
   const {data, error} = await query;
@@ -1744,6 +2048,13 @@ async function fetchOrders() {
   allOrders = data || [];
   const p = allOrders.filter(o => ['received','printing','delivering'].includes(o.status)).length;
   document.getElementById('pcnt').innerText = p;
+
+  // Also refresh market orders
+  try {
+    const {data:md} = await sb.from('market_orders').select('*').order('created_at',{ascending:false}).limit(200);
+    allMktOrders = md || [];
+  } catch(_) {}
+
   renderOrders();
   calcStats();
   renderStaffDashboard();
@@ -1775,11 +2086,22 @@ function calcStats() {
 
   const expressCount = allOrders.filter(o=>o.is_express).length;
 
-  document.getElementById('s-today').innerText   = todayOrds.length;
-  document.getElementById('s-pending').innerText = pendingOrds.length;
-  document.getElementById('s-revenue').innerText = (todayRev/1000).toFixed(1) + 'K';
-  document.getElementById('s-total').innerText   = allOrders.length;
+  document.getElementById('s-today').innerText     = todayOrds.length;
+  document.getElementById('s-pending').innerText   = pendingOrds.length;
+  document.getElementById('s-revenue').innerText   = (todayRev/1000).toFixed(1) + 'K';
+  document.getElementById('s-total').innerText     = allOrders.length;
   document.getElementById('s-pending').style.color = pendingOrds.length > 0 ? 'var(--orange)' : 'var(--green)';
+
+  // Market + combined counts
+  const mktCount  = allMktOrders.length;
+  const combinedCount = allOrders.filter(o => o.order_type === 'combined').length;
+  const deliveredCount = allOrders.filter(o => o.status === 'delivered').length;
+  const cancelledCount = allOrders.filter(o => o.status === 'cancelled').length;
+  const _sv = (id,v) => { const el=document.getElementById(id); if(el) el.innerText=v; };
+  _sv('s-market', mktCount);
+  _sv('s-combined', combinedCount);
+  _sv('s-delivered', deliveredCount);
+  _sv('s-cancelled', cancelledCount);
 
   const det = document.getElementById('stats-detail');
   if (!det) return;
@@ -1788,7 +2110,8 @@ function calcStats() {
   Object.keys(SM).forEach(k => byStatus[k] = allOrders.filter(o=>o.status===k).length);
   const statusRows = Object.entries(byStatus).map(([k,v]) => {
     const s = SM[k];
-    return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:.9rem;"><span>${s.i} ${s.l}</span><b>${v} طلب</b></div>`;
+    return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:.9rem;cursor:pointer;" onclick="setTypeFilter('all',document.querySelector('#type-filter-bar .ftab'));setFilter('${k}',document.querySelector('#filter-bar .ftab'))">
+      <span>${s.i} ${s.l}</span><b>${byStatus[k]} طلب</b></div>`;
   }).join('');
 
   det.innerHTML = `
@@ -1810,19 +2133,106 @@ function calcStats() {
         <div style="font-size:.73rem;opacity:.85;margin-top:2px;">معدل الإتمام</div>
       </div>
     </div>
-
-    <h4 style="margin:0 0 10px;color:var(--navy);font-weight:800;font-size:.92rem;">📊 توزيع الطلبات حسب الحالة</h4>
+    <h4 style="margin:0 0 10px;color:var(--navy);font-weight:800;font-size:.92rem;">📊 توزيع الطلبات حسب الحالة (اضغط للفلترة)</h4>
     ${statusRows}
-
     ${topRegions.length ? `
     <h4 style="margin:14px 0 10px;color:var(--navy);font-weight:800;font-size:.92rem;">📍 أكثر المناطق طلباً</h4>
     ${topRegions.map(([r,c],i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:.9rem;"><span>${['🥇','🥈','🥉'][i]||'📍'} ${esc(r)}</span><b style="color:var(--teal);">${c} طلب</b></div>`).join('')}` : ''}
-
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;">
       ${couponsUsed > 0 ? `<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:12px;text-align:center;"><div style="font-size:1.4rem;font-weight:800;color:#166534;">${couponsUsed}</div><div style="font-size:.73rem;color:#166534;">استخدام الكوبونات</div></div>` : ''}
       ${expressCount > 0 ? `<div style="background:#f5f3ff;border:1px solid #c4b5fd;border-radius:12px;padding:12px;text-align:center;"><div style="font-size:1.4rem;font-weight:800;color:#7c3aed;">${expressCount}</div><div style="font-size:.73rem;color:#7c3aed;">طلبات عاجلة ⚡</div></div>` : ''}
+      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:12px;text-align:center;"><div style="font-size:1.4rem;font-weight:800;color:#166534;">${allMktOrders.length}</div><div style="font-size:.73rem;color:#166534;">طلبات المتجر 🛍️</div></div>
+      <div style="background:#f5f3ff;border:1px solid #c4b5fd;border-radius:12px;padding:12px;text-align:center;"><div style="font-size:1.4rem;font-weight:800;color:#7c3aed;">${allOrders.filter(o=>o.order_type==='combined').length}</div><div style="font-size:.73rem;color:#7c3aed;">طلبات مشتركة 🔀</div></div>
     </div>
   `;
+}
+
+// ══ showStatDetail — popup when clicking a stat card ══
+function showStatDetail(type) {
+  const modal = document.getElementById('stats-modal');
+  const title = document.getElementById('stats-modal-title');
+  const body  = document.getElementById('stats-modal-body');
+  modal.classList.add('open');
+
+  const tod = new Date(); tod.setHours(0,0,0,0);
+  const printOrders = allOrders.filter(o => !o.order_type || o.order_type === 'print' || o.order_type === 'combined');
+
+  const configs = {
+    today: {
+      title: '📅 طلبات اليوم',
+      data: allOrders.filter(o => new Date(o.created_at) >= tod),
+      cols: ['id','name','phone','status','total']
+    },
+    pending: {
+      title: '⏳ قيد التنفيذ',
+      data: allOrders.filter(o => ['received','printing','delivering'].includes(o.status)),
+      cols: ['id','name','phone','status','total']
+    },
+    revenue: {
+      title: '💰 إيرادات اليوم',
+      data: allOrders.filter(o => new Date(o.created_at) >= tod && o.status === 'delivered'),
+      cols: ['id','name','total','status']
+    },
+    total: {
+      title: '📦 إجمالي الطلبات',
+      data: allOrders,
+      cols: ['id','name','phone','status','total']
+    },
+    market: {
+      title: '🛍️ طلبات المتجر',
+      data: allMktOrders,
+      cols: ['id','name','phone','status','total']
+    },
+    combined: {
+      title: '🔀 الطلبات المشتركة',
+      data: allOrders.filter(o => o.order_type === 'combined'),
+      cols: ['id','name','phone','status','total']
+    },
+    delivered: {
+      title: '✅ تم التسليم',
+      data: allOrders.filter(o => o.status === 'delivered'),
+      cols: ['id','name','phone','total']
+    },
+    cancelled: {
+      title: '❌ الملغاة',
+      data: allOrders.filter(o => o.status === 'cancelled'),
+      cols: ['id','name','phone','total']
+    }
+  };
+
+  const cfg = configs[type] || configs.total;
+  title.innerText = cfg.title;
+  const list = cfg.data;
+
+  if (!list.length) {
+    body.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;">لا توجد بيانات</p>';
+    return;
+  }
+
+  const statusAr = {received:'مستلم',printing:'قيد الطباعة',delivering:'في الطريق',delivered:'تم التسليم',cancelled:'ملغى',pending:'معلق'};
+  const totalVal = list.reduce((s,o) => s + (o.total||0), 0);
+
+  body.innerHTML = `
+    <div style="background:linear-gradient(135deg,var(--navy),#1e40af);color:#fff;border-radius:14px;padding:14px;margin-bottom:14px;text-align:center;">
+      <div style="font-size:1.8rem;font-weight:800;">${list.length}</div>
+      <div style="font-size:.8rem;opacity:.85;">إجمالي العدد</div>
+      <div style="font-size:1.1rem;font-weight:800;margin-top:6px;">${totalVal.toLocaleString()} د.ع</div>
+      <div style="font-size:.75rem;opacity:.8;">إجمالي القيمة</div>
+    </div>
+    <div style="max-height:50vh;overflow-y:auto;">
+      ${list.slice(0,50).map(o => `
+        <div class="stat-row">
+          <div>
+            <b style="color:var(--navy);font-size:.88rem;">#${esc(o.id||o.order_id||'')}</b>
+            <div style="font-size:.78rem;color:var(--text-muted);">${esc(o.name||'')} ${o.phone?'· '+esc(o.phone):''}</div>
+          </div>
+          <div style="text-align:left;">
+            <b style="color:var(--orange);font-size:.88rem;">${(o.total||0).toLocaleString()} د.ع</b>
+            <div style="font-size:.72rem;color:var(--text-muted);">${statusAr[o.status]||o.status||''}</div>
+          </div>
+        </div>`).join('')}
+      ${list.length > 50 ? `<p style="text-align:center;color:var(--text-muted);font-size:.82rem;padding:10px;">... و${list.length-50} طلب آخر</p>` : ''}
+    </div>`;
 }
 
 // ══════════════════════════════════
@@ -1831,9 +2241,38 @@ function calcStats() {
 function setFilter(f, el) {
   curFilter = f;
   curPage = 1;
-  document.querySelectorAll('.ftab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#filter-bar .ftab').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   renderOrders();
+}
+
+function setTypeFilter(type, el) {
+  curTypeFilter = type;
+  curFilter = 'all';
+  curMktStatusFilter = 'all';
+  curPage = 1;
+  document.querySelectorAll('#type-filter-bar .ftab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  // Show/hide sub-filters
+  const isPrint = type === 'print' || type === 'combined' || type === 'all';
+  const isMkt   = type === 'market';
+  document.getElementById('filter-bar').style.display    = isPrint ? 'flex' : 'none';
+  document.getElementById('mkt-filter-bar').style.display = isMkt   ? 'flex' : 'none';
+  // Reset sub-filter buttons
+  document.querySelectorAll('#filter-bar .ftab').forEach((b,i) => b.classList.toggle('active', i===0));
+  document.querySelectorAll('#mkt-filter-bar .ftab').forEach((b,i) => b.classList.toggle('active', i===0));
+  if (type === 'market') {
+    renderMarketOrdersUnified();
+  } else {
+    renderOrders();
+  }
+}
+
+function setMktStatusFilter(f, el) {
+  curMktStatusFilter = f;
+  document.querySelectorAll('#mkt-filter-bar .ftab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderMarketOrdersUnified();
 }
 
 let curPage = 1;
@@ -1842,9 +2281,14 @@ const PAGE_SIZE = 30;
 function renderOrders() {
   const cont = document.getElementById('olist');
   const searchQ = (document.getElementById('order-search')?.value || '').toLowerCase().trim();
-  let list = curFilter === 'all' ? allOrders : allOrders.filter(o => o.status === curFilter);
 
-  // 🔍 Search filter
+  let list = allOrders;
+  // Type filter
+  if (curTypeFilter === 'print')    list = list.filter(o => !o.order_type || o.order_type === 'print');
+  else if (curTypeFilter === 'combined') list = list.filter(o => o.order_type === 'combined');
+  // Status sub-filter
+  if (curFilter !== 'all') list = list.filter(o => o.status === curFilter);
+  // Search
   if (searchQ) {
     list = list.filter(o =>
       (o.id || '').toLowerCase().includes(searchQ) ||
@@ -1855,7 +2299,6 @@ function renderOrders() {
 
   if (!list.length) { cont.innerHTML = '<div style="text-align:center;padding:50px;color:var(--text-muted);">لا توجد طلبات</div>'; return; }
 
-  // Pagination
   const totalPages = Math.ceil(list.length / PAGE_SIZE);
   if (curPage > totalPages) curPage = totalPages;
   const start = (curPage - 1) * PAGE_SIZE;
@@ -1866,6 +2309,11 @@ function renderOrders() {
     const s    = SM[o.status] || SM.received;
     const isNew = now - new Date(o.created_at).getTime() < 15*60*1000;
     const sp   = 'event.stopPropagation()';
+    const orderTypeBadgeHtml = o.order_type === 'combined'
+      ? '<span class="order-type-badge otb-combined">🔀 مشترك</span>'
+      : o.order_type === 'market'
+        ? '<span class="order-type-badge otb-market">🛍️ متجر</span>'
+        : '';
     let act = '';
     if (o.status === 'received') {
       if (canDo('received','printing'))   act += `<button class="abtn aprint" onclick="${sp};chStatus('${o.id}','printing')">🖨️ بدء الطباعة</button>`;
@@ -1877,29 +2325,35 @@ function renderOrders() {
       if (canDo('delivering','delivered')) act += `<button class="abtn adone"  onclick="${sp};chStatus('${o.id}','delivered')">✅ تم التسليم</button>`;
       if (canDo('delivering','cancelled')) act += `<button class="abtn acanc"  onclick="${sp};initCancel('${o.id}')">❌ إلغاء</button>`;
     }
-    return `<div class="ocard ${isNew?'isnew':''} ${o.is_express?'isnew':''.replace('isnew','')}" style="${o.is_express?'border-right:4px solid #9333ea;':''}" onclick="openDet('${o.id}')">
+    // حالة "تم التجهيز" للطلبات المشتركة/المتجر
+    if ((o.order_type === 'combined' || o.order_type === 'market') && o.status === 'received' && !o.is_ready) {
+      if (canConfirmReady()) act += `<button class="abtn" style="background:#f3e8ff;color:#7c3aed;" onclick="${sp};markReady('${o.id}')">✅ تم التجهيز</button>`;
+    }
+
+    return `<div class="ocard ${isNew?'isnew':''}" style="${o.is_express?'border-right:4px solid #9333ea;':''}" onclick="openDet('${o.id}')">
       <div class="ohdr">
         <div>
           <b style="color:var(--navy);font-size:1.05rem;">#${esc(o.id)}</b>
           ${isNew?'<span class="newbdg">جديد</span>':''}
           ${o.is_express?'<span style="background:linear-gradient(135deg,#9333ea,#7c3aed);color:#fff;border-radius:8px;font-size:.65rem;padding:2px 7px;font-weight:800;vertical-align:middle;margin-right:5px;">⚡ عاجل</span>':''}
+          ${orderTypeBadgeHtml}
+          ${o.is_ready?'<span class="sbdg sready" style="font-size:.65rem;padding:2px 8px;margin-right:4px;">✅ جاهز</span>':''}
         </div>
         <span class="sbdg ${s.c}">${s.i} ${s.l}</span>
       </div>
       <div class="infogrid">
         <div class="ii">👤 ${esc(o.name)}</div><div class="ii">📞 ${esc(o.phone)}</div>
         <div class="ii">🏠 ${esc(o.region)}</div><div class="ii" style="color:var(--orange);font-weight:700;">💰 ${(o.total||0).toLocaleString()} د.ع</div>
-        <div class="ii">🎨 ${o.color==='c'?'ملون':'أسود'} • ${o.side==='1'?'وجه':'وجهين'}</div>
-        <div class="ii" style="color:var(--teal);">📋 ${o.files?.length||0} ملف</div>
+        ${o.order_type !== 'market' ? `<div class="ii">🎨 ${o.color==='c'?'ملون':'أسود'} • ${o.side==='1'?'وجه':'وجهين'}</div>
+        <div class="ii" style="color:var(--teal);">📋 ${o.files?.length||0} ملف</div>` : ''}
+        ${o.suggested_items?.length ? `<div class="ii" style="color:var(--green);grid-column:span 2;">🛍️ مستلزمات: ${o.suggested_items.map(i=>i.name+'×'+i.qty).join(', ')}</div>` : ''}
         ${o.packaging&&o.packaging!=='none'?`<div class="ii" style="color:#7c3aed;grid-column:span 2;">📦 ${({cardboard:'ورق مقوى ونايلون 📦',spiral:'سبايرول 🔩'})[o.packaging]||''}</div>`:''}
       </div>
       ${o.notes?`<div style="font-size:.78rem;color:var(--orange);background:rgba(232,107,36,.06);padding:5px 8px;border-radius:8px;margin-top:4px;">📝 ${esc(o.notes).substring(0,50)}${o.notes.length>50?'...':''}</div>`:''}
-      ${o.rating?`<div style="font-size:.78rem;margin-top:4px;">⭐ تقييم: ${'⭐'.repeat(o.rating)}</div>`:''}
       ${act?`<div class="arow">${act}</div>`:''}
     </div>`;
   }).join('');
 
-  // Pagination controls
   if (totalPages > 1) {
     html += `<div style="display:flex;justify-content:center;align-items:center;gap:10px;margin-top:16px;padding:10px;">
       <button onclick="curPage=Math.max(1,curPage-1);renderOrders();" style="border:1.5px solid #e2e8f0;background:var(--card);padding:8px 16px;border-radius:10px;cursor:pointer;font-weight:700;font-family:'Tajawal',sans-serif;" ${curPage===1?'disabled':''}>→ السابق</button>
@@ -1907,13 +2361,75 @@ function renderOrders() {
       <button onclick="curPage=Math.min(${totalPages},curPage+1);renderOrders();" style="border:1.5px solid #e2e8f0;background:var(--card);padding:8px 16px;border-radius:10px;cursor:pointer;font-weight:700;font-family:'Tajawal',sans-serif;" ${curPage===totalPages?'disabled':''}>← التالي</button>
     </div>`;
   }
-
   cont.innerHTML = html;
 }
 
-// ══════════════════════════════════
-//  CANCEL WITH REASON
-// ══════════════════════════════════
+// ══ Market orders in unified view ══
+async function fetchAllOrders() {
+  await fetchOrders();
+  try {
+    const {data} = await sb.from('market_orders').select('*').order('created_at',{ascending:false}).limit(200);
+    allMktOrders = data || [];
+  } catch(_){}
+}
+
+function renderMarketOrdersUnified() {
+  const cont = document.getElementById('olist');
+  let list = allMktOrders;
+  if (curMktStatusFilter !== 'all') list = list.filter(o => o.status === curMktStatusFilter);
+  const searchQ = (document.getElementById('order-search')?.value || '').toLowerCase().trim();
+  if (searchQ) list = list.filter(o => (o.id||'').toLowerCase().includes(searchQ)||(o.name||'').toLowerCase().includes(searchQ)||(o.phone||'').includes(searchQ));
+  if (!list.length) { cont.innerHTML = '<div style="text-align:center;padding:50px;color:var(--text-muted);">لا توجد طلبات متجر</div>'; return; }
+  cont.innerHTML = list.map(o => {
+    const s = MKT_ST[o.status]||MKT_ST.pending;
+    const items = (o.items||[]).map(i=>`${esc(i.name)} ×${i.qty}`).join(' · ');
+    const readyBtn = !o.is_ready && o.status==='pending' && canConfirmReady()
+      ? `<button class="abtn" style="background:#f3e8ff;color:#7c3aed;" onclick="event.stopPropagation();markMktReady('${esc(o.id)}')">✅ تم التجهيز</button>` : '';
+    const sp = 'event.stopPropagation()';
+    return `<div class="ocard">
+      <div class="ohdr">
+        <div><b style="color:var(--navy);">#${esc(o.id)}</b> <span class="order-type-badge otb-market">🛍️ متجر</span>
+        ${o.is_ready?'<span class="sbdg sready" style="font-size:.65rem;padding:2px 8px;margin-right:4px;">✅ جاهز</span>':''}</div>
+        <span class="sbdg ${s.c}">${s.i} ${s.l}</span>
+      </div>
+      <div class="infogrid">
+        <div class="ii">👤 ${esc(o.name)}</div><div class="ii">📞 ${esc(o.phone)}</div>
+        <div class="ii">🏠 ${esc(o.region)}</div><div class="ii" style="color:var(--orange);font-weight:700;">💰 ${(o.total||0).toLocaleString()} د.ع</div>
+      </div>
+      <div style="font-size:.82rem;color:var(--text-muted);background:#f8fafc;padding:8px;border-radius:8px;margin:6px 0;">🛍️ ${items}</div>
+      <div class="arow">
+        ${readyBtn}
+        ${o.status==='pending'?`<button onclick="${sp};updateMktOrderStatus('${esc(o.id)}','delivering')" class="abtn adeliv">🛵 توصيل</button>`:''}
+        ${o.status==='delivering'?`<button onclick="${sp};updateMktOrderStatus('${esc(o.id)}','delivered')" class="abtn adone">✔ تسليم</button>`:''}
+        ${!['delivered','cancelled'].includes(o.status)?`<button onclick="${sp};cancelMktOrder('${esc(o.id)}')" class="abtn acanc">❌ إلغاء</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function canConfirmReady() {
+  return currentRole === 'admin' ||
+    (currentRole === '__custom__' && currentCustomCan?.includes('confirm_ready'));
+}
+
+async function markReady(orderId) {
+  if (!confirm('تأكيد: تم تجهيز الطلب؟')) return;
+  const { error } = await sb.from('orders').update({ is_ready: true }).eq('id', orderId);
+  if (error) return showToast('❌ ' + error.message);
+  showToast('✅ تم تحديد الطلب كجاهز للتوصيل');
+  await fetchOrders();
+}
+
+async function markMktReady(orderId) {
+  if (!confirm('تأكيد: تم تجهيز الطلب؟')) return;
+  const { error } = await sb.from('market_orders').update({ is_ready: true }).eq('id', orderId);
+  if (error) return showToast('❌ ' + error.message);
+  showToast('✅ تم تحديد الطلب كجاهز');
+  const { data } = await sb.from('market_orders').select('telegram_id').eq('id', orderId).maybeSingle();
+  if (data?.telegram_id) await tgSend(String(data.telegram_id), `✅ تم تجهيز طلبك #${orderId} وهو جاهز للتوصيل!`);
+  await fetchAllOrders();
+  renderMarketOrdersUnified();
+}
 let pendingCancelId = null;
 
 function initCancel(docId) {
@@ -2351,9 +2867,195 @@ function _prMsg(text, type) {
   setTimeout(() => { el.style.display='none'; }, 5000);
 }
 
-// ══════════════════════════════════════════════════════════════
-//  🛒 MARKET ADMIN — إدارة المتجر الطلابي
-// ══════════════════════════════════════════════════════════════
+// ══ SETTINGS PAGE: Products (S = Settings variant) ══
+let _editingProdIdS = null;
+let _adminProductsS = [];
+
+async function loadAdminProductsS() {
+  await loadMktCats();
+  const box = document.getElementById('products-list-s');
+  if (!box) return;
+  try {
+    const { data } = await sb.from('market_products').select('*').order('name');
+    _adminProductsS = data || [];
+    renderProductsS();
+  } catch(e) { box.innerHTML = `<p style="color:var(--red);">❌ ${esc(e.message)}</p>`; }
+}
+
+function renderProductsS() {
+  const box = document.getElementById('products-list-s');
+  if (!box) return;
+  if (!_adminProductsS.length) { box.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;">لا توجد منتجات بعد</p>'; return; }
+  const CAT = {notebooks:'📓',books:'📚',stationery:'✏️',other:'📦'};
+  box.innerHTML = _adminProductsS.map(p => {
+    const stockColor = p.stock <= 0 ? 'var(--red)' : p.stock <= 3 ? 'var(--orange)' : 'var(--green)';
+    return `<div class="prod-card">
+      <div style="display:flex;gap:10px;align-items:flex-start;">
+        <div style="width:52px;height:52px;border-radius:10px;overflow:hidden;flex-shrink:0;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">
+          ${p.image_url ? `<img src="${p.image_url.startsWith('data:')?p.image_url:esc(p.image_url)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='${CAT[p.category]||'📦'}'">` : CAT[p.category]||'📦'}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:4px;">
+            <b style="color:var(--navy);font-size:.9rem;">${esc(p.name)}</b>
+            <div style="display:flex;gap:4px;flex-shrink:0;">
+              ${p.is_suggested ? '<span style="background:#fff7ed;color:#c2410c;border-radius:6px;font-size:.6rem;padding:2px 6px;font-weight:800;">⭐ مقترح</span>' : ''}
+              <span class="${p.active?'ok-badge':'low-badge'}">${p.active?'نشط':'مخفي'}</span>
+            </div>
+          </div>
+          <div style="font-size:.82rem;font-weight:800;color:var(--orange);margin-top:3px;">${(p.price||0).toLocaleString()} د.ع / ${esc(p.unit||'قطعة')}</div>
+          <div style="font-size:.78rem;font-weight:700;color:${stockColor};">مخزون: ${p.stock}</div>
+        </div>
+      </div>
+      <div class="arow" style="margin-top:8px;">
+        <button onclick="editProductS('${esc(p.id)}')" class="abtn" style="background:#dbeafe;color:#1e40af;">✏️ تعديل</button>
+        <button onclick="toggleProductActive('${esc(p.id)}',${!p.active})" class="abtn" style="background:${p.active?'#fef3c7':'#f0fdf4'};color:${p.active?'#b45309':'#166634'};">${p.active?'🙈 إخفاء':'👁️ إظهار'}</button>
+        <button onclick="deleteProduct('${esc(p.id)}')" class="abtn acanc">🗑️ حذف</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function editProductS(id) {
+  const p = _adminProductsS.find(x => x.id === id);
+  if (!p) return;
+  _editingProdIdS = id;
+  const sv = (eid, v) => { const el=document.getElementById(eid); if(el) el.value=v||''; };
+  sv('prod-name-s', p.name); sv('prod-cat-s', p.category||'other');
+  sv('prod-unit-s', p.unit); sv('prod-price-s', p.price); sv('prod-stock-s', p.stock);
+  sv('prod-desc-s', p.description); sv('prod-img-s', p.image_url||'');
+  const sugEl = document.getElementById('prod-suggested-s');
+  if (sugEl) sugEl.checked = !!p.is_suggested;
+  updateProdImgPreview(p.image_url||'', 'prod-img-preview-s');
+  document.getElementById('prod-form-title-s').innerText = '✏️ تعديل المنتج';
+  document.getElementById('save-prod-btn-s').innerText = '💾 حفظ التعديلات';
+  document.getElementById('cancel-edit-prod-s').style.display = 'inline-block';
+  document.getElementById('product-form-section-s').scrollIntoView({behavior:'smooth'});
+}
+
+function clearProductFormS() {
+  _editingProdIdS = null;
+  ['prod-name-s','prod-unit-s','prod-desc-s','prod-img-s'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  const el = document.getElementById('prod-price-s'); if(el) el.value='';
+  const es = document.getElementById('prod-stock-s'); if(es) es.value='';
+  const ec = document.getElementById('prod-cat-s'); if(ec) ec.value='notebooks';
+  const sg = document.getElementById('prod-suggested-s'); if(sg) sg.checked=false;
+  document.getElementById('prod-img-preview-s').innerHTML = '📦';
+  document.getElementById('prod-form-title-s').innerText = '➕ إضافة منتج جديد';
+  document.getElementById('save-prod-btn-s').innerText = '✅ إضافة المنتج';
+  document.getElementById('cancel-edit-prod-s').style.display = 'none';
+}
+
+async function saveProductS() {
+  const g = id => document.getElementById(id)?.value?.trim()||'';
+  const name  = g('prod-name-s');
+  const cat   = g('prod-cat-s') || 'other';
+  const unit  = g('prod-unit-s') || 'قطعة';
+  const price = parseFloat(document.getElementById('prod-price-s')?.value) || 0;
+  const stock = parseInt(document.getElementById('prod-stock-s')?.value) || 0;
+  const desc  = g('prod-desc-s');
+  const img   = g('prod-img-s');
+  const isSug = document.getElementById('prod-suggested-s')?.checked || false;
+  if (!name) return showToast('❌ أدخل اسم المنتج');
+  if (!price) return showToast('❌ أدخل سعراً');
+  const btn = document.getElementById('save-prod-btn-s');
+  btn.disabled = true; btn.innerText = '⏳ جاري الحفظ...';
+  try {
+    const payload = { name, category:cat, unit, price, stock, description:desc||null, image_url:img||null, active:true, is_suggested:isSug };
+    if (_editingProdIdS) {
+      const {error} = await sb.from('market_products').update(payload).eq('id', _editingProdIdS);
+      if (error) throw error;
+      showToast('✅ تم تحديث المنتج');
+    } else {
+      const {error} = await sb.from('market_products').insert(payload);
+      if (error) throw error;
+      showToast('✅ تم إضافة المنتج');
+    }
+    clearProductFormS();
+    await loadAdminProductsS();
+  } catch(e) { showToast('❌ ' + e.message); }
+  btn.disabled = false;
+  btn.innerText = _editingProdIdS ? '💾 حفظ التعديلات' : '✅ إضافة المنتج';
+}
+
+// ══ SETTINGS PAGE: Supplies (S variant) ══
+async function loadSuppliesS() {
+  const box = document.getElementById('supplies-list-s');
+  if (!box) return;
+  try {
+    const {data} = await sb.from('supplies').select('*').order('name');
+    const list = data || [];
+    const _sv = (id,v) => { const el=document.getElementById(id); if(el) el.innerText=v; };
+    _sv('sup-s-total-s', list.length);
+    _sv('sup-s-low-s', list.filter(s => s.stock <= (s.min_stock||0)).length);
+    if (!list.length) { box.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;">لا توجد مواد بعد</p>'; return; }
+    const catL = {paper:'📄 ورق',ink:'🖨️ حبر',binding:'🔩 سبايرول',clips:'📎 كلبس',cover:'📋 أغلفة',other:'📦 أخرى'};
+    box.innerHTML = list.map(s => {
+      const isLow = s.stock <= (s.min_stock||0);
+      return `<div class="sup-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <b style="color:var(--navy);font-size:.9rem;">${esc(s.name)}</b>
+            <div style="font-size:.75rem;color:var(--text-muted);margin-top:2px;">${catL[s.category]||'📦'} · ${esc(s.unit||'')}</div>
+          </div>
+          <div style="text-align:left;">
+            <b style="color:${isLow?'var(--red)':'var(--green)'};font-size:1rem;">${s.stock}</b>
+            <div style="font-size:.72rem;color:var(--text-muted);">حد: ${s.min_stock||0}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <button onclick="openSupplyTx('${esc(s.id)}','add')" class="abtn adeliv" style="flex:1;">➕ إضافة</button>
+          <button onclick="openSupplyTx('${esc(s.id)}','sub')" class="abtn aprint" style="flex:1;">➖ خصم</button>
+          <button onclick="deleteSupply('${esc(s.id)}')" class="abtn acanc">🗑️</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) { box.innerHTML = `<p style="color:var(--red);">❌ ${esc(e.message)}</p>`; }
+}
+
+async function createSupplyS() {
+  const g = id => document.getElementById(id)?.value?.trim()||'';
+  const name  = g('sup-name-s');
+  const cat   = g('sup-cat-s') || 'other';
+  const unit  = g('sup-unit-s') || 'قطعة';
+  const stock = parseFloat(document.getElementById('sup-stock-s')?.value)||0;
+  const min   = parseFloat(document.getElementById('sup-min-s')?.value)||0;
+  const cost  = parseFloat(document.getElementById('sup-cost-s')?.value)||0;
+  if (!name) return showToast('❌ أدخل اسم المادة');
+  const {error} = await sb.from('supplies').insert({ name, category:cat, unit, stock, min_stock:min, cost });
+  if (error) return showToast('❌ ' + error.message);
+  ['sup-name-s','sup-unit-s','sup-stock-s','sup-min-s','sup-cost-s'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  showToast('✅ تمت إضافة المادة');
+  await loadSuppliesS();
+}
+
+async function deleteSupply(id) {
+  if (!confirm('حذف هذه المادة؟')) return;
+  await sb.from('supplies').delete().eq('id', id);
+  showToast('🗑️ تم الحذف');
+  await loadSuppliesS();
+}
+
+// ══ SETTINGS PAGE: Coupons ══
+async function loadCouponsS() {
+  const box = document.getElementById('coupon-list-s');
+  if (!box) return;
+  try {
+    const {data} = await sb.from('coupons').select('*').order('created_at',{ascending:false});
+    if (!data?.length) { box.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:10px;">لا توجد كوبونات</p>'; return; }
+    box.innerHTML = data.map(c => `
+      <div class="staff-card" style="border-right:3px solid ${c.active?'var(--green)':'var(--red)'};">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <b style="color:var(--navy);">${esc(c.code)}</b>
+          <span style="font-size:.8rem;font-weight:800;color:var(--orange);">${c.discount_type==='percent'?c.discount_value+'%':c.discount_value.toLocaleString()+' د.ع'}</span>
+        </div>
+        <div style="font-size:.78rem;color:var(--text-muted);margin-top:4px;">استُخدم: ${c.used_count||0}${c.max_uses>0?' / '+c.max_uses:''} ${c.expires_at?'· ينتهي '+new Date(c.expires_at).toLocaleDateString('ar-IQ'):''}</div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <button onclick="toggleCoupon('${c.id}',${!c.active})" style="border:none;background:${c.active?'#fef2f2':'#dcfce7'};color:${c.active?'var(--red)':'#166534'};padding:5px 12px;border-radius:8px;font-size:.78rem;cursor:pointer;font-weight:700;">${c.active?'تعطيل':'تفعيل'}</button>
+          <button onclick="deleteCoupon('${c.id}')" style="border:none;background:#fef2f2;color:var(--red);padding:5px 12px;border-radius:8px;font-size:.78rem;cursor:pointer;font-weight:700;">حذف</button>
+        </div>
+      </div>`).join('');
+  } catch(e) { box.innerHTML = `<p style="color:var(--red);">❌ ${esc(e.message)}</p>`; }
+}
 
 let _adminProducts = [];
 let _adminMktOrders = [];
@@ -2639,11 +3341,15 @@ async function cancelMktOrder(id) {
 async function handleProdImgUpload(input) {
   const file = input.files[0];
   if (!file) return;
-  if (file.size > 2 * 1024 * 1024) { showToast('❌ الصورة أكبر من 2MB'); input.value=''; return; }
+  if (file.size > 3 * 1024 * 1024) { showToast('❌ الصورة أكبر من 3MB'); input.value=''; return; }
 
-  // Preview immediately
+  // Preview immediately as base64
   const reader = new FileReader();
-  reader.onload = e => updateProdImgPreview(e.target.result);
+  reader.onload = e => {
+    updateProdImgPreview(e.target.result, 'prod-img-preview');
+    // Store base64 as temp fallback in the URL field
+    document.getElementById('prod-img').value = e.target.result;
+  };
   reader.readAsDataURL(file);
 
   showToast('⏳ جاري رفع الصورة...');
@@ -2654,19 +3360,44 @@ async function handleProdImgUpload(input) {
     if (upErr) throw upErr;
     const { data } = sb.storage.from('product-images').getPublicUrl(path);
     document.getElementById('prod-img').value = data.publicUrl;
-    updateProdImgPreview(data.publicUrl);
-    showToast('✅ تم رفع الصورة');
+    updateProdImgPreview(data.publicUrl, 'prod-img-preview');
+    showToast('✅ تم رفع الصورة بنجاح');
   } catch(e) {
-    showToast('⚠️ تعذّر الرفع — الصورة محفوظة مؤقتاً كـ Base64');
-    // Keep base64 preview as fallback (already set above)
+    showToast('✅ الصورة محفوظة مؤقتاً — ستُرفع عند الحفظ');
+    // base64 already stored above — product will save with it
   }
 }
 
-function updateProdImgPreview(src) {
-  const box = document.getElementById('prod-img-preview');
+async function handleProdImgUploadS(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 3 * 1024 * 1024) { showToast('❌ الصورة أكبر من 3MB'); input.value=''; return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    updateProdImgPreview(e.target.result, 'prod-img-preview-s');
+    document.getElementById('prod-img-s').value = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  showToast('⏳ جاري رفع الصورة...');
+  try {
+    const ext  = file.name.split('.').pop().toLowerCase() || 'jpg';
+    const path = `products/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error: upErr } = await sb.storage.from('product-images').upload(path, file, { upsert: true });
+    if (upErr) throw upErr;
+    const { data } = sb.storage.from('product-images').getPublicUrl(path);
+    document.getElementById('prod-img-s').value = data.publicUrl;
+    updateProdImgPreview(data.publicUrl, 'prod-img-preview-s');
+    showToast('✅ تم رفع الصورة بنجاح');
+  } catch(e) {
+    showToast('✅ الصورة محفوظة — ستُرفع عند الحفظ');
+  }
+}
+
+function updateProdImgPreview(src, previewId='prod-img-preview') {
+  const box = document.getElementById(previewId);
   if (!box) return;
-  if (src && src.length > 5) {
-    box.innerHTML = `<img src="${esc(src)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='📦'">`;
+  if (src && src.length > 10) {
+    box.innerHTML = `<img src="${src.startsWith('data:')?src:esc(src)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" onerror="this.parentElement.innerHTML='📦'">`;
   } else {
     box.innerHTML = '📦';
   }
@@ -3056,6 +3787,7 @@ async function deleteMktCat(idx) {
 </script>
 </body>
 </html>
+
 
 
 
