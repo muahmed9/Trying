@@ -1,4 +1,17 @@
 <!DOCTYPE html>
+<!-- 
+  ══ DATABASE MIGRATIONS REQUIRED ══════════════════════════════
+  Run once in Supabase SQL Editor:
+
+  -- 1. Add is_suggested flag to market_products
+  ALTER TABLE market_products ADD COLUMN IF NOT EXISTS is_suggested BOOLEAN DEFAULT false;
+
+  -- 2. Add order_type and suggested_items to orders
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_type TEXT DEFAULT 'print';
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS suggested_items JSONB;
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS suggested_total INTEGER DEFAULT 0;
+  ══════════════════════════════════════════════════════════════
+-->
 <html lang="ar" dir="rtl" data-theme="light">
 <head>
 <meta charset="UTF-8">
@@ -35,7 +48,8 @@
 .cart-total-box{background:linear-gradient(135deg,var(--navy),#1e40af);color:#fff;border-radius:16px;padding:16px;margin:14px 0;}
  
 /* ── Cart FAB ──────────────────────────────── */
-#cart-fab{position:fixed;bottom:95px;left:16px;background:var(--orange);color:#fff;width:56px;height:56px;border-radius:50%;border:none;display:none;align-items:center;justify-content:center;font-size:1.5rem;cursor:pointer;box-shadow:0 6px 18px rgba(232,107,36,.4);z-index:150;animation:pulseGlow 2s infinite;}
+#cart-fab{position:fixed;bottom:95px;left:16px;background:var(--orange);color:#fff;width:56px;height:56px;border-radius:50%;border:none;display:none;align-items:center;justify-content:center;font-size:1.5rem;cursor:pointer;box-shadow:0 6px 18px rgba(232,107,36,.5);z-index:150;animation:pulseGlow 2s infinite;opacity:1!important;}
+[data-theme="dark"] #cart-fab{background:var(--orange);box-shadow:0 6px 22px rgba(255,140,66,.6);opacity:1!important;}
 #cart-count{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;border-radius:10px;font-size:.65rem;font-weight:800;padding:2px 6px;min-width:20px;text-align:center;}
  
 /* ── Category Tabs ────────────────────────────── */
@@ -240,7 +254,22 @@ input:checked+.togs:before{transform:translateX(-24px);}
 /* ── EXPRESS BADGE ── */
 .express-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:.72rem;font-weight:800;background:linear-gradient(135deg,#9333ea,#7c3aed);color:#fff;animation:pulseGlow 2s infinite;}
 
-/* ── ORDER FILTER BAR ── */
+/* ── Suggested Products (inline in order form) ──────────── */
+.sug-prod-row{display:flex;align-items:center;gap:10px;background:var(--card);border:1.5px solid var(--border);border-radius:13px;padding:10px 12px;transition:border-color .2s;}
+.sug-prod-row.selected{border-color:var(--teal);background:rgba(90,179,196,.07);}
+.sug-prod-img{width:46px;height:46px;border-radius:9px;object-fit:cover;background:var(--input-bg);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;overflow:hidden;}
+.sug-prod-img img{width:100%;height:100%;object-fit:cover;}
+.sug-qty-ctrl{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.sug-qbtn{border:none;background:var(--light-teal);width:28px;height:28px;border-radius:8px;cursor:pointer;font-weight:800;font-size:.95rem;color:var(--navy);}
+
+/* ── Combined order summary ──────────────────────────── */
+.combined-badge{display:inline-block;background:linear-gradient(135deg,var(--teal),var(--navy));color:#fff;border-radius:20px;padding:3px 12px;font-size:.72rem;font-weight:800;vertical-align:middle;margin-right:6px;}
+
+/* ── Order type nav badges ────────────────────────────── */
+[data-theme="dark"] .sug-prod-row{background:#1e293b;border-color:#334155;}
+[data-theme="dark"] .sug-prod-row.selected{border-color:var(--teal);background:rgba(90,179,196,.12);}
+
+
 .orders-fbar{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;}
 .orders-fbar::-webkit-scrollbar{display:none;}
 .ofbtn{padding:7px 14px;border-radius:20px;border:1.5px solid #e2e8f0;background:var(--card);cursor:pointer;font-size:.8rem;white-space:nowrap;font-weight:700;color:var(--text-muted);font-family:'Tajawal',sans-serif;}
@@ -368,24 +397,64 @@ input:checked+.togs:before{transform:translateX(-24px);}
     <div class="card">
       <p style="margin:0 0 12px;color:var(--navy);font-weight:800;font-size:.97rem;">📦 طريقة التغليف:</p>
       <div style="display:flex;flex-direction:column;gap:9px;">
+        <!-- كبس فقط (staples icon) -->
         <button id="pkg-none" onclick="setPkg('none')" style="display:flex;align-items:center;gap:11px;padding:13px 15px;border-radius:14px;border:1.5px solid var(--navy);background:var(--navy);color:#fff;cursor:pointer;text-align:right;font-family:'Tajawal',sans-serif;transition:all .2s;">
-          <span style="font-size:1.4rem;">🗜️</span>
+          <span style="flex-shrink:0;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- stapler / clips icon -->
+              <rect x="4" y="13" width="24" height="6" rx="3" fill="rgba(255,255,255,0.9)"/>
+              <rect x="7" y="10" width="4" height="4" rx="1" fill="rgba(255,255,255,0.7)"/>
+              <rect x="21" y="10" width="4" height="4" rx="1" fill="rgba(255,255,255,0.7)"/>
+              <rect x="4" y="19" width="5" height="3" rx="1.5" fill="rgba(255,255,255,0.5)"/>
+              <rect x="23" y="19" width="5" height="3" rx="1.5" fill="rgba(255,255,255,0.5)"/>
+            </svg>
+          </span>
           <div style="flex:1;">
             <b style="font-size:.95rem;display:block;">كبس فقط</b>
             <span style="font-size:.76rem;opacity:.8;font-weight:500;">تدبيس الورق — بدون تغليف إضافي</span>
           </div>
           <span id="pkg-none-price" style="font-weight:800;background:rgba(255,255,255,.2);padding:3px 9px;border-radius:8px;font-size:.85rem;">مجاني</span>
         </button>
+
+        <!-- ورق مقوى ونايلون (cardboard + transparent cover) -->
         <button id="pkg-cardboard" onclick="setPkg('cardboard')" style="display:flex;align-items:center;gap:11px;padding:13px 15px;border-radius:14px;border:1.5px solid #e2e8f0;background:var(--card);color:var(--text-muted);cursor:pointer;text-align:right;font-family:'Tajawal',sans-serif;transition:all .2s;">
-          <span style="font-size:1.4rem;">📦</span>
+          <span style="flex-shrink:0;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">
+            <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- book with transparent red cover like the photo -->
+              <rect x="5" y="6" width="20" height="24" rx="2" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.2"/>
+              <rect x="5" y="6" width="20" height="24" rx="2" fill="rgba(239,68,68,0.35)" stroke="#ef4444" stroke-width="1.5"/>
+              <!-- spiral binding on left -->
+              <circle cx="5" cy="10" r="2" fill="none" stroke="#64748b" stroke-width="1.5"/>
+              <circle cx="5" cy="16" r="2" fill="none" stroke="#64748b" stroke-width="1.5"/>
+              <circle cx="5" cy="22" r="2" fill="none" stroke="#64748b" stroke-width="1.5"/>
+              <!-- pages inside -->
+              <rect x="8" y="10" width="14" height="1.5" rx=".75" fill="rgba(255,255,255,0.7)"/>
+              <rect x="8" y="14" width="14" height="1.5" rx=".75" fill="rgba(255,255,255,0.7)"/>
+              <rect x="8" y="18" width="10" height="1.5" rx=".75" fill="rgba(255,255,255,0.7)"/>
+            </svg>
+          </span>
           <div style="flex:1;">
             <b style="font-size:.95rem;display:block;color:var(--text-main);">ورق مقوى ونايلون شفاف</b>
             <span style="font-size:.76rem;font-weight:500;">حماية من الماء والانثناء</span>
           </div>
           <span id="pkg-cardboard-price" style="font-weight:800;color:var(--orange);font-size:.85rem;">500 د.ع</span>
         </button>
+
+        <!-- سبايرول (spiral binding) -->
         <button id="pkg-spiral" onclick="setPkg('spiral')" style="display:flex;align-items:center;gap:11px;padding:13px 15px;border-radius:14px;border:1.5px solid #e2e8f0;background:var(--card);color:var(--text-muted);cursor:pointer;text-align:right;font-family:'Tajawal',sans-serif;transition:all .2s;">
-          <span style="font-size:1.4rem;">🔩</span>
+          <span style="flex-shrink:0;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">
+            <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- spiral coil -->
+              <path d="M8 7 Q12 4 16 7 Q20 10 24 7 Q28 4 29 8" stroke="#64748b" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <path d="M8 11 Q12 8 16 11 Q20 14 24 11 Q28 8 29 12" stroke="#64748b" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <path d="M8 15 Q12 12 16 15 Q20 18 24 15 Q28 12 29 16" stroke="#64748b" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <path d="M8 19 Q12 16 16 19 Q20 22 24 19 Q28 16 29 20" stroke="#64748b" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <path d="M8 23 Q12 20 16 23 Q20 26 24 23 Q28 20 29 24" stroke="#64748b" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <!-- pages -->
+              <rect x="6" y="6" width="3" height="22" rx="1" fill="#e2e8f0"/>
+              <rect x="25" y="6" width="3" height="22" rx="1" fill="#e2e8f0"/>
+            </svg>
+          </span>
           <div style="flex:1;">
             <b style="font-size:.95rem;display:block;color:var(--text-main);">سبايرول</b>
             <span style="font-size:.76rem;font-weight:500;">تجليد حلزوني — مثالي للتقارير والمشاريع</span>
@@ -403,6 +472,20 @@ input:checked+.togs:before{transform:translateX(-24px);}
           <p style="margin:4px 0 0;font-size:.83rem;color:var(--text-muted);font-weight:600;">أولوية في الطباعة والتوصيل (+1,500 د.ع)</p>
         </div>
         <label class="togw"><input type="checkbox" id="expressTog" onchange="toggleExpressStyle();calcUI()"><span class="togs" style="background:#cbd5e1;"></span></label>
+      </div>
+    </div>
+
+    <!-- 🛍️ Suggested Products (admin-configured) -->
+    <div id="suggested-products-section" style="display:none;">
+      <div class="card" style="border:2px solid var(--teal);background:linear-gradient(135deg,rgba(90,179,196,.06),rgba(13,59,102,.04));">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+          <div style="background:var(--teal);width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">🛍️</div>
+          <div>
+            <b style="color:var(--navy);font-size:1rem;">أضف مستلزمات دراسية لطلبك!</b>
+            <p style="margin:2px 0 0;font-size:.78rem;color:var(--text-muted);font-weight:500;">تُوصَّل مع طلبك مباشرة</p>
+          </div>
+        </div>
+        <div id="suggested-products-list" style="display:flex;flex-direction:column;gap:9px;"></div>
       </div>
     </div>
 
@@ -620,6 +703,80 @@ let ordFilter = 'all';
 let allUserOrders = [];
 let _rateOid = null, _rateStars = 0;
 
+// ── Suggested products (admin-configured, shown in order form) ──
+let _suggestedProducts = [];
+let _sugCart = {}; // { productId: qty }
+
+async function loadSuggestedProducts() {
+  try {
+    const {data} = await sb.from('market_products')
+      .select('*')
+      .eq('active', true)
+      .eq('is_suggested', true)
+      .gt('stock', 0)
+      .order('name');
+    if (data?.length) {
+      _suggestedProducts = data;
+      renderSuggestedProducts();
+      document.getElementById('suggested-products-section').style.display = 'block';
+    }
+  } catch(e) {
+    // Column may not exist yet — silent fail
+    console.log('Suggested products not available:', e.message);
+  }
+}
+
+function renderSuggestedProducts() {
+  const list = document.getElementById('suggested-products-list');
+  if (!list || !_suggestedProducts.length) return;
+  const catIcons = {books:'📚',notebooks:'📓',stationery:'✏️',other:'📦'};
+  list.innerHTML = _suggestedProducts.map(p => {
+    const qty = _sugCart[p.id] || 0;
+    const selected = qty > 0;
+    return `<div class="sug-prod-row ${selected?'selected':''}" id="sugrow-${p.id}">
+      <div class="sug-prod-img">
+        ${p.image_url ? `<img src="${esc(p.image_url)}" onerror="this.parentElement.innerHTML='${catIcons[p.category]||'📦'}'">` : catIcons[p.category]||'📦'}
+      </div>
+      <div style="flex:1;min-width:0;">
+        <b style="font-size:.88rem;color:var(--navy);display:block;">${esc(p.name)}</b>
+        <span style="font-size:.78rem;color:var(--orange);font-weight:800;">${(p.price||0).toLocaleString()} د.ع / ${esc(p.unit||'قطعة')}</span>
+      </div>
+      <div class="sug-qty-ctrl">
+        ${selected ? `
+          <button class="sug-qbtn" onclick="adjSugQty('${p.id}',-1)">−</button>
+          <b style="color:var(--orange);font-size:.95rem;min-width:22px;text-align:center;">${qty}</b>
+          <button class="sug-qbtn" onclick="adjSugQty('${p.id}',1)">+</button>
+        ` : `
+          <button onclick="adjSugQty('${p.id}',1)" style="border:none;background:var(--navy);color:#fff;padding:7px 14px;border-radius:10px;font-size:.82rem;font-weight:800;cursor:pointer;font-family:'Tajawal',sans-serif;white-space:nowrap;">+ إضافة</button>
+        `}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function adjSugQty(pid, delta) {
+  const p = _suggestedProducts.find(x => x.id === pid);
+  if (!p) return;
+  const cur = _sugCart[pid] || 0;
+  const next = Math.max(0, Math.min(p.stock, cur + delta));
+  if (next === 0) delete _sugCart[pid];
+  else _sugCart[pid] = next;
+  renderSuggestedProducts();
+  calcUI();
+}
+
+function getSugCartItems() {
+  return Object.entries(_sugCart).map(([id, qty]) => {
+    const p = _suggestedProducts.find(x => x.id === id);
+    if (!p) return null;
+    return {id, name: p.name, qty, price: p.price, unit: p.unit||'قطعة', stock: p.stock};
+  }).filter(Boolean);
+}
+
+function getSugTotal() {
+  return getSugCartItems().reduce((s, i) => s + i.price * i.qty, 0);
+}
+
 // ══ PRICING CONFIG (افتراضي — يُحمَّل من Supabase) ══
 let PRICING = {
   min_pages:5, min_price:1000,
@@ -774,6 +931,7 @@ async function init() {
   } catch(e) { console.error('Init error:', e); }
   
   await loadPricing();
+  await loadSuggestedProducts();
   if (!uDoc.first_order_done) document.getElementById('fo-gift').style.display = 'block';
   refreshPtsUI();
   startRT();
@@ -1040,9 +1198,9 @@ function getLoc() {
 function setPkg(v) {
   packaging = v;
   const styles = {
-    none: { border:'1.5px solid var(--navy)', background:'var(--navy)', color:'#fff' },
-    cardboard: { border:'1.5px solid var(--teal)', background:'var(--teal)', color:'#fff' },
-    spiral: { border:'1.5px solid var(--orange)', background:'var(--orange)', color:'#fff' }
+    none:      { border:'1.5px solid var(--navy)',   background:'var(--navy)',   color:'#fff' },
+    cardboard: { border:'1.5px solid var(--teal)',   background:'var(--teal)',   color:'#fff' },
+    spiral:    { border:'1.5px solid var(--orange)', background:'var(--orange)', color:'#fff' }
   };
   const off = { border:'1.5px solid #e2e8f0', background:'var(--card)', color:'var(--text-muted)' };
   ['none','cardboard','spiral'].forEach(k => {
@@ -1050,11 +1208,23 @@ function setPkg(v) {
     if (!el) return;
     const s = k === v ? styles[k] : off;
     el.style.border = s.border; el.style.background = s.background; el.style.color = s.color;
-    // Fix text colors inside unselected
-    const nameEl = el.querySelector('b'); const descEl = el.querySelector('span:not([id])');
+    const nameEl = el.querySelector('b');
+    const descEl = el.querySelector('span:not([id])');
     if (nameEl) nameEl.style.color = k===v ? '#fff' : 'var(--text-main)';
     if (descEl) descEl.style.color = k===v ? 'rgba(255,255,255,.8)' : 'var(--text-muted)';
-    // Fix price color
+    // SVG color update
+    const svgEl = el.querySelector('svg');
+    if (svgEl) {
+      const paths = svgEl.querySelectorAll('rect,path,circle');
+      paths.forEach(p => {
+        if (p.getAttribute('fill') && p.getAttribute('fill') !== 'none') {
+          p.setAttribute('fill', k===v ? p.getAttribute('data-fill-sel')||p.getAttribute('fill') : p.getAttribute('data-fill-off')||p.getAttribute('fill'));
+        }
+        if (p.getAttribute('stroke') && p.getAttribute('stroke') !== 'none') {
+          p.setAttribute('stroke', k===v ? 'rgba(255,255,255,0.8)' : p.getAttribute('data-stroke-off')||p.getAttribute('stroke'));
+        }
+      });
+    }
     const priceEl = document.getElementById('pkg-'+k+'-price');
     if (priceEl) {
       priceEl.style.color = k===v ? '#fff' : 'var(--orange)';
@@ -1103,11 +1273,13 @@ function calcUI() {
   document.getElementById('sidebox').style.display = hasD ? 'block' : 'none';
   document.getElementById('inote').style.display = hasI ? 'block' : 'none';
   document.getElementById('flist').style.display = files.length ? 'block' : 'none';
-  document.getElementById('opts').style.display = files.length ? 'block' : 'none';
+  // عرض خيارات الطلب إذا كانت هناك ملفات أو مستلزمات
+  document.getElementById('opts').style.display = (files.length || Object.keys(_sugCart).length) ? 'block' : 'none';
 
   const pp = calcPrice(sh, im);
+  const hasAnyOrder = files.length > 0 || Object.keys(_sugCart).length > 0;
   const isFO = !uDoc.first_order_done;
-  const df = files.length===0 ? 0 : (pp>=(PRICING.delivery_free_threshold||10000)||isFO ? 0 : (PRICING.delivery_fee||1000));
+  const df = !hasAnyOrder ? 0 : ((pp + getSugTotal()) >= (PRICING.delivery_free_threshold||10000) || isFO ? 0 : (PRICING.delivery_fee||1000));
   const isG = (uDoc.loyalty_points||0) >= 1000;
   const td = isG ? Math.round(pp*.05) : 0;
   const useP = document.getElementById('ptstog')?.checked && pendingR;
@@ -1139,7 +1311,7 @@ function calcUI() {
     sl.innerText = `✨ سيُخصم ${pendingR.disc.toLocaleString()} د.ع من المجموع`;
   } else pc.style.display = 'none';
 
-  const tot = Math.max(0, pp - td - pd - couponDisc + df + expressFee + pkgFee);
+  const tot = Math.max(0, pp - td - pd - couponDisc + df + expressFee + pkgFee + getSugTotal());
   const hasDiscount = (td > 0) || (pd > 0) || (couponDisc > 0);
   const pe = hasDiscount ? 0 : Math.floor(pp / 1000) * 10;
   const dtxt = isFO ? '<b style="color:#4eff4e;">مجاني 🎁</b>' : df===0 ? '<b style="color:#4eff4e;">مجاني ✨</b>' : df.toLocaleString()+' د.ع';
@@ -1153,14 +1325,22 @@ function calcUI() {
     ${pd>0&&useP?`<div class="il"><span>💎 خصم النقاط:</span><b style="color:#4eff4e;">−${pd.toLocaleString()} د.ع</b></div>`:''}
     ${couponDisc>0?`<div class="il"><span>🎟️ خصم الكوبون:</span><b style="color:#4eff4e;">−${couponDisc.toLocaleString()} د.ع</b></div>`:''}
     ${isExpress?`<div class="il"><span>⚡ رسوم الطلب العاجل:</span><b style="color:#e9d5ff;">${expressFee.toLocaleString()} د.ع</b></div>`:''}
-    <div class="il"><span>📦 التغليف:</span><b style="color:${pkgFee>0?'#fbbf24':'#4eff4e'};">${pkgLabels[packaging]||'كبس فقط 🗜️'} ${pkgFee>0?'— '+pkgFee.toLocaleString()+' د.ع':'— مجاني'}</b></div>
+    <div class="il"><span>📦 التغليف:</span><b style="color:${pkgFee>0?'#fbbf24':'#4eff4e'};">${pkgLabels[packaging]||'كبس فقط'} ${pkgFee>0?'— '+pkgFee.toLocaleString()+' د.ع':'— مجاني'}</b></div>
+    ${getSugTotal()>0?`<div class="il" style="border-top:1px solid rgba(255,255,255,.15);padding-top:8px;margin-top:4px;"><span>🛍️ مستلزمات دراسية:</span><b style="color:#fcd34d;">${getSugTotal().toLocaleString()} د.ع</b></div>
+    ${getSugCartItems().map(i=>`<div class="il" style="opacity:.8;font-size:.82rem;"><span style="padding-right:12px;">• ${esc(i.name)} ×${i.qty}</span><b>${(i.price*i.qty).toLocaleString()} د.ع</b></div>`).join('')}`:''}
     <div class="il"><span>🚚 أجور التوصيل:</span><b>${dtxt}</b></div>
     <div class="il" style="background:rgba(0,0,0,.18);padding:10px;border-radius:10px;margin-top:8px;">
       <span>💎 نقاط ستكسبها (عند التسليم):</span>
       <b style="color:${hasDiscount?'#94a3b8':'#ffd700'};">${hasDiscount?'0 (خصم مطبّق)':'+'+pe}</b>
     </div>`;
-  document.getElementById('totlbl').innerText = `المجموع النهائي: ${tot.toLocaleString()} د.ع`;
-  window._ord = {pp, df, td, pd, couponDisc, expressFee, pkgFee, packaging, tot, pe, isFO};
+  const hasSugItemsNow = Object.keys(_sugCart).length > 0;
+  const totalLabel = (!files.length && hasSugItemsNow)
+    ? `إجمالي المستلزمات: ${tot.toLocaleString()} د.ع`
+    : (files.length && hasSugItemsNow)
+      ? `المجموع الكلي (طباعة + مستلزمات): ${tot.toLocaleString()} د.ع`
+      : `المجموع النهائي: ${tot.toLocaleString()} د.ع`;
+  document.getElementById('totlbl').innerText = totalLabel;
+  window._ord = {pp, df, td, pd, couponDisc, expressFee, pkgFee, packaging, tot, pe, isFO, sugItems: getSugCartItems(), sugTotal: getSugTotal()};
 }
 
 window.adjC = (i,d) => { files[i].c=Math.max(1,files[i].c+d); calcUI(); };
@@ -1187,8 +1367,8 @@ async function sendOrder() {
   if (name.length < 3)                     return showErr('❌ الاسم يجب أن يكون 3 أحرف على الأقل');
   if (phone.length!==11 || isNaN(+phone)) return showErr('❌ رقم الهاتف يجب أن يكون 11 رقمًا');
   if (!region)                              return showErr('❌ يرجى إدخال اسم المنطقة');
+  if (!files.length && !Object.keys(_sugCart).length) return showErr('❌ يرجى رفع ملف للطباعة أو اختيار منتج دراسي على الأقل');
   if (!locUrl)                              return showErr('❌ يرجى تحديد موقعك على الخريطة');
-  if (!files.length)                        return showErr('❌ يرجى رفع ملف واحد على الأقل');
 
   // 🔒 Rate limiting
   const now = Date.now();
@@ -1207,30 +1387,37 @@ async function sendOrder() {
 
   try {
     const oid = 'SH-' + Date.now().toString(36).toUpperCase();
-    const {pp, df, td, pd, couponDisc, expressFee, pkgFee, packaging:pkgType, tot, pe, isFO} = window._ord || {};
+    const {pp, df, td, pd, couponDisc, expressFee, pkgFee, packaging:pkgType, tot, pe, isFO, sugItems, sugTotal} = window._ord || {};
     const useP = document.getElementById('ptstog')?.checked && pendingR;
     const pu   = useP ? pendingR.pts : 0;
     const isExpress = document.getElementById('expressTog')?.checked;
+    const hasPrint = files.length > 0;
+    const hasSug   = sugItems?.length > 0;
+    const orderType = hasPrint && hasSug ? 'combined' : hasPrint ? 'print' : 'market';
 
-    stxt.innerText = 'جاري تجهيز وضغط الملفات...';
-    document.getElementById('pbar').style.width = '15%';
-    const zip = new JSZip(), folder = zip.folder('order-' + oid);
-    const meta = [];
-    for (const f of files) {
-      const buf = await f.file.arrayBuffer();
-      for (let c=1; c<=f.c; c++) folder.file(f.c>1?`(${c}) ${f.name}`:f.name, buf);
-      meta.push({name:f.name, pages:f.p, copies:f.c, type:f.type});
+    let meta = [], zipUrl = '';
+    if (hasPrint) {
+      stxt.innerText = 'جاري تجهيز وضغط الملفات...';
+      document.getElementById('pbar').style.width = '15%';
+      const zip = new JSZip(), folder = zip.folder('order-' + oid);
+      for (const f of files) {
+        const buf = await f.file.arrayBuffer();
+        for (let c=1; c<=f.c; c++) folder.file(f.c>1?`(${c}) ${f.name}`:f.name, buf);
+        meta.push({name:f.name, pages:f.p, copies:f.c, type:f.type});
+      }
+      const zipBlob = await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}},
+        m => { document.getElementById('pbar').style.width = (15 + m.percent*.4) + '%'; });
+
+      stxt.innerText = 'جاري رفع الملفات...';
+      const zpath = `orders/${oid}/files_${oid}.zip`;
+      const {error:upErr} = await sb.storage.from('order-files').upload(zpath, zipBlob, {cacheControl:'3600',upsert:true});
+      if (upErr) throw new Error('فشل رفع الملفات: ' + upErr.message);
+      const {data:urlData} = sb.storage.from('order-files').getPublicUrl(zpath);
+      zipUrl = urlData?.publicUrl || '';
+      document.getElementById('pbar').style.width = '75%';
+    } else {
+      document.getElementById('pbar').style.width = '60%';
     }
-    const zipBlob = await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}},
-      m => { document.getElementById('pbar').style.width = (15 + m.percent*.4) + '%'; });
-
-    stxt.innerText = 'جاري رفع الملفات...';
-    const zpath = `orders/${oid}/files_${oid}.zip`;
-    const {error:upErr} = await sb.storage.from('order-files').upload(zpath, zipBlob, {cacheControl:'3600',upsert:true});
-    if (upErr) throw new Error('فشل رفع الملفات: ' + upErr.message);
-    const {data:urlData} = sb.storage.from('order-files').getPublicUrl(zpath);
-    const zipUrl = urlData?.publicUrl || '';
-    document.getElementById('pbar').style.width = '75%';
 
     stxt.innerText = 'جاري تسجيل الطلب...';
     const order = {
@@ -1249,12 +1436,42 @@ async function sendOrder() {
       pts_used:pu, total:tot||0,
       loyalty_points_earned:pe||0,
       is_first_order:!!isFO,
+      order_type: orderType,
+      suggested_items: sugItems?.length ? sugItems : null,
+      suggested_total: sugTotal||0,
       status:'received',
       status_history:[{status:'received', time:new Date().toISOString()}]
     };
 
     const {error:dbErr} = await sb.from('orders').insert(order);
     if (dbErr) throw dbErr;
+
+    // ── خصم مخزون التغليف (كبس/سبايرول/مقوى) من جدول supplies ──
+    if (pkgType && pkgType !== 'none') {
+      const pkgSupplyMap = { spiral: 'سبايرول', cardboard: 'أغلفة' };
+      const pkgCat = pkgSupplyMap[pkgType];
+      if (pkgCat) {
+        try {
+          const {data:supItems} = await sb.from('supplies')
+            .select('id,stock')
+            .eq('category', pkgType === 'spiral' ? 'binding' : 'cover')
+            .limit(1);
+          if (supItems?.length) {
+            const s = supItems[0];
+            await sb.from('supplies').update({ stock: Math.max(0, (s.stock||0) - 1) }).eq('id', s.id);
+          }
+        } catch(_) { /* non-fatal */ }
+      }
+    }
+
+    // ── خصم مخزون المستلزمات المقترحة ──
+    if (sugItems?.length) {
+      await Promise.all(sugItems.map(item =>
+        sb.from('market_products')
+          .update({ stock: Math.max(0, item.stock - item.qty) })
+          .eq('id', item.id)
+      ));
+    }
 
     // Update coupon usage
     if (appliedCoupon) {
@@ -1275,15 +1492,17 @@ async function sendOrder() {
     document.getElementById('pbar').style.width = '90%';
 
     const flist = meta.map(f=>`📄 ${f.name} (${f.pages}ص × ${f.copies}ن)`).join('\n');
-    const pkgLabelsMsg = {none:'كبس فقط 🗜️', cardboard:'ورق مقوى ونايلون 📦', spiral:'سبايرول 🔩'};
+    const pkgLabelsMsg = {none:'كبس فقط', cardboard:'ورق مقوى ونايلون 📦', spiral:'سبايرول 🔩'};
+    const orderTypeBadge = orderType==='combined'?'🔀 مشترك':orderType==='print'?'🖨️ استنساخ':'🛍️ مستلزمات';
+    const sugTxt = sugItems?.length ? '\n\n🛍️ المستلزمات:\n' + sugItems.map(i=>`• ${i.name} ×${i.qty} = ${(i.price*i.qty).toLocaleString()} د.ع`).join('\n') : '';
     await tgMsg(ADMIN,
-      `🆕 طلب جديد #${oid}${isExpress?' ⚡عاجل':''}\n${isFO?'🚚 توصيل مجاني — أول طلب\n':''}` +
+      `🆕 طلب جديد ${orderTypeBadge} #${oid}${isExpress?' ⚡عاجل':''}\n${isFO?'🚚 توصيل مجاني — أول طلب\n':''}` +
       `👤 ${name}\n📞 ${phone}\n🏠 ${region}\n` +
-      `🎨 ${color==='c'?'ملون':'أسود'} — ${side==='1'?'وجه':'وجهين'}\n` +
-      `📦 التغليف: ${pkgLabelsMsg[pkgType||'none']}\n` +
+      (hasPrint ? `🎨 ${color==='c'?'ملون':'أسود'} — ${side==='1'?'وجه':'وجهين'}\n📦 التغليف: ${pkgLabelsMsg[pkgType||'none']}\n` : '') +
       `💰 ${(tot||0).toLocaleString()} د.ع\n📍 ${locUrl}\n` +
       (appliedCoupon ? `🎟️ كوبون: ${appliedCoupon.code}\n` : '') +
-      `\n📋 الملفات:\n${flist}\n\n📦 رابط التحميل:\n${zipUrl}`
+      (hasPrint ? `\n📋 الملفات:\n${flist}\n\n📦 رابط التحميل:\n${zipUrl}` : '') +
+      sugTxt
     );
     if (tgU?.id) await tgMsg(String(tgU.id),
       `✅ تم استلام طلبك #${oid} بنجاح!\n💰 ${(tot||0).toLocaleString()} د.ع\n\n${pe>0?`💎 ستكسب ${pe} نقطة ولاء عند التسليم!\n`:''}سنُخطرك بكل تحديث 🔔`
@@ -1291,7 +1510,11 @@ async function sendOrder() {
 
     document.getElementById('pbar').style.width = '100%';
     lastOrderTime = Date.now();
-    pendingR = null; appliedCoupon = null; refreshPtsUI();
+    pendingR = null; appliedCoupon = null;
+    // Reset suggested cart
+    _sugCart = {};
+    renderSuggestedProducts();
+    refreshPtsUI();
     showSuccessUI(oid, pe, np);
 
   } catch(e) {
@@ -1513,9 +1736,10 @@ function renderUserOrders() {
 
     return `<div class="ocard ${o.is_express?'express-card':''}" onclick="showDet('${esc(o.id)}')">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div style="display:flex;align-items:center;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <b style="color:var(--navy);font-size:1.1rem;">#${esc(o.id)}</b>
           ${o.is_express?'<span class="express-badge">⚡ عاجل</span>':''}
+          ${o.order_type==='combined'?'<span style="background:linear-gradient(135deg,var(--teal),var(--navy));color:#fff;border-radius:20px;padding:2px 10px;font-size:.68rem;font-weight:800;">🔀 مشترك</span>':o.order_type==='market'?'<span style="background:var(--green);color:#fff;border-radius:20px;padding:2px 10px;font-size:.68rem;font-weight:800;">🛍️ مستلزمات</span>':''}
         </div>
         <span class="sbadge ${s.c}">${s.i} ${s.l}</span>
       </div>
@@ -1632,17 +1856,29 @@ async function showDet(oid) {
 
   document.getElementById('det-body').innerHTML = `
     ${o.is_express?'<div style="text-align:center;margin-bottom:12px;"><span class="express-badge" style="font-size:.85rem;padding:6px 16px;">⚡ طلب عاجل</span></div>':''}
+    ${o.order_type==='combined'?'<div style="text-align:center;margin-bottom:12px;"><span style="background:linear-gradient(135deg,var(--teal),var(--navy));color:#fff;border-radius:20px;padding:5px 18px;font-size:.82rem;font-weight:800;">🔀 طلب مشترك (طباعة + مستلزمات)</span></div>':o.order_type==='market'?'<div style="text-align:center;margin-bottom:12px;"><span style="background:var(--green);color:#fff;border-radius:20px;padding:5px 18px;font-size:.82rem;font-weight:800;">🛍️ طلب مستلزمات دراسية</span></div>':''}
     ${tl}${cancelBox}${ratingHtml}
     <div style="background:var(--light-teal);border:1px solid rgba(90,179,196,.2);border-radius:16px;padding:16px;margin-bottom:16px;">
+      ${o.order_type !== 'market' ? `
       <div class="il" style="color:var(--navy);"><span>الطباعة:</span><b>${o.color==='c'?'ملون':'أسود'} • ${o.side==='1'?'وجه واحد':'وجهين'}</b></div>
-      <div class="il" style="color:var(--navy);margin-top:8px;"><span>📦 التغليف:</span><b>${({none:'كبس فقط 🗜️',cardboard:'ورق مقوى ونايلون 📦',spiral:'سبايرول 🔩'})[o.packaging||'none']||'كبس فقط 🗜️'}</b></div>
-      <div class="il" style="color:var(--navy);margin-top:8px;"><span>المجموع:</span><b style="font-size:1.15rem;color:var(--orange);">${(o.total||0).toLocaleString()} د.ع</b></div>
+      <div class="il" style="color:var(--navy);margin-top:8px;"><span>📦 التغليف:</span><b>${({none:'كبس فقط',cardboard:'ورق مقوى ونايلون 📦',spiral:'سبايرول 🔩'})[o.packaging||'none']||'كبس فقط'}</b></div>
+      ` : ''}
+      ${o.suggested_items?.length ? `
+      <div style="margin-top:${o.order_type!=='market'?'10px':'0'};padding-top:${o.order_type!=='market'?'10px':'0'};${o.order_type!=='market'?'border-top:1px solid rgba(90,179,196,.3);':''}">
+        <b style="color:var(--navy);font-size:.88rem;display:block;margin-bottom:6px;">🛍️ المستلزمات الدراسية:</b>
+        ${o.suggested_items.map(i=>`<div style="display:flex;justify-content:space-between;font-size:.83rem;padding:4px 0;color:var(--text-muted);">
+          <span>• ${esc(i.name)} ×${i.qty} ${esc(i.unit||'قطعة')}</span>
+          <b style="color:var(--orange);">${(i.price*i.qty).toLocaleString()} د.ع</b>
+        </div>`).join('')}
+      </div>` : ''}
+      <div class="il" style="color:var(--navy);margin-top:8px;border-top:1px solid rgba(90,179,196,.3);padding-top:8px;"><span>المجموع:</span><b style="font-size:1.15rem;color:var(--orange);">${(o.total||0).toLocaleString()} د.ع</b></div>
       <div class="il" style="color:var(--green);margin-top:8px;"><span>💎 نقاط:</span><b style="background:#dcfce7;padding:3px 10px;border-radius:8px;">${o.loyalty_points_earned||0} نقطة</b></div>
     </div>
+    ${o.order_type !== 'market' ? `
     <h4 style="margin:0 0 10px;color:var(--navy);font-weight:800;">الملفات (${o.files?.length||0})</h4>
-    <div style="background:var(--card);border-radius:14px;padding:8px 14px;border:1px solid var(--border);">
+    <div style="background:var(--card);border-radius:14px;padding:8px 14px;border:1px solid var(--border);margin-bottom:14px;">
       ${o.files?.map(f=>`<div style="padding:10px 0;border-bottom:1px solid var(--border);font-size:.88rem;display:flex;justify-content:space-between;align-items:center;"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:65%;">📄 ${esc(f.name)}</span><span style="color:var(--text-muted);font-size:.83rem;background:var(--input-bg);padding:3px 8px;border-radius:6px;">${f.pages}ص × <b style="color:var(--navy);">${f.copies}</b>ن</span></div>`).join('')||''}
-    </div>
+    </div>` : ''}
     ${reorderBtn}`;
 }
 function closeDet() { document.getElementById('det-ov').classList.remove('open'); }
@@ -1770,8 +2006,9 @@ function filterMktProducts() {
     const inCart = cart.find(c => c.id === p.id);
     const hasStock = p.stock > 0;
     return `<div class="mkt-card" onclick="openProductDetail('${p.id}')">
-      <div class="mkt-img">
+      <div class="mkt-img" style="position:relative;">
         ${p.image_url ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" onerror="this.parentElement.innerHTML='${catIcons[p.category]||'📦'}'">` : catIcons[p.category]||'📦'}
+        ${p.is_suggested ? `<span style="position:absolute;top:6px;right:6px;background:var(--orange);color:#fff;border-radius:8px;font-size:.62rem;font-weight:800;padding:2px 7px;box-shadow:0 2px 6px rgba(0,0,0,.2);">⭐ مقترح</span>` : ''}
       </div>
       <b style="font-size:.92rem;color:var(--navy);display:block;margin-bottom:4px;line-height:1.4;">${esc(p.name)}</b>
       ${p.description ? `<p style="font-size:.75rem;color:var(--text-muted);margin:0 0 6px;line-height:1.5;">${esc(p.description.substring(0,50))}${p.description.length>50?'...':''}</p>` : ''}
@@ -2025,5 +2262,6 @@ init();
 </script>
 </body>
 </html>
+
 
 
