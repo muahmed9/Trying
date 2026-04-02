@@ -393,6 +393,12 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
           <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer;padding:8px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
             <input type="checkbox" id="perm-canc" value="any→cancelled"> إلغاء الطلبات
           </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer;padding:8px;background:#f0fdf4;border-radius:10px;border:1px solid #86efac;">
+            <input type="checkbox" id="perm-market" value="manage_market"> إدارة المتجر 🛒
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer;padding:8px;background:#fef3c7;border-radius:10px;border:1px solid #fde68a;">
+            <input type="checkbox" id="perm-supplies" value="manage_supplies"> إدارة المخزن 🗄️
+          </label>
         </div>
         <select id="new-staff-emoji" style="margin-bottom:12px;">
           <option value="👤">👤 موظف عام</option>
@@ -639,7 +645,7 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
       <!-- Packaging fees -->
       <div style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.03);margin-bottom:20px;">
         <h4 style="margin:0 0 16px;color:var(--navy);font-weight:800;">📦 رسوم التغليف</h4>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;">
           <div style="background:#f0fdf4;border-radius:12px;padding:12px;">
             <label style="font-size:.78rem;color:#166534;font-weight:800;display:block;margin-bottom:6px;">🗜️ كبس فقط</label>
             <input type="number" id="pr-pkg-none" value="0" min="0" step="250" style="margin-bottom:0;background:#dcfce7;">
@@ -716,8 +722,17 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
           <textarea id="prod-desc" placeholder="وصف مختصر للمنتج..." rows="2" style="resize:none;margin-bottom:0;"></textarea>
         </div>
         <div style="grid-column:span 2;">
-          <label style="font-size:.78rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">رابط الصورة (اختياري)</label>
-          <input type="text" id="prod-img" placeholder="https://..." style="margin-bottom:0;">
+          <label style="font-size:.78rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">📷 صورة المنتج (اختياري)</label>
+          <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;">
+            <div id="prod-img-preview" style="width:72px;height:72px;border-radius:10px;background:#f1f5f9;border:1.5px dashed #cbd5e1;display:flex;align-items:center;justify-content:center;font-size:2rem;flex-shrink:0;overflow:hidden;">📦</div>
+            <div style="flex:1;min-width:180px;">
+              <label style="display:block;background:var(--teal);color:#fff;padding:9px 14px;border-radius:10px;cursor:pointer;text-align:center;font-weight:700;font-size:.88rem;margin-bottom:6px;">
+                📤 رفع صورة مباشرة
+                <input type="file" id="prod-img-file" accept="image/*" style="display:none;" onchange="handleProdImgUpload(this)">
+              </label>
+              <input type="text" id="prod-img" placeholder="أو الصق رابط صورة https://..." style="margin-bottom:0;font-size:.82rem;" oninput="updateProdImgPreview(this.value)">
+            </div>
+          </div>
         </div>
       </div>
  
@@ -739,6 +754,21 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
       </select>
     </div>
  
+
+    <!-- Category Manager -->
+    <div id="mkt-cat-manager" style="background:var(--card);border-radius:18px;padding:18px;box-shadow:0 4px 12px rgba(0,0,0,.03);margin-bottom:18px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h4 style="margin:0;color:var(--navy);font-weight:800;">🏷️ إدارة فئات المتجر</h4>
+        <button onclick="document.getElementById('mkt-cat-manager-body').style.display=document.getElementById('mkt-cat-manager-body').style.display==='none'?'block':'none'" style="border:none;background:#f1f5f9;color:var(--text-muted);padding:5px 12px;border-radius:8px;font-size:.82rem;cursor:pointer;font-weight:700;">▾ عرض/إخفاء</button>
+      </div>
+      <div id="mkt-cat-manager-body" style="display:none;">
+        <div id="mkt-cat-manager-list"></div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <input type="text" id="mkt-new-cat-label" placeholder="مثال: 🎒 حقائب" style="margin-bottom:0;flex:1;">
+          <button onclick="addMktCat()" style="border:none;background:var(--teal);color:#fff;padding:10px 16px;border-radius:12px;font-weight:800;cursor:pointer;font-family:'Tajawal',sans-serif;white-space:nowrap;">+ إضافة</button>
+        </div>
+      </div>
+    </div>
     <!-- Stats quick summary -->
     <div class="sgrid" style="margin-bottom:16px;" id="mkt-stats-grid">
       <div class="scard"><div class="snum" id="mkt-s-total" style="color:var(--navy);">—</div><div class="slbl">إجمالي المنتجات</div></div>
@@ -773,6 +803,21 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
       </div>
       <p style="margin:0 0 18px;color:var(--text-muted);font-size:.88rem;">إدارة مواد الورق والأحبار والسبايرول والكلبس وغيرها</p>
  
+
+      <!-- Supply Category Manager -->
+      <div style="background:var(--card);border-radius:18px;padding:18px;box-shadow:0 4px 12px rgba(0,0,0,.03);margin-bottom:18px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <h4 style="margin:0;color:var(--navy);font-weight:800;">🏷️ إدارة فئات المخزن</h4>
+          <button onclick="document.getElementById('sup-cat-mgr-body').style.display=document.getElementById('sup-cat-mgr-body').style.display==='none'?'block':'none'" style="border:none;background:#f1f5f9;color:var(--text-muted);padding:5px 12px;border-radius:8px;font-size:.82rem;cursor:pointer;font-weight:700;">▾ عرض/إخفاء</button>
+        </div>
+        <div id="sup-cat-mgr-body" style="display:none;">
+          <div id="sup-cat-manager-list"></div>
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <input type="text" id="sup-new-cat-label" placeholder="مثال: 🖊️ أقلام" style="margin-bottom:0;flex:1;">
+            <button onclick="addSupCat()" style="border:none;background:var(--teal);color:#fff;padding:10px 16px;border-radius:12px;font-weight:800;cursor:pointer;font-family:'Tajawal',sans-serif;white-space:nowrap;">+ إضافة</button>
+          </div>
+        </div>
+      </div>
       <!-- Low Stock Alert -->
       <div id="low-stock-alert" style="display:none;" class="alert-low">
     <p class="alert-low-title">⚠️ مواد تحت الحد الأدنى</p>
@@ -983,16 +1028,16 @@ function tryCustomLogin(user, pass) {
   return getCustomAccounts().find(a => a.username === user && a.pass === pass);
 }
 function canDo(from, to) {
-  // Check built-in role
   const allowed = ROLES[currentRole]?.can || [];
   if (allowed.includes(`${from}→${to}`)) return true;
   if (to === 'cancelled' && allowed.includes('any→cancelled')) return true;
-  // Check if logged in as custom account
   if (currentRole === '__custom__' && currentCustomCan) {
     return currentCustomCan.includes(`${from}→${to}`) || (to==='cancelled' && currentCustomCan.includes('any→cancelled'));
   }
   return false;
 }
+function canManageMarket()   { return currentRole==='admin' || (currentRole==='__custom__' && currentCustomCan?.includes('manage_market')); }
+function canManageSupplies() { return currentRole==='admin' || (currentRole==='__custom__' && currentCustomCan?.includes('manage_supplies')); }
 // For custom accounts
 let currentCustomCan = null;
 let currentCustomLabel = '';
@@ -1086,6 +1131,11 @@ function enterDashboard(profile) {
       document.getElementById('tab-supplies-btn').style.display = '';
       loadPricingAdmin();
     }
+  }
+  // Show market/supply tabs for custom accounts with permissions
+  if (currentRole !== 'admin') {
+    if (canManageMarket())   document.getElementById('tab-market-btn').style.display   = '';
+    if (canManageSupplies()) document.getElementById('tab-supplies-btn').style.display = '';
   }
   renderStaffList();
   startListening();
@@ -1190,7 +1240,7 @@ async function createCustomAccount() {
     return;
   }
 
-  const perms = ['perm-rp','perm-pd','perm-dd','perm-canc']
+  const perms = ['perm-rp','perm-pd','perm-dd','perm-canc','perm-market','perm-supplies']
     .map(id => document.getElementById(id))
     .filter(el => el?.checked)
     .map(el => el.value);
@@ -1198,37 +1248,32 @@ async function createCustomAccount() {
   if (!perms.length) { alert('يرجى اختيار صلاحية واحدة على الأقل'); return; }
 
   try {
-    // إنشاء مستخدم جديد عبر Supabase Auth Admin API مباشرة
-    const res = await fetch(
-      'https://zrumnqtgdscrwgcguseq.supabase.co/auth/v1/admin/users',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SB_KEY,
-          'Authorization': 'Bearer ' + SB_KEY
-        },
-        body: JSON.stringify({
-          email,
-          password: pass,
-          email_confirm: true,
-          user_metadata: { name, emoji, permissions: perms }
-        })
-      }
-    );
-
-    const userData = await res.json();
-    if (!res.ok) throw new Error(userData.msg || userData.message || 'فشل إنشاء المستخدم');
-
-    // إضافة الدور في profiles
-    const { error: profErr } = await sb.from('profiles').insert({
-      id: userData.id,
-      role: 'custom',
-      name,
-      emoji: emoji || '👤',
-      permissions: perms
+    // إنشاء الحساب عبر Edge Function (تتطلب service_role من الخادم)
+    const { data: fnData, error: fnErr } = await sb.functions.invoke('create-staff', {
+      body: { email, password: pass, name, emoji: emoji||'👤', permissions: perms }
     });
-    if (profErr) throw profErr;
+
+    if (fnErr) {
+      // Edge Function غير متاحة — إنشاء مسجّل فقط في profiles (يتطلب إنشاء مستخدم يدوياً في Supabase)
+      const { data: signData, error: signErr } = await sb.auth.signUp({ email, password: pass });
+      if (signErr) throw new Error('تأكد من Supabase Dashboard لإنشاء المستخدم: ' + signErr.message);
+      const uid = signData?.user?.id;
+      if (!uid) throw new Error('فشل في الحصول على معرف المستخدم. راجع Supabase Auth.');
+      const { error: profErr } = await sb.from('profiles').insert({
+        id: uid, role: 'custom', name, emoji: emoji||'👤', permissions: perms
+      });
+      if (profErr && profErr.code !== '23505') throw profErr;
+      showToast('✅ تم إنشاء الحساب (يحتاج تأكيد البريد)');
+    } else {
+      showToast('✅ تم إنشاء حساب ' + name);
+    }
+
+    // إضافة الدور في profiles إذا أعادت Edge Function بيانات
+    if (fnData?.user?.id) {
+      await sb.from('profiles').upsert({
+        id: fnData.user.id, role: 'custom', name, emoji: emoji||'👤', permissions: perms
+      }, { onConflict: 'id' });
+    }
 
     document.getElementById('new-staff-name').value = '';
     document.getElementById('new-staff-user').value = '';
@@ -2324,6 +2369,7 @@ function switchMarketSubTab(tab, el) {
 }
 
 async function loadAdminProducts() {
+  await loadMktCats();
   const box = document.getElementById('products-list');
   if (!box) return;
   box.innerHTML = '<div style="text-align:center;padding:30px;color:var(--teal);"><b>جاري التحميل...</b></div>';
@@ -2587,9 +2633,430 @@ async function cancelMktOrder(id) {
   await updateMktOrderStatus(id, 'cancelled');
 }
 
+// ══════════════════════════════════════════════════════════════
+//  📷 IMAGE UPLOAD — رفع صورة مباشرة إلى Supabase Storage
+// ══════════════════════════════════════════════════════════════
+async function handleProdImgUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { showToast('❌ الصورة أكبر من 2MB'); input.value=''; return; }
+
+  // Preview immediately
+  const reader = new FileReader();
+  reader.onload = e => updateProdImgPreview(e.target.result);
+  reader.readAsDataURL(file);
+
+  showToast('⏳ جاري رفع الصورة...');
+  try {
+    const ext  = file.name.split('.').pop().toLowerCase() || 'jpg';
+    const path = `products/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error: upErr } = await sb.storage.from('product-images').upload(path, file, { upsert: true });
+    if (upErr) throw upErr;
+    const { data } = sb.storage.from('product-images').getPublicUrl(path);
+    document.getElementById('prod-img').value = data.publicUrl;
+    updateProdImgPreview(data.publicUrl);
+    showToast('✅ تم رفع الصورة');
+  } catch(e) {
+    showToast('⚠️ تعذّر الرفع — الصورة محفوظة مؤقتاً كـ Base64');
+    // Keep base64 preview as fallback (already set above)
+  }
+}
+
+function updateProdImgPreview(src) {
+  const box = document.getElementById('prod-img-preview');
+  if (!box) return;
+  if (src && src.length > 5) {
+    box.innerHTML = `<img src="${esc(src)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='📦'">`;
+  } else {
+    box.innerHTML = '📦';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  🗄️  SUPPLIES / WAREHOUSE — إدارة مخزن مواد الاستنساخ
+// ══════════════════════════════════════════════════════════════
+let _supplies     = [];
+let _supCatFilter = 'all';
+let _txSupId      = null;
+let _txType       = 'add';
+let _editSupId    = null;
+
+// ── Default supply categories ──
+const DEF_SUP_CATS = [
+  { id:'paper',   label:'📄 ورق',            color:'#e0f2fe' },
+  { id:'ink',     label:'🖨️ أحبار',           color:'#ede9fe' },
+  { id:'binding', label:'🔩 سبايرول/تجليد',   color:'#fef3c7' },
+  { id:'clips',   label:'📎 كلبس وتدبيس',    color:'#f0fdf4' },
+  { id:'cover',   label:'📋 أغلفة',           color:'#fdf4ff' },
+  { id:'other',   label:'📦 أخرى',            color:'#f1f5f9' },
+];
+
+let _supCats = [...DEF_SUP_CATS];
+
+async function loadSupCats() {
+  try {
+    const { data } = await sb.from('settings').select('value').eq('key','supply_categories').maybeSingle();
+    if (data?.value?.length) _supCats = data.value;
+  } catch {}
+  renderSupCatFilter();
+  renderSupCatOptions();
+}
+
+async function saveSupCats() {
+  try {
+    await sb.from('settings').upsert({ key:'supply_categories', value:_supCats }, { onConflict:'key' });
+  } catch {}
+}
+
+function renderSupCatFilter() {
+  const bar = document.getElementById('sup-cat-filter-bar');
+  if (!bar) return;
+  bar.innerHTML = `<button class="ftab active" onclick="setSupCatFilter('all',this)">الكل</button>` +
+    _supCats.map(c => `<button class="ftab" onclick="setSupCatFilter('${c.id}',this)">${c.label}</button>`).join('');
+}
+
+function renderSupCatOptions() {
+  const selAdd  = document.getElementById('sup-cat');
+  const selEdit = document.getElementById('edit-sup-cat');
+  const opts    = _supCats.map(c => `<option value="${c.id}">${c.label}</option>`).join('');
+  if (selAdd)  selAdd.innerHTML  = opts;
+  if (selEdit) selEdit.innerHTML = opts;
+  renderSupCatManager();
+}
+
+function renderSupCatManager() {
+  const box = document.getElementById('sup-cat-manager-list');
+  if (!box) return;
+  box.innerHTML = _supCats.map((c,i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px;background:${c.color||'#f8fafc'};border-radius:10px;margin-bottom:6px;">
+      <span style="flex:1;font-size:.88rem;font-weight:700;">${c.label}</span>
+      <button onclick="deleteSupCat(${i})" style="border:none;background:#fef2f2;color:#991b1b;padding:4px 10px;border-radius:7px;font-size:.75rem;cursor:pointer;font-weight:700;">حذف</button>
+    </div>`).join('');
+}
+
+async function addSupCat() {
+  const labelEl = document.getElementById('sup-new-cat-label');
+  const label = labelEl?.value.trim();
+  if (!label) return showToast('❌ أدخل اسم الفئة');
+  const id = 'cat_' + Date.now().toString(36);
+  _supCats.push({ id, label, color:'#f1f5f9' });
+  labelEl.value = '';
+  await saveSupCats();
+  renderSupCatFilter();
+  renderSupCatOptions();
+  showToast('✅ تمت إضافة الفئة');
+}
+
+async function deleteSupCat(idx) {
+  if (!confirm('حذف هذه الفئة؟ المواد المرتبطة بها ستبقى ولكن فئتها ستصبح غير معروفة.')) return;
+  _supCats.splice(idx, 1);
+  await saveSupCats();
+  renderSupCatFilter();
+  renderSupCatOptions();
+  showToast('🗑️ تم حذف الفئة');
+}
+
+async function loadSupplies() {
+  await loadSupCats();
+  const box = document.getElementById('supplies-list');
+  if (!box) return;
+  box.innerHTML = '<div style="text-align:center;padding:40px;color:var(--teal);"><b>جاري التحميل...</b></div>';
+  try {
+    const { data, error } = await sb.from('supplies').select('*').order('category').order('name');
+    if (error) throw error;
+    _supplies = data || [];
+    renderSupplies();
+  } catch(e) {
+    box.innerHTML = `<div style="text-align:center;padding:30px;color:var(--red);"><b>❌ ${esc(e.message)}</b></div>`;
+  }
+}
+
+function setSupCatFilter(cat, el) {
+  _supCatFilter = cat;
+  document.querySelectorAll('#sup-cat-filter-bar .ftab').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderSupplies();
+}
+
+function renderSupplies() {
+  const box  = document.getElementById('supplies-list');
+  const list = _supCatFilter === 'all' ? _supplies : _supplies.filter(s => s.category === _supCatFilter);
+
+  // Stats
+  const _sv = (id, v) => { const el=document.getElementById(id); if(el) el.innerText=v; };
+  _sv('sup-s-total', _supplies.length);
+  _sv('sup-s-low',   _supplies.filter(s => s.stock>0 && s.stock<=(s.min_stock||0)).length);
+  _sv('sup-s-ok',    _supplies.filter(s => s.stock>(s.min_stock||0)).length);
+  const totalCost = _supplies.reduce((t,s)=>t+(s.stock*(s.cost||0)),0);
+  _sv('sup-s-cost',  Math.round(totalCost/1000));
+
+  // Low-stock alert
+  const low = _supplies.filter(s => s.stock<=(s.min_stock||0));
+  const alertBox = document.getElementById('low-stock-alert');
+  const alertItems = document.getElementById('low-stock-items');
+  if (alertBox) alertBox.style.display = low.length ? 'block' : 'none';
+  if (alertItems) alertItems.innerHTML = low.map(s =>
+    `<span style="display:inline-block;margin:3px;background:${s.stock<=0?'#fecaca':'#fed7aa'};color:${s.stock<=0?'#991b1b':'#92400e'};padding:3px 10px;border-radius:20px;font-size:.78rem;font-weight:700;">${esc(s.name)} — ${s.stock} ${esc(s.unit||'')}</span>`
+  ).join('');
+
+  if (!list.length) {
+    box.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;"><div style="font-size:3rem;opacity:.3;">🗄️</div><p style="font-weight:600;">لا توجد مواد في هذه الفئة</p></div>';
+    return;
+  }
+
+  box.innerHTML = list.map(s => {
+    const cat  = _supCats.find(c=>c.id===s.category);
+    const pct  = s.min_stock>0 ? Math.min(100, Math.round((s.stock/s.min_stock)*100)) : 100;
+    const barC = s.stock<=0?'#ef4444':s.stock<=(s.min_stock||0)?'#f59e0b':'#10b981';
+    const badge = s.stock<=0
+      ? `<span class="low-badge">❌ نفد</span>`
+      : s.stock<=(s.min_stock||0)
+        ? `<span class="low-badge">⚠️ منخفض</span>`
+        : `<span class="ok-badge">✅ كافٍ</span>`;
+    return `
+    <div class="sup-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+        <div style="flex:1;">
+          <b style="color:var(--navy);font-size:.95rem;">${cat?.label?.charAt(0)||'📦'} ${esc(s.name)}</b>
+          ${badge}
+          ${s.notes?`<p style="font-size:.75rem;color:var(--text-muted);margin:4px 0 0;">${esc(s.notes)}</p>`:''}
+        </div>
+        <div style="text-align:center;margin-right:10px;">
+          <div style="font-size:1.6rem;font-weight:800;color:${barC};line-height:1;">${s.stock}</div>
+          <div style="font-size:.7rem;color:var(--text-muted);">${esc(s.unit||'وحدة')}</div>
+        </div>
+      </div>
+      <div class="stock-bar-wrap"><div class="stock-bar" style="width:${pct}%;background:${barC};"></div></div>
+      <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px;display:flex;justify-content:space-between;">
+        <span>حد الأدنى: ${s.min_stock||0} ${esc(s.unit||'')}</span>
+        ${s.cost?`<span>التكلفة: ${Number(s.cost).toLocaleString()} د.ع/وحدة</span>`:''}
+      </div>
+      <div class="arow" style="margin-top:10px;">
+        <button onclick="openSupplyTx('${s.id}','add')" class="abtn adeliv">➕ إضافة</button>
+        <button onclick="openSupplyTx('${s.id}','sub')" class="abtn aprint">➖ خصم</button>
+        <button onclick="openEditSupply('${s.id}')" class="abtn" style="background:#dbeafe;color:#1e40af;">✏️ تعديل</button>
+        <button onclick="openSupplyLog('${s.id}')" class="abtn" style="background:#f8fafc;color:#64748b;">📋 سجل</button>
+        <button onclick="deleteSupply('${s.id}')" class="abtn acanc">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function createSupply() {
+  const name  = document.getElementById('sup-name').value.trim();
+  const cat   = document.getElementById('sup-cat').value;
+  const unit  = document.getElementById('sup-unit').value.trim() || 'قطعة';
+  const stock = parseFloat(document.getElementById('sup-stock').value) || 0;
+  const min   = parseFloat(document.getElementById('sup-min').value)   || 0;
+  const cost  = parseFloat(document.getElementById('sup-cost').value)  || 0;
+  const notes = document.getElementById('sup-notes').value.trim();
+
+  if (!name) return showToast('❌ أدخل اسم المادة');
+
+  const btn = document.querySelector('#page-supplies .bmain[onclick="createSupply()"]');
+  if (btn) { btn.disabled=true; btn.innerText='⏳ جاري الإضافة...'; }
+
+  try {
+    const initLog = stock > 0
+      ? [{ type:'add', qty:stock, notes:'مخزون ابتدائي', time:new Date().toISOString() }]
+      : [];
+    const { error } = await sb.from('supplies').insert({
+      name, category:cat, unit, stock, min_stock:min, cost, notes:notes||null, tx_log:initLog
+    });
+    if (error) throw error;
+    ['sup-name','sup-unit','sup-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+    ['sup-stock','sup-min','sup-cost'].forEach(id  => { const el=document.getElementById(id); if(el) el.value=''; });
+    showToast('✅ تمت إضافة المادة للمخزن');
+    await loadSupplies();
+  } catch(e) {
+    showToast('❌ ' + e.message);
+  } finally {
+    if (btn) { btn.disabled=false; btn.innerText='✅ إضافة للمخزن'; }
+  }
+}
+
+function openSupplyTx(id, type) {
+  _txSupId = id;
+  _txType  = type;
+  const s  = _supplies.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('tx-supply-name').innerText = s.name;
+  document.getElementById('tx-type-label').innerText  = type === 'add' ? '➕ إضافة مخزون' : '➖ خصم من المخزون';
+  document.getElementById('tx-qty').value   = '';
+  document.getElementById('tx-notes').value = '';
+  document.getElementById('supply-tx-modal').classList.add('open');
+}
+
+async function confirmSupplyTx() {
+  const qty   = parseFloat(document.getElementById('tx-qty').value);
+  const notes = document.getElementById('tx-notes').value.trim();
+  if (isNaN(qty) || qty <= 0) return showToast('❌ أدخل كمية أكبر من صفر');
+  const s = _supplies.find(x => x.id === _txSupId);
+  if (!s) return;
+  const newStock = _txType === 'add' ? s.stock + qty : Math.max(0, s.stock - qty);
+  const newLog   = [...(s.tx_log||[]), { type:_txType, qty, notes:notes||null, time:new Date().toISOString() }];
+  try {
+    const { error } = await sb.from('supplies').update({ stock:newStock, tx_log:newLog }).eq('id', _txSupId);
+    if (error) throw error;
+    document.getElementById('supply-tx-modal').classList.remove('open');
+    showToast(`✅ المخزون الجديد: ${newStock} ${s.unit||''}`);
+    await loadSupplies();
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+function openEditSupply(id) {
+  _editSupId = id;
+  const s = _supplies.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('edit-sup-id').value    = id;
+  document.getElementById('edit-sup-name').value  = s.name||'';
+  document.getElementById('edit-sup-cat').value   = s.category||'other';
+  document.getElementById('edit-sup-unit').value  = s.unit||'';
+  document.getElementById('edit-sup-min').value   = s.min_stock??'';
+  document.getElementById('edit-sup-cost').value  = s.cost??'';
+  document.getElementById('edit-sup-notes').value = s.notes||'';
+  document.getElementById('edit-supply-modal').classList.add('open');
+}
+
+async function saveSupplyEdit() {
+  const id    = document.getElementById('edit-sup-id').value;
+  const name  = document.getElementById('edit-sup-name').value.trim();
+  const cat   = document.getElementById('edit-sup-cat').value;
+  const unit  = document.getElementById('edit-sup-unit').value.trim()||'قطعة';
+  const min   = parseFloat(document.getElementById('edit-sup-min').value)||0;
+  const cost  = parseFloat(document.getElementById('edit-sup-cost').value)||0;
+  const notes = document.getElementById('edit-sup-notes').value.trim();
+  if (!name) return showToast('❌ الاسم مطلوب');
+  try {
+    const { error } = await sb.from('supplies').update({ name, category:cat, unit, min_stock:min, cost, notes:notes||null }).eq('id', id);
+    if (error) throw error;
+    document.getElementById('edit-supply-modal').classList.remove('open');
+    showToast('✅ تم حفظ التعديلات');
+    await loadSupplies();
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+async function deleteSupply(id) {
+  const s = _supplies.find(x => x.id === id);
+  if (!confirm(`حذف "${s?.name}"؟ لا يمكن التراجع.`)) return;
+  try {
+    const { error } = await sb.from('supplies').delete().eq('id', id);
+    if (error) throw error;
+    showToast('🗑️ تم الحذف');
+    await loadSupplies();
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+function openSupplyLog(id) {
+  const s = _supplies.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('log-supply-name').innerText = s.name;
+  const log  = (s.tx_log||[]).slice().reverse();
+  const body = document.getElementById('supply-log-body');
+  body.innerHTML = !log.length
+    ? '<p style="text-align:center;color:var(--text-muted);padding:20px;">لا توجد حركات مسجّلة</p>'
+    : log.map(tx => {
+        const dt   = new Date(tx.time).toLocaleString('ar-IQ',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+        const isAdd = tx.type === 'add';
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f1f5f9;">
+          <div>
+            <span style="font-weight:800;color:${isAdd?'#166534':'#991b1b'};">${isAdd?'➕':'➖'} ${tx.qty}</span>
+            ${tx.notes?`<span style="font-size:.78rem;color:var(--text-muted);margin-right:8px;">— ${esc(tx.notes)}</span>`:''}
+          </div>
+          <span style="font-size:.75rem;color:#94a3b8;">${dt}</span>
+        </div>`;
+      }).join('');
+  document.getElementById('supply-log-modal').classList.add('open');
+}
+
+function exportSuppliesReport() {
+  if (!_supplies.length) return showToast('❌ لا توجد بيانات للتصدير');
+  const catLabel = id => _supCats.find(c=>c.id===id)?.label || id;
+  const rows = [['الاسم','الفئة','الوحدة','المخزون','الحد الأدنى','تكلفة الوحدة','القيمة الكلية','الملاحظات']];
+  _supplies.forEach(s => rows.push([
+    s.name, catLabel(s.category), s.unit||'', s.stock, s.min_stock||0, s.cost||0,
+    Math.round(s.stock*(s.cost||0)), s.notes||''
+  ]));
+  const csv = '\uFEFF' + rows.map(r => r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
+  a.download = `مخزن_الشاطر_${new Date().toLocaleDateString('en-CA')}.csv`;
+  a.click();
+  showToast('⬇️ جاري تحميل التقرير...');
+}
+
+// ══════════════════════════════════════════════════════════════
+//  🏷️ MARKET CATEGORIES MANAGEMENT — إدارة فئات المتجر
+// ══════════════════════════════════════════════════════════════
+const DEF_MKT_CATS = [
+  { id:'notebooks', label:'📓 دفاتر' },
+  { id:'books',     label:'📚 كتب' },
+  { id:'stationery',label:'✏️ قرطاسية وأدوات' },
+  { id:'other',     label:'📦 أخرى' },
+];
+
+let _mktCatsDef = [...DEF_MKT_CATS];
+
+async function loadMktCats() {
+  try {
+    const { data } = await sb.from('settings').select('value').eq('key','market_categories').maybeSingle();
+    if (data?.value?.length) _mktCatsDef = data.value;
+  } catch {}
+  applyMktCatsToUI();
+}
+
+async function saveMktCats() {
+  try {
+    await sb.from('settings').upsert({ key:'market_categories', value:_mktCatsDef }, { onConflict:'key' });
+  } catch {}
+}
+
+function applyMktCatsToUI() {
+  // Update prod-cat select
+  const sel = document.getElementById('prod-cat');
+  if (sel) sel.innerHTML = _mktCatsDef.map(c=>`<option value="${c.id}">${c.label}</option>`).join('');
+  // Update prod-cat-filter select
+  const flt = document.getElementById('prod-cat-filter');
+  if (flt) flt.innerHTML = '<option value="all">كل الفئات</option>' + _mktCatsDef.map(c=>`<option value="${c.id}">${c.label}</option>`).join('');
+  renderMktCatManager();
+}
+
+function renderMktCatManager() {
+  const box = document.getElementById('mkt-cat-manager-list');
+  if (!box) return;
+  box.innerHTML = _mktCatsDef.map((c,i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#f8fafc;border-radius:10px;margin-bottom:6px;border:1px solid #e2e8f0;">
+      <span style="flex:1;font-size:.88rem;font-weight:700;">${c.label}</span>
+      <code style="font-size:.72rem;color:#64748b;background:#e2e8f0;padding:2px 6px;border-radius:5px;">${c.id}</code>
+      <button onclick="deleteMktCat(${i})" style="border:none;background:#fef2f2;color:#991b1b;padding:4px 10px;border-radius:7px;font-size:.75rem;cursor:pointer;font-weight:700;">حذف</button>
+    </div>`).join('');
+}
+
+async function addMktCat() {
+  const labelEl = document.getElementById('mkt-new-cat-label');
+  const label = labelEl?.value.trim();
+  if (!label) return showToast('❌ أدخل اسم الفئة');
+  const id = 'cat_' + Date.now().toString(36);
+  _mktCatsDef.push({ id, label });
+  labelEl.value = '';
+  await saveMktCats();
+  applyMktCatsToUI();
+  showToast('✅ تمت إضافة الفئة');
+}
+
+async function deleteMktCat(idx) {
+  if (_mktCatsDef.length <= 1) return showToast('❌ يجب أن تبقى فئة واحدة على الأقل');
+  if (!confirm('حذف هذه الفئة؟ المنتجات المرتبطة بها ستبقى ولكن فئتها ستصبح "other".')) return;
+  _mktCatsDef.splice(idx, 1);
+  await saveMktCats();
+  applyMktCatsToUI();
+  showToast('🗑️ تم حذف الفئة');
+}
+
 </script>
 </body>
 </html>
+
 
 
 
