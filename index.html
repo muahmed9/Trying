@@ -270,6 +270,24 @@ input:checked+.togs:before{transform:translateX(-24px);}
 [data-theme="dark"] .sug-prod-row.selected{border-color:var(--teal);background:rgba(90,179,196,.12);}
 
 
+
+/* ── Unified Cart in tab-order ── */
+#unified-cart-section{background:var(--card);border-radius:18px;padding:16px;margin:14px 0;border:2px solid var(--teal);display:none;}
+.ucart-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
+.ucart-item:last-child{border-bottom:none;}
+.ucart-qty-ctrl{display:flex;align-items:center;gap:6px;}
+.ucqbtn{border:none;background:var(--light-teal);width:28px;height:28px;border-radius:8px;cursor:pointer;font-weight:800;font-size:.95rem;color:var(--navy);}
+/* ── Product Detail Page ── */
+#product-detail-page{position:fixed;inset:0;background:var(--bg);z-index:250;overflow-y:auto;display:none;}
+#product-detail-page.open{display:block;}
+.pdp-header{background:var(--navy);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10;}
+.pdp-back{border:none;background:rgba(255,255,255,.15);color:#fff;width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;}
+.pdp-img{width:100%;max-height:260px;object-fit:cover;border-radius:0 0 18px 18px;}
+.pdp-body{padding:18px;}
+.similar-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px;}
+.disc-badge{background:#dcfce7;color:#166534;border-radius:8px;font-size:.72rem;padding:3px 10px;font-weight:800;}
+.gift-badge{background:#fef3c7;color:#b45309;border-radius:8px;font-size:.72rem;padding:3px 10px;font-weight:800;}
+
 .orders-fbar{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;}
 .orders-fbar::-webkit-scrollbar{display:none;}
 .ofbtn{padding:7px 14px;border-radius:20px;border:1.5px solid #e2e8f0;background:var(--card);cursor:pointer;font-size:.8rem;white-space:nowrap;font-weight:700;color:var(--text-muted);font-family:'Tajawal',sans-serif;}
@@ -375,6 +393,20 @@ input:checked+.togs:before{transform:translateX(-24px);}
     <input type="file" id="fileinp" multiple style="display:none">
   </div>
   <div id="flist" style="display:none;"></div>
+
+  <!-- ══ سلة القرطاسية الموحدة ══ -->
+  <div id="unified-cart-section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <b style="color:var(--navy);font-size:.95rem;">🛒 سلة القرطاسية</b>
+      <button onclick="goTab('market')" style="border:none;background:var(--light-teal);color:var(--teal);padding:6px 12px;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;font-family:'Tajawal',sans-serif;">+ إضافة منتجات</button>
+    </div>
+    <div id="unified-cart-items"></div>
+    <div style="background:var(--light-teal);border-radius:12px;padding:12px;margin-top:10px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:.88rem;color:var(--navy);font-weight:700;">إجمالي القرطاسية:</span>
+      <b id="ucart-subtotal" style="color:var(--orange);font-size:1rem;">0 د.ع</b>
+    </div>
+  </div>
+
   <div id="opts" style="display:none;">
     <div class="card">
       <p style="margin:0 0 10px;color:var(--navy);font-weight:700;">نوع الطباعة:</p>
@@ -525,6 +557,7 @@ input:checked+.togs:before{transform:translateX(-24px);}
       </div>
       <div id="coupon-msg" style="display:none;padding:8px;border-radius:10px;font-size:.85rem;font-weight:700;margin-bottom:12px;text-align:center;"></div>
 
+      <textarea id="uNotes" placeholder="📝 ملاحظات إضافية (اختياري)..." rows="2" style="resize:none;"></textarea>
       <button id="locbtn" class="bmain" style="background:#64748b;color:#fff;margin-bottom:15px;" onclick="getLoc()">📍 تحديد موقعي على الخريطة</button>
       <div class="pcon" id="pcon"><div class="pbar" id="pbar"></div></div>
       <p id="statustxt" style="text-align:center;font-size:.85rem;color:var(--navy);font-weight:700;display:none;margin:8px 0;"></p>
@@ -583,7 +616,7 @@ input:checked+.togs:before{transform:translateX(-24px);}
   </div>
 </div>
 <!-- ══════════════ 2. CART DRAWER ══════════════ -->
-<button id="cart-fab" onclick="openCart()">
+<button id="cart-fab" onclick="goTab('market')">
   🛒<span id="cart-count" style="position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;border-radius:10px;font-size:.65rem;font-weight:800;padding:2px 6px;min-width:20px;text-align:center;display:none;"></span>
 </button>
  
@@ -623,6 +656,17 @@ input:checked+.togs:before{transform:translateX(-24px);}
     </div>
   </div>
 </div>
+
+<!-- ══ صفحة تفاصيل المنتج ══ -->
+<div id="product-detail-page">
+  <div class="pdp-header">
+    <button class="pdp-back" onclick="closeProductDetail()">←</button>
+    <span id="pdp-title" style="font-weight:800;font-size:1rem;flex:1;">تفاصيل المنتج</span>
+    <span id="pdp-cart-badge" style="background:var(--orange);color:#fff;border-radius:12px;padding:4px 12px;font-size:.82rem;font-weight:800;display:none;"></span>
+  </div>
+  <div id="pdp-content" style="padding-bottom:100px;"></div>
+</div>
+
 <!-- BOTTOM NAV -->
 <nav class="bnav">
   <button class="nbtn active" id="nav-order" onclick="goTab('order')"><span class="ni">🖨️</span><span>الرئيسية</span></button>
@@ -632,7 +676,7 @@ input:checked+.togs:before{transform:translateX(-24px);}
   </button>
   <button class="nbtn" id="nav-points" onclick="goTab('points')"><span class="ni">🏆</span><span>المكافآت</span></button>
   <button class="nbtn" id="nav-market" onclick="goTab('market')" style="position:relative;">
-    <span class="ni">🛒</span><span>المتجر</span>
+    <span class="ni">📦</span><span>القرطاسية</span>
     <span id="mkt-badge" style="display:none;background:var(--orange);color:#fff;border-radius:10px;font-size:.62rem;font-weight:800;padding:2px 6px;position:absolute;top:4px;margin-right:-14px;"></span>
   </button>
   <button class="nbtn" id="nav-dm" onclick="toggleDark()">
@@ -644,12 +688,12 @@ input:checked+.togs:before{transform:translateX(-24px);}
 <!-- ══════════════ TAB: MARKET ══════════════ -->
 <div class="tab" id="tab-market">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-    <h2 style="color:var(--navy);margin:0;font-weight:800;">🛒 المتجر الطلابي</h2>
-    <button onclick="openCart()" style="position:relative;border:none;background:var(--navy);color:#fff;padding:10px 16px;border-radius:12px;cursor:pointer;font-weight:800;font-size:.88rem;font-family:'Tajawal',sans-serif;display:flex;align-items:center;gap:6px;">
-      🛒 السلة <span id="nav-cart-badge" style="background:var(--orange);border-radius:10px;font-size:.7rem;padding:1px 6px;display:none;"></span>
+    <h2 style="color:var(--navy);margin:0;font-weight:800;">📦 قرطاسية الشاطر</h2>
+    <button onclick="openCart()" style="position:relative;border:none;background:var(--teal);color:#fff;padding:10px 16px;border-radius:12px;cursor:pointer;font-weight:800;font-size:.88rem;font-family:'Tajawal',sans-serif;display:flex;align-items:center;gap:6px;">
+      🛒 سلتي <span id="nav-cart-badge" style="background:var(--orange);border-radius:10px;font-size:.7rem;padding:1px 6px;display:none;"></span>
     </button>
   </div>
-  <p style="color:var(--text-muted);font-size:.88rem;font-weight:500;margin:0 0 14px;">أدوات ومستلزمات دراسية موصلة لبابك</p>
+  <p style="color:var(--text-muted);font-size:.88rem;font-weight:500;margin:0 0 14px;">قرطاسية ومستلزمات دراسية توصل لبابك 📦</p>
  
   <!-- Category Filter -->
   <div class="mkt-cats" id="mkt-cat-bar">
@@ -774,7 +818,9 @@ function getSugCartItems() {
 }
 
 function getSugTotal() {
-  return getSugCartItems().reduce((s, i) => s + i.price * i.qty, 0);
+  const sugT = getSugCartItems().reduce((s, i) => s + i.price * i.qty, 0);
+  const cartT = cart.reduce((s, c) => s + (c.effective_price||c.price) * c.qty, 0);
+  return sugT + cartT;
 }
 
 // ══ PRICING CONFIG (افتراضي — يُحمَّل من Supabase) ══
@@ -1252,7 +1298,7 @@ function calcPrice(sh, im) {
   return roundTo250(raw);
 }
 
-// ══ UI UPDATE ════════════════════════════════════
+// ══ UI UPDATE (عرض فقط — الحسابات الحقيقية على الخادم في submit-order) ════════
 function calcUI() {
   let sh=0, im=0, dp=0, hasD=false, hasI=false;
   const fl = document.getElementById('flist');
@@ -1274,7 +1320,8 @@ function calcUI() {
   document.getElementById('inote').style.display = hasI ? 'block' : 'none';
   document.getElementById('flist').style.display = files.length ? 'block' : 'none';
   // عرض خيارات الطلب إذا كانت هناك ملفات أو مستلزمات
-  document.getElementById('opts').style.display = (files.length || Object.keys(_sugCart).length) ? 'block' : 'none';
+  document.getElementById('opts').style.display = (files.length || Object.keys(_sugCart).length || cart.length) ? 'block' : 'none';
+  renderUnifiedCart();
 
   const pp = calcPrice(sh, im);
   const hasAnyOrder = files.length > 0 || Object.keys(_sugCart).length > 0;
@@ -1340,7 +1387,7 @@ function calcUI() {
       ? `المجموع الكلي (طباعة + مستلزمات): ${tot.toLocaleString()} د.ع`
       : `المجموع النهائي: ${tot.toLocaleString()} د.ع`;
   document.getElementById('totlbl').innerText = totalLabel;
-  window._ord = {pp, df, td, pd, couponDisc, expressFee, pkgFee, packaging, tot, pe, isFO, sugItems: getSugCartItems(), sugTotal: getSugTotal()};
+  window._ord = {pp, df, td, pd, couponDisc, expressFee, pkgFee, packaging, tot, pe, isFO, sugItems: getSugCartItems(), sugTotal: getSugTotal(), cartItems: cart.map(c=>({...c})) };
 }
 
 window.adjC = (i,d) => { files[i].c=Math.max(1,files[i].c+d); calcUI(); };
@@ -1367,7 +1414,7 @@ async function sendOrder() {
   if (name.length < 3)                     return showErr('❌ الاسم يجب أن يكون 3 أحرف على الأقل');
   if (phone.length!==11 || isNaN(+phone)) return showErr('❌ رقم الهاتف يجب أن يكون 11 رقمًا');
   if (!region)                              return showErr('❌ يرجى إدخال اسم المنطقة');
-  if (!files.length && !Object.keys(_sugCart).length) return showErr('❌ يرجى رفع ملف للطباعة أو اختيار منتج دراسي على الأقل');
+  if (!files.length && !Object.keys(_sugCart).length && !cart.length) return showErr('❌ يرجى رفع ملف للطباعة أو اختيار منتج على الأقل');
   if (!locUrl)                              return showErr('❌ يرجى تحديد موقعك على الخريطة');
 
   // 🔒 Rate limiting
@@ -1392,8 +1439,13 @@ async function sendOrder() {
     const pu   = useP ? pendingR.pts : 0;
     const isExpress = document.getElementById('expressTog')?.checked;
     const hasPrint = files.length > 0;
-    const hasSug   = sugItems?.length > 0;
-    const orderType = hasPrint && hasSug ? 'combined' : hasPrint ? 'print' : 'market';
+    // hasSug already used above
+    const hasCart  = cart.length > 0;
+    const allCartItems = [
+      ...getSugCartItems(),
+      ...cart.map(c => ({id:c.id, name:c.name, qty:c.qty, price:c.effective_price||c.price, original_price:c.original_price||c.price, unit:c.unit, stock:c.stock}))
+    ];
+    const orderType = hasPrint && (hasSug || hasCart) ? 'combined' : hasPrint ? 'print' : 'market';
 
     let meta = [], zipUrl = '';
     if (hasPrint) {
@@ -1437,8 +1489,10 @@ async function sendOrder() {
       loyalty_points_earned:pe||0,
       is_first_order:!!isFO,
       order_type: orderType,
-      suggested_items: sugItems?.length ? sugItems : null,
-      suggested_total: sugTotal||0,
+      cart_items: allCartItems.length ? allCartItems : null,
+      suggested_items: allCartItems.length ? allCartItems : null,
+      suggested_total: allCartItems.reduce((s,i)=>s+(i.price*i.qty),0),
+      notes: document.getElementById('uNotes')?.value?.trim()||null,
       status:'received',
       status_history:[{status:'received', time:new Date().toISOString()}]
     };
@@ -1464,11 +1518,11 @@ async function sendOrder() {
       }
     }
 
-    // ── خصم مخزون المستلزمات المقترحة ──
-    if (sugItems?.length) {
-      await Promise.all(sugItems.map(item =>
+    // ── خصم مخزون القرطاسية (مقترحة + سلة) ──
+    if (allCartItems.length) {
+      await Promise.all(allCartItems.map(item =>
         sb.from('market_products')
-          .update({ stock: Math.max(0, item.stock - item.qty) })
+          .update({ stock: Math.max(0, (item.stock||0) - item.qty) })
           .eq('id', item.id)
       ));
     }
@@ -1494,7 +1548,7 @@ async function sendOrder() {
     const flist = meta.map(f=>`📄 ${f.name} (${f.pages}ص × ${f.copies}ن)`).join('\n');
     const pkgLabelsMsg = {none:'كبس فقط', cardboard:'ورق مقوى ونايلون 📦', spiral:'سبايرول 🔩'};
     const orderTypeBadge = orderType==='combined'?'🔀 مشترك':orderType==='print'?'🖨️ استنساخ':'🛍️ مستلزمات';
-    const sugTxt = sugItems?.length ? '\n\n🛍️ المستلزمات:\n' + sugItems.map(i=>`• ${i.name} ×${i.qty} = ${(i.price*i.qty).toLocaleString()} د.ع`).join('\n') : '';
+    const sugTxt = allCartItems?.length ? '\n\n📦 القرطاسية:\n' + allCartItems.map(i=>`• ${i.name} ×${i.qty} = ${(i.price*i.qty).toLocaleString()} د.ع`).join('\n') : '';
     await tgMsg(ADMIN,
       `🆕 طلب جديد ${orderTypeBadge} #${oid}${isExpress?' ⚡عاجل':''}\n${isFO?'🚚 توصيل مجاني — أول طلب\n':''}` +
       `👤 ${name}\n📞 ${phone}\n🏠 ${region}\n` +
@@ -1513,7 +1567,10 @@ async function sendOrder() {
     pendingR = null; appliedCoupon = null;
     // Reset suggested cart
     _sugCart = {};
+    cart = [];
     renderSuggestedProducts();
+    updateCartUI();
+    renderUnifiedCart();
     refreshPtsUI();
     showSuccessUI(oid, pe, np);
 
@@ -1950,6 +2007,46 @@ function showErr(m) { const e=document.getElementById('errbox'); e.innerText=m; 
 function hideErr()  { document.getElementById('errbox').style.display='none'; }
 function showToast(m) { const t=document.getElementById('toast'); t.innerText=m; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(()=>t.style.display='none',4000); }
 
+
+// ══ Unified Cart Renderer ══
+function renderUnifiedCart() {
+  const section = document.getElementById('unified-cart-section');
+  const itemsBox = document.getElementById('unified-cart-items');
+  if (!section || !itemsBox) return;
+
+  if (!cart.length) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = 'block';
+
+  itemsBox.innerHTML = cart.map(item => {
+    const hasDisc = item.original_price && item.original_price !== item.price;
+    return `<div class="ucart-item">
+      <div style="flex:1;min-width:0;">
+        <b style="font-size:.88rem;color:var(--navy);">${esc(item.name)}</b>
+        <div style="font-size:.78rem;margin-top:2px;">
+          ${hasDisc ? `<span style="text-decoration:line-through;color:#94a3b8;font-size:.73rem;">${item.original_price.toLocaleString()}</span> ` : ''}
+          <span style="color:var(--orange);font-weight:800;">${item.price.toLocaleString()} د.ع</span>
+          ${item.discount_percent ? `<span class="disc-badge">-${item.discount_percent}%</span>` : ''}
+          ${item.gift_name ? `<span class="gift-badge">🎁 ${esc(item.gift_name)}</span>` : ''}
+        </div>
+        <div style="font-size:.73rem;color:var(--text-muted);">${item.qty} ${esc(item.unit)}</div>
+      </div>
+      <div class="ucart-qty-ctrl">
+        <button class="ucqbtn" onclick="changeCartQtyDirect('${esc(item.id)}',-1)">−</button>
+        <b style="color:var(--orange);min-width:22px;text-align:center;">${item.qty}</b>
+        <button class="ucqbtn" onclick="changeCartQtyDirect('${esc(item.id)}',1)">+</button>
+        <button onclick="removeFromCart('${esc(item.id)}')" style="border:none;background:#fef2f2;color:var(--red);width:26px;height:26px;border-radius:7px;cursor:pointer;font-size:.8rem;margin-right:4px;">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  const subtotal = cart.reduce((s,c) => s + c.price * c.qty, 0);
+  const subEl = document.getElementById('ucart-subtotal');
+  if (subEl) subEl.innerText = subtotal.toLocaleString() + ' د.ع';
+}
+
 // ══ MARKET JS ════════════════════════════════════
 // ════════════════════════════════════════════════════════════
 //  🛒 CUSTOMER MARKET
@@ -2021,53 +2118,125 @@ function filterMktProducts() {
   }).join('');
 }
  
-// ── تفاصيل المنتج (sheet) ──
+
 function openProductDetail(id) {
   const p = _mktProducts.find(x => x.id === id);
   if (!p) return;
-  const inCart = cart.find(c => c.id === id);
-  const hasStock = p.stock > 0;
   const catIcons = { books:'📚', notebooks:'📓', stationery:'✏️', other:'📦' };
-  document.getElementById('det-title').innerText = p.name;
-  document.getElementById('det-body').innerHTML = `
-    <div style="text-align:center;margin-bottom:16px;">
-      <div class="mkt-img" style="height:180px;margin:0 auto 12px;max-width:260px;">
-        ${p.image_url ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;" onerror="this.parentElement.innerHTML='${catIcons[p.category]||'📦'}'">` : catIcons[p.category]||'📦'}
+  const now = new Date();
+  const discActive = p.discount_percent > 0 && (!p.discount_expires_at || new Date(p.discount_expires_at) > now);
+  const effectivePrice = discActive ? Math.round(p.price * (1 - p.discount_percent / 100)) : p.price;
+  const hasStock = p.stock > 0;
+  const inCart = cart.find(c => c.id === id);
+
+  // Similar products (same category, exclude current)
+  const similar = _mktProducts.filter(x => x.id !== id && x.category === p.category && x.active && x.stock > 0).slice(0,4);
+
+  document.getElementById('pdp-title').innerText = p.name;
+  const badge = document.getElementById('pdp-cart-badge');
+  if (inCart) { badge.style.display='inline'; badge.innerText=`في السلة ×${inCart.qty}`; }
+  else badge.style.display='none';
+
+  const imgHtml = p.image_url
+    ? `<img src="${esc(p.image_url)}" class="pdp-img" onerror="this.style.display='none'">`
+    : `<div style="width:100%;height:200px;background:var(--light-teal);display:flex;align-items:center;justify-content:center;font-size:5rem;">${catIcons[p.category]||'📦'}</div>`;
+
+  document.getElementById('pdp-content').innerHTML = `
+    ${imgHtml}
+    <div class="pdp-body">
+      <h2 style="margin:0 0 6px;color:var(--navy);font-size:1.2rem;">${esc(p.name)}</h2>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+        ${discActive ? `<span style="text-decoration:line-through;color:#94a3b8;font-size:.9rem;">${p.price.toLocaleString()} د.ع</span>
+          <b style="color:var(--green);font-size:1.3rem;">${effectivePrice.toLocaleString()} د.ع</b>
+          <span class="disc-badge">خصم ${p.discount_percent}%</span>` :
+          `<b style="color:var(--orange);font-size:1.3rem;">${(p.price||0).toLocaleString()} د.ع</b>`}
+        <span style="color:var(--text-muted);font-size:.85rem;">/ ${esc(p.unit||'قطعة')}</span>
       </div>
-      <div class="mkt-price" style="font-size:1.4rem;">${(p.price||0).toLocaleString()} د.ع <span style="font-size:.82rem;color:var(--text-muted);font-weight:500;">/ ${esc(p.unit||'قطعة')}</span></div>
-      <div class="${hasStock?'mkt-stock-ok':'mkt-stock-low'}" style="margin-top:4px;font-size:.85rem;">${hasStock?`✅ متوفر — ${p.stock} ${esc(p.unit||'قطعة')}`:'❌ نفد المخزون'}</div>
-    </div>
-    ${p.description ? `<div style="background:var(--input-bg);border-radius:14px;padding:14px;margin-bottom:14px;"><b style="color:var(--navy);font-size:.88rem;">📝 الوصف:</b><p style="margin:8px 0 0;color:var(--text-muted);font-size:.9rem;line-height:1.7;">${esc(p.description)}</p></div>` : ''}
-    ${inCart ? `
-    <div style="background:var(--light-teal);border-radius:14px;padding:14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
-      <b style="color:var(--navy);">الكمية في السلة:</b>
-      <div class="cart-qty-ctrl">
-        <button class="cqbtn" onclick="changeCartQty('${p.id}',-1)">−</button>
-        <b style="color:var(--orange);font-size:1.1rem;">${inCart.qty}</b>
-        <button class="cqbtn" onclick="changeCartQty('${p.id}',1)">+</button>
+      ${p.gift_name ? `<div style="margin-bottom:10px;"><span class="gift-badge" style="font-size:.85rem;padding:5px 12px;">🎁 هدية مجانية: ${esc(p.gift_name)} ×${p.gift_qty||1}</span></div>` : ''}
+      <div style="margin-bottom:14px;">
+        <span class="${hasStock?'ok-badge':'low-badge'}" style="font-size:.82rem;padding:4px 12px;">
+          ${hasStock ? `✅ متوفر — ${p.stock} ${esc(p.unit||'قطعة')}` : '❌ نفد المخزون'}
+        </span>
       </div>
-    </div>` : ''}
-    <button class="add-cart-btn ${inCart?'in-cart':''}" ${!hasStock?'disabled':''} onclick="addToCart('${p.id}');closeDet()">
-      ${inCart ? '✅ موجود في السلة — إضافة المزيد' : hasStock ? '🛒 إضافة للسلة' : '❌ نفد المخزون'}
-    </button>
-    ${inCart ? `<button onclick="removeFromCart('${p.id}');closeDet()" class="bmain" style="background:#fef2f2;color:var(--red);margin-top:10px;">🗑️ إزالة من السلة</button>` : ''}
-  `;
-  document.getElementById('det-ov').classList.add('open');
+      ${p.description ? `<div style="background:var(--input-bg);border-radius:14px;padding:14px;margin-bottom:16px;">
+        <b style="color:var(--navy);font-size:.88rem;display:block;margin-bottom:6px;">📝 الوصف</b>
+        <p style="margin:0;color:var(--text-muted);font-size:.9rem;line-height:1.75;">${esc(p.description)}</p>
+      </div>` : ''}
+
+      ${inCart ? `<div style="background:var(--light-teal);border-radius:14px;padding:14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
+        <b style="color:var(--navy);">في السلة:</b>
+        <div class="ucart-qty-ctrl">
+          <button class="ucqbtn" onclick="changeCartQtyDirect('${esc(p.id)}',-1);refreshPdpCart('${esc(p.id)}')">−</button>
+          <b style="color:var(--orange);font-size:1.1rem;">${inCart.qty}</b>
+          <button class="ucqbtn" onclick="changeCartQtyDirect('${esc(p.id)}',1);refreshPdpCart('${esc(p.id)}')">+</button>
+        </div>
+      </div>` : ''}
+
+      <button class="add-cart-btn ${inCart?'in-cart':''}" ${!hasStock?'disabled':''}
+        onclick="addToCart('${esc(p.id)}');openProductDetail('${esc(p.id)}')">
+        ${inCart ? '✅ في السلة — إضافة المزيد' : hasStock ? '🛒 إضافة للسلة' : '❌ نفد المخزون'}
+      </button>
+      ${inCart ? `<button onclick="removeFromCart('${esc(p.id)}');closeProductDetail()" class="bmain" style="background:#fef2f2;color:var(--red);margin-top:10px;">🗑️ إزالة من السلة</button>` : ''}
+
+      ${similar.length ? `
+      <div style="margin-top:22px;">
+        <h3 style="margin:0 0 12px;color:var(--navy);font-size:1rem;font-weight:800;">منتجات مشابهة</h3>
+        <div class="similar-grid">
+          ${similar.map(sp => {
+            const spDisc = sp.discount_percent > 0 && (!sp.discount_expires_at || new Date(sp.discount_expires_at) > now);
+            const spPrice = spDisc ? Math.round(sp.price*(1-sp.discount_percent/100)) : sp.price;
+            return `<div class="mkt-card" style="padding:12px;" onclick="openProductDetail('${esc(sp.id)}')">
+              <div class="mkt-img" style="height:90px;font-size:2rem;">
+                ${sp.image_url ? `<img src="${esc(sp.image_url)}" onerror="this.parentElement.innerHTML='${catIcons[sp.category]||'📦'}'">` : catIcons[sp.category]||'📦'}
+              </div>
+              <b style="font-size:.8rem;color:var(--navy);display:block;margin-bottom:4px;line-height:1.3;">${esc(sp.name.substring(0,30))}</b>
+              <div style="font-size:.82rem;color:var(--orange);font-weight:800;">${spPrice.toLocaleString()} د.ع</div>
+              ${spDisc ? `<span class="disc-badge" style="font-size:.6rem;">-${sp.discount_percent}%</span>` : ''}
+            </div>`;
+          }).join('')}
+        </div>
+      </div>` : ''}
+    </div>`;
+
+  document.getElementById('product-detail-page').classList.add('open');
 }
+
+function refreshPdpCart(pid) {
+  // Refresh the detail page to show updated qty
+  openProductDetail(pid);
+}
+
+function closeProductDetail() {
+  document.getElementById('product-detail-page').classList.remove('open');
+}
+
  
 // ── إضافة للسلة ──
 function addToCart(pid) {
   const p = _mktProducts.find(x => x.id === pid);
   if (!p || p.stock <= 0) return;
+  // [J] Discount logic
+  const now = new Date();
+  const discActive = p.discount_percent > 0 && (!p.discount_expires_at || new Date(p.discount_expires_at) > now);
+  const effectivePrice = discActive ? Math.round(p.price * (1 - p.discount_percent / 100)) : p.price;
   const existing = cart.find(c => c.id === pid);
   if (existing) {
     if (existing.qty >= p.stock) { showToast('⚠️ لا يوجد مخزون كافٍ'); return; }
     existing.qty++;
   } else {
-    cart.push({ id: p.id, name: p.name, price: p.price, qty: 1, unit: p.unit||'قطعة', stock: p.stock });
+    cart.push({
+      id: p.id, name: p.name, price: effectivePrice,
+      original_price: discActive ? p.price : null,
+      discount_percent: discActive ? p.discount_percent : 0,
+      gift_name: p.gift_name||null, gift_qty: p.gift_qty||0,
+      qty: 1, unit: p.unit||'قطعة', stock: p.stock
+    });
   }
   updateCartUI();
-  showToast(`✅ تمت إضافة ${p.name} للسلة`);
+  calcUI();
+  const discNote = discActive ? ` (خصم ${p.discount_percent}%)` : '';
+  const giftNote = p.gift_name ? ` + 🎁 ${p.gift_name}` : '';
+  showToast(`✅ ${p.name}${discNote}${giftNote} — أضيف للسلة`);
 }
  
 // ── تغيير الكمية ──
@@ -2100,12 +2269,13 @@ function updateCartUI() {
   if (navBadge){ navBadge.style.display = total > 0 ? 'inline' : 'none'; navBadge.innerText = total; }
   if (mktBadge){ mktBadge.style.display = total > 0 ? 'inline' : 'none'; mktBadge.innerText = total; }
   filterMktProducts();
+  renderUnifiedCart();
 }
  
-// ── فتح السلة ──
+// ── فتح السلة (يرجع لصفحة الطلب لرؤية السلة الموحدة) ──
 function openCart() {
-  document.getElementById('cart-drawer').classList.add('open');
-  renderCartDrawer();
+  goTab('order');
+  document.getElementById('unified-cart-section').scrollIntoView({behavior:'smooth'});
 }
  
 function renderCartDrawer() {
@@ -2156,8 +2326,10 @@ function changeCartQtyDirect(pid, delta) {
   const item = cart.find(c => c.id === pid);
   if (!item) return;
   item.qty = Math.max(1, Math.min(item.stock, item.qty + delta));
-  renderCartDrawer();
+  if (item.qty <= 0) { cart = cart.filter(c => c.id !== pid); }
   updateCartUI();
+  renderUnifiedCart();
+  calcUI();
 }
  
 // ── تحديد الموقع للسلة ──
@@ -2175,9 +2347,9 @@ function getCartLoc() {
   );
 }
  
-// ── تأكيد طلب المتجر ──
+// ── checkoutMarket الآن جزء من sendOrder الموحدة ──
 let _lastMktOrder = 0;
-async function checkoutMarket() {
+async function checkoutMarket_DEPRECATED() {
   const name   = document.getElementById('cart-name').value.trim();
   const phone  = document.getElementById('cart-phone').value.trim();
   const region = document.getElementById('cart-region').value.trim();
@@ -2206,7 +2378,7 @@ async function checkoutMarket() {
     const oid      = 'MKT-' + Date.now().toString(36).toUpperCase();
     const items    = cart.map(c => ({ id: c.id, name: c.name, qty: c.qty, price: c.price, unit: c.unit }));
  
-    const { error } = await sb.from('market_orders').insert({
+    const { error } = await sb.from('orders').insert({
       id: oid, user_id: userId, telegram_id: userId,
       items, total, delivery_fee: delFee,
       name, phone, region, loc_url: _cartLocUrl,
@@ -2262,6 +2434,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 
