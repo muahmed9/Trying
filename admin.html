@@ -1140,9 +1140,12 @@ let _detOrderId = null, _detOrderTgId = null;
 
 // ══ DEBOUNCE البحث ════════════════════════════════
 let _searchT;
-document.getElementById('order-search').addEventListener('input', () => {
-  clearTimeout(_searchT);
-  _searchT = setTimeout(renderOrders, 300);
+document.addEventListener('DOMContentLoaded', () => {
+  const _srchEl = document.getElementById('order-search');
+  if (_srchEl) _srchEl.addEventListener('input', () => {
+    clearTimeout(_searchT);
+    _searchT = setTimeout(renderOrders, 300);
+  });
 });
 
 // ══════════════════════════════════
@@ -3165,32 +3168,7 @@ const MKT_ST = {
   delivering:{l:'توصيل',c:'sd',i:'🛵'}, delivered:{l:'مسلّم',c:'sv',i:'✔'}, cancelled:{l:'ملغى',c:'sc',i:'❌'}
 };
 
-// renderMarketOrders removed);
-    const items = (o.items||[]).map(i=>`${esc(i.name)} ×${i.qty}`).join(' · ');
-    return `
-    <div class="ocard">
-      <div class="ohdr">
-        <b style="color:var(--navy);">#${esc(o.id)}</b>
-        <span class="sbdg ${s.c}">${s.i} ${s.l}</span>
-      </div>
-      <div class="infogrid">
-        <div class="ii">👤 ${esc(o.name)}</div>
-        <div class="ii">📞 ${esc(o.phone)}</div>
-        <div class="ii">🏠 ${esc(o.region)}</div>
-        <div class="ii">💰 ${(o.total||0).toLocaleString()} د.ع</div>
-      </div>
-      <div style="font-size:.82rem;color:var(--text-muted);background:#f8fafc;padding:8px;border-radius:8px;margin-bottom:8px;">🛍️ ${items}</div>
-      ${o.notes?`<div style="font-size:.8rem;color:var(--text-muted);padding:6px 8px;background:#f1f5f9;border-radius:8px;margin-bottom:8px;">📝 ${esc(o.notes)}</div>`:''}
-      <div style="font-size:.78rem;color:#94a3b8;margin-bottom:8px;">📅 ${dt}${o.loc_url?` · <a href="${esc(o.loc_url)}" target="_blank" style="color:var(--teal);">📍 الموقع</a>`:''}</div>
-      <div class="arow">
-        ${o.status==='pending'?`<button onclick="updateMktOrderStatus('${esc(o.id)}','confirmed')" class="abtn adeliv">✅ تأكيد</button><button onclick="updateMktOrderStatus('${esc(o.id)}','delivering')" class="abtn aprint">🛵 توصيل</button>`:''}
-        ${o.status==='confirmed'?`<button onclick="updateMktOrderStatus('${esc(o.id)}','delivering')" class="abtn adeliv">🛵 إرسال للتوصيل</button>`:''}
-        ${o.status==='delivering'?`<button onclick="updateMktOrderStatus('${esc(o.id)}','delivered')" class="abtn adone">✔ تأكيد التسليم</button>`:''}
-        ${!['delivered','cancelled'].includes(o.status)?`<button onclick="cancelMktOrder('${esc(o.id)}')" class="abtn acanc">❌ إلغاء</button>`:''}
-      </div>
-    </div>`;
-  }).join('');
-}
+
 
 async function updateMktOrderStatus(id, status) {
   const o = allOrders.find(x=>x.id===id);
@@ -3542,17 +3520,6 @@ async function saveSupplyEdit() {
   } catch(e) { showToast('❌ ' + e.message); }
 }
 
-async function deleteSupply(id) {
-  const s = _supplies.find(x => x.id === id);
-  if (!confirm(`حذف "${s?.name}"؟ لا يمكن التراجع.`)) return;
-  try {
-    const { error } = await sb.from('supplies').delete().eq('id', id);
-    if (error) throw error;
-    showToast('🗑️ تم الحذف');
-    await loadSupplies();
-  } catch(e) { showToast('❌ ' + e.message); }
-}
-
 function openSupplyLog(id) {
   const s = _supplies.find(x => x.id === id);
   if (!s) return;
@@ -3662,10 +3629,3 @@ async function deleteMktCat(idx) {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
