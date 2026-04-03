@@ -3152,14 +3152,6 @@ async function confirmAdjProductStock() {
   await loadAdminProducts();
 }
 
-// loadMarketOrders removed).limit(100);
-    if (error) throw error;
-    _adminMktOrders = data||[];
-    renderMktOrdersPanel();
-  } catch(e) {
-    box.innerHTML = `<div style="text-align:center;padding:30px;color:var(--red);"><b>❌ ${esc(e.message)}</b></div>`;
-  }
-}
 
 function setMktOrderFilter(f, el) {
   _mktOrderFilter = f;
