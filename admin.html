@@ -1071,28 +1071,14 @@ function esc(s) {
 // ══════════════════════════════════
 //  🔔 SOUND NOTIFICATION
 // ══════════════════════════════════
-// AudioContext مشترك لتجنب تسرب الذاكرة - يُنشأ عند الحاجة فقط
-let _audioCtx = null;
-
-function _getAudioCtx() {
-  if (!_audioCtx) {
-    try {
-      _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    } catch(e) {
-      console.warn('AudioContext not supported:', e);
-      return null;
-    }
-  }
-  return _audioCtx;
-}
+// AudioContext مشترك لتجنب تسرب الذاكرة
+const _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 function _playNote(freq, startTime, duration, volume = 0.35) {
-  const ctx = _getAudioCtx();
-  if (!ctx) return;
-  if (ctx.state === 'suspended') ctx.resume();
-  const osc  = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.connect(gain); gain.connect(ctx.destination);
+  if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  const osc  = _audioCtx.createOscillator();
+  const gain = _audioCtx.createGain();
+  osc.connect(gain); gain.connect(_audioCtx.destination);
   osc.type = 'sine';
   osc.frequency.setValueAtTime(freq, startTime);
   gain.gain.setValueAtTime(volume, startTime);
@@ -1103,10 +1089,8 @@ function _playNote(freq, startTime, duration, volume = 0.35) {
 
 function playAdminAlert(status) {
   try {
-    const ctx = _getAudioCtx();
-    if (!ctx) return;
-    if (ctx.state === 'suspended') ctx.resume();
-    const t = ctx.currentTime;
+    if (_audioCtx.state === 'suspended') _audioCtx.resume();
+    const t = _audioCtx.currentTime;
     switch (status) {
       case 'received':
         // ثلاث نبضات متوسطة — طلب جديد يحتاج موظف الاستلام
@@ -1248,7 +1232,6 @@ function custMsg(id, status, reason='') {
 //  AUTH — Supabase Auth
 // ══════════════════════════════════
 async function doLogin() {
-  console.log('🔐 doLogin() called');
   const email = document.getElementById('adm-user').value.trim();
   const pass  = document.getElementById('adm-pass').value;
   const err   = document.getElementById('loginerr');
@@ -1265,46 +1248,17 @@ async function doLogin() {
   btn.disabled = true;
 
   try {
-    console.log('🔑 Attempting Supabase Auth...');
     // 1. تسجيل الدخول عبر Supabase Auth
     const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
-    console.log('Auth result:', { data, error });
     if (error) throw error;
 
-    console.log('✅ Auth successful, fetching profile...');
     // 2. جلب الدور من جدول profiles
     const { data: profile, error: pErr } = await sb.from('profiles')
       .select('role, name, emoji, permissions')
       .eq('id', data.user.id)
       .single();
-    
-    console.log('Profile result:', { profile, pErr });
 
-    if (pErr || !profile) {
-      console.warn('⚠️ No profile found, creating default...');
-      // إنشاء profile افتراضي إذا لم يوجد
-      const { error: insertErr } = await sb.from('profiles').insert({
-        id: data.user.id,
-        role: 'admin',
-        name: email.split('@')[0],
-        emoji: '👤',
-        permissions: []
-      });
-      if (insertErr) {
-        console.error('Failed to create profile:', insertErr);
-        throw new Error('لا يوجد صلاحيات لهذا الحساب - يرجى إنشاء profile في قاعدة البيانات');
-      }
-      // إعادة جلب الـ profile
-      const { data: newProfile } = await sb.from('profiles')
-        .select('role, name, emoji, permissions')
-        .eq('id', data.user.id)
-        .single();
-      if (newProfile) {
-        currentRole = newProfile.role;
-        enterDashboard(newProfile);
-        return;
-      }
-    }
+    if (pErr || !profile) throw new Error('لا يوجد صلاحيات لهذا الحساب');
 
     // 3. تعيين الدور
     currentRole = profile.role;
@@ -1315,7 +1269,6 @@ async function doLogin() {
 
     enterDashboard(profile);
   } catch(e) {
-    console.error('❌ Login error:', e);
     err.innerText = '❌ ' + (e.message === 'Invalid login credentials' ? 'البريد أو كلمة المرور غير صحيحة' : e.message);
     err.style.display = 'block';
     btn.innerText = 'تسجيل الدخول';
@@ -2194,7 +2147,6 @@ function renderOrders() {
   // Type filter
   if (curTypeFilter === 'print')    list = list.filter(o => !o.order_type || o.order_type === 'print');
   else if (curTypeFilter === 'combined') list = list.filter(o => o.order_type === 'combined');
-  else if (curTypeFilter === 'market')   list = list.filter(o => o.order_type === 'market');
   // Status sub-filter
   if (curFilter !== 'all') list = list.filter(o => o.status === curFilter);
   // Search
@@ -2808,7 +2760,14 @@ function renderProductsS() {
               <span class="${p.active?'ok-badge':'low-badge'}">${p.active?'نشط':'مخفي'}</span>
             </div>
           </div>
-          <div style="font-size:.82rem;font-weight:800;color:var(--orange);margin-top:3px;">${p.discount_percent>0?`<span style='text-decoration:line-through;color:#94a3b8;font-size:.78rem;'>${(p.price||0).toLocaleString()}</span> <span style='color:var(--green);'>${Math.round(p.price*(1-p.discount_percent/100)).toLocaleString()}</span>`:p.price.toLocaleString()} د.ع / ${esc(p.unit||'قطعة')} ${p.discount_percent>0?`<span style='background:#dcfce7;color:#166534;border-radius:5px;font-size:.6rem;padding:1px 5px;'>خصم ${p.discount_percent}%</span>':''} ${p.gift_name?`<span style='background:#fef3c7;color:#b45309;border-radius:5px;font-size:.6rem;padding:1px 5px;'>🎁 ${esc(p.gift_name)}</span>':''}</div>
+          <div style="font-size:.82rem;font-weight:800;color:var(--orange);margin-top:3px;">
+            ${p.discount_percent>0
+              ? '<span style=\"text-decoration:line-through;color:#94a3b8;font-size:.78rem;\">'+(p.price||0).toLocaleString()+'</span> <span style=\"color:var(--green);font-weight:800;\">'+(Math.round(p.price*(1-p.discount_percent/100))).toLocaleString()+'</span>'
+              : (p.price||0).toLocaleString()
+            } د.ع / ${esc(p.unit||'قطعة')}
+            ${p.discount_percent>0 ? '<span style=\"background:#dcfce7;color:#166534;border-radius:5px;font-size:.6rem;padding:1px 6px;font-weight:800;\">خصم '+p.discount_percent+'%</span>' : ''}
+            ${p.gift_name ? '<span style=\"background:#fef3c7;color:#b45309;border-radius:5px;font-size:.6rem;padding:1px 6px;font-weight:800;\">🎁 '+esc(p.gift_name)+'</span>' : ''}
+          </div>
           <div style="font-size:.78rem;font-weight:700;color:${stockColor};">مخزون: ${p.stock}</div>
         </div>
       </div>
@@ -3711,3 +3670,10 @@ async function deleteMktCat(idx) {
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
