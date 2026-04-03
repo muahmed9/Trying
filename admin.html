@@ -192,6 +192,16 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
 .ldot { width:9px; height:9px; background:#4eff4e; border-radius:50%; display:inline-block; margin-left:6px; animation:pulse 1.5s infinite; }
 @keyframes pulse { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.3);} }
 
+
+/* ── Accordion ── */
+.acc-section{margin-bottom:8px;}
+.acc-header{width:100%;display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:var(--card);border:1px solid #edf0f4;border-radius:14px;cursor:pointer;font-weight:800;color:var(--navy);font-family:'Tajawal',sans-serif;font-size:.95rem;transition:background .2s;}
+.acc-header:hover{background:var(--light-teal);}
+.acc-header.open{border-radius:14px 14px 0 0;background:var(--light-teal);}
+.acc-body{padding:18px;background:var(--card);border-radius:0 0 14px 14px;border:1px solid #edf0f4;border-top:2px solid var(--teal);margin-bottom:6px;}
+.acc-icon{transition:transform .25s;font-size:.82rem;color:var(--teal);}
+.acc-header.open .acc-icon{transform:rotate(180deg);}
+
 /* ── TOAST ── */
 #toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%); background:var(--navy); color:#fff; padding:13px 22px; border-radius:14px; font-size:.92rem; font-weight:700; z-index:999; display:none; box-shadow:0 6px 18px rgba(0,0,0,.2); min-width:200px; text-align:center; }
 </style>
@@ -362,6 +372,8 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
       <button class="atab" id="tab-dash-btn"  onclick="switchPage('dash',this)"   style="display:none;">🏆 داشبورد</button>
       <button class="atab" id="tab-reports-btn" onclick="switchPage('reports',this)" style="display:none;">📥 تقارير Excel</button>
       <button class="atab" id="tab-settings-btn" onclick="switchPage('settings',this)" style="display:none;">⚙️ الإعدادات</button>
+      <button class="atab" id="tab-market-btn" onclick="switchPage('market',this)" style="display:none;">📦 قرطاسية الشاطر</button>
+      <button class="atab" id="tab-supplies-btn" onclick="switchPage('supplies',this)" style="display:none;">🗄️ المخزن</button>
     </div>
 
     <!-- Page: Orders -->
@@ -374,7 +386,7 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
       <div class="fbar" id="type-filter-bar" style="margin-bottom:8px;">
         <button class="ftab active" onclick="setTypeFilter('all',this)">الكل</button>
         <button class="ftab" onclick="setTypeFilter('print',this)">🖨️ استنساخ</button>
-        <button class="ftab" onclick="setTypeFilter('market',this)">🛍️ متجر</button>
+        <button class="ftab" onclick="setTypeFilter('market',this)">📦 قرطاسية</button>
         <button class="ftab" onclick="setTypeFilter('combined',this)">🔀 مشترك</button>
       </div>
       <!-- Status sub-filter (shown for print/combined) -->
@@ -405,7 +417,7 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
         <div class="scard" onclick="showStatDetail('pending')"><div class="snum" id="s-pending" style="color:var(--orange);">—</div><div class="slbl">قيد التنفيذ</div></div>
         <div class="scard" onclick="showStatDetail('revenue')"><div class="snum" id="s-revenue" style="color:var(--green);">—</div><div class="slbl">إيرادات اليوم</div></div>
         <div class="scard" onclick="showStatDetail('total')"><div class="snum" id="s-total"   style="color:var(--teal);">—</div><div class="slbl">إجمالي الطلبات</div></div>
-        <div class="scard" onclick="showStatDetail('market')"><div class="snum" id="s-market"  style="color:var(--green);">—</div><div class="slbl">طلبات المتجر</div></div>
+        <div class="scard" onclick="showStatDetail('market')"><div class="snum" id="s-market"  style="color:var(--green);">—</div><div class="slbl">طلبات القرطاسية</div></div>
         <div class="scard" onclick="showStatDetail('combined')"><div class="snum" id="s-combined" style="color:#7c3aed;">—</div><div class="slbl">الطلبات المشتركة</div></div>
         <div class="scard" onclick="showStatDetail('delivered')"><div class="snum" id="s-delivered" style="color:var(--green);">—</div><div class="slbl">تم التسليم</div></div>
         <div class="scard" onclick="showStatDetail('cancelled')"><div class="snum" id="s-cancelled" style="color:var(--red);">—</div><div class="slbl">ملغاة</div></div>
@@ -416,62 +428,7 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
       </div>
     </div>
 
-    <!-- Page: Staff Management (manager only) -->
-    <div class="admin-page" id="page-staff">
-      <h3 style="margin:0 0 18px;color:var(--navy);font-weight:800;">👥 إدارة الموظفين</h3>
-      <div id="staff-list"></div>
 
-      <!-- Change built-in passwords -->
-      <div style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.03);margin-bottom:18px;">
-        <h4 style="margin:0 0 14px;color:var(--navy);font-weight:800;">🔑 تغيير بيانات الدخول</h4>
-        <select id="change-role-sel" style="margin-bottom:12px;">
-          <option value="operator">موظف استنساخ</option>
-          <option value="driver">مندوب توصيل</option>
-          <option value="admin">المدير (أنت)</option>
-        </select>
-        <input type="text" id="new-user" placeholder="👤 اسم المستخدم الجديد (اختياري)">
-        <input type="password" id="new-pass" placeholder="🔑 كلمة المرور الجديدة (اختياري)">
-        <button class="bmain" style="background:var(--teal);color:#fff;" onclick="changeCredentials()">حفظ التغييرات</button>
-      </div>
-
-      <!-- Create custom account -->
-      <div style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.03);">
-        <h4 style="margin:0 0 14px;color:var(--navy);font-weight:800;">➕ إضافة حساب موظف جديد</h4>
-        <input type="text"     id="new-staff-name"  placeholder="✍️ اسم الموظف" style="margin-bottom:10px;">
-        <input type="text"     id="new-staff-user"  placeholder="📧 البريد الإلكتروني (للدخول)" style="margin-bottom:10px;">
-        <input type="password" id="new-staff-pass"  placeholder="🔑 كلمة المرور">
-        <p style="margin:0 0 8px;font-size:.88rem;color:var(--text-muted);font-weight:700;">صلاحياته:</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
-          <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer;padding:8px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
-            <input type="checkbox" id="perm-rp" value="received→printing"> تأكيد استلام وبدء طباعة
-          </label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer;padding:8px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
-            <input type="checkbox" id="perm-pd" value="printing→delivering"> إرسال للتوصيل
-          </label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer;padding:8px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
-            <input type="checkbox" id="perm-dd" value="delivering→delivered"> تأكيد التسليم
-          </label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer;padding:8px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
-            <input type="checkbox" id="perm-canc" value="any→cancelled"> إلغاء الطلبات
-          </label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer;padding:8px;background:#f0fdf4;border-radius:10px;border:1px solid #86efac;">
-            <input type="checkbox" id="perm-market" value="manage_market"> إدارة المتجر 🛒
-          </label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer;padding:8px;background:#fef3c7;border-radius:10px;border:1px solid #fde68a;">
-            <input type="checkbox" id="perm-supplies" value="manage_supplies"> إدارة المخزن 🗄️
-          </label>
-        </div>
-        <select id="new-staff-emoji" style="margin-bottom:12px;">
-          <option value="👤">👤 موظف عام</option>
-          <option value="🖨️">🖨️ موظف استنساخ</option>
-          <option value="🛵">🛵 مندوب توصيل</option>
-          <option value="📦">📦 مخزن</option>
-          <option value="☎️">☎️ خدمة عملاء</option>
-        </select>
-        <button class="bmain" style="background:var(--navy);color:#fff;margin-bottom:10px;" onclick="createCustomAccount()">✅ إنشاء الحساب</button>
-        <div id="custom-accounts-list"></div>
-      </div>
-    </div>
 
     <!-- Page: Employee Dashboard (manager only) -->
     <div class="admin-page" id="page-dash">
@@ -606,136 +563,14 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
       </div>
     </div>
 
-    <!-- Page: Coupon Management (manager only) -->
-    <div class="admin-page" id="page-coupons">
-      <h3 style="margin:0 0 18px;color:var(--navy);font-weight:800;">🎟️ إدارة الكوبونات</h3>
-      <!-- Create coupon -->
-      <div style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.03);margin-bottom:18px;">
-        <h4 style="margin:0 0 14px;color:var(--navy);font-weight:800;">➕ إنشاء كوبون جديد</h4>
-        <input type="text" id="cpn-code" placeholder="🎟️ كود الكوبون (مثل: WELCOME50)" style="text-transform:uppercase;">
-        <div style="display:flex;gap:10px;margin-bottom:12px;">
-          <select id="cpn-type" style="flex:1;">
-            <option value="percent">خصم نسبة %</option>
-            <option value="fixed">خصم مبلغ ثابت</option>
-          </select>
-          <input type="text" id="cpn-value" placeholder="القيمة" style="flex:1;margin-bottom:0;">
-        </div>
-        <input type="text" id="cpn-max" placeholder="الحد الأقصى للاستخدام (0 = غير محدود)" style="margin-bottom:12px;">
-        <input type="number" id="cpn-min-order" placeholder="الحد الأدنى لقيمة الطلب بالدينار (0 = بدون حد)" style="margin-bottom:12px;">
-        <div style="margin-bottom:14px;">
-          <label style="font-size:.83rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:6px;">📅 تاريخ انتهاء الصلاحية (اختياري):</label>
-          <input type="date" id="cpn-expires" style="margin-bottom:0;">
-        </div>
-        <button class="bmain" style="background:var(--teal);color:#fff;" onclick="createCoupon()">✅ إنشاء الكوبون</button>
-      </div>
-      <!-- Coupon list -->
-      <div id="coupon-list" style="color:var(--text-muted);text-align:center;padding:20px;">جاري التحميل...</div>
-    </div>
 
-    <!-- Page: Pricing Management (manager only) -->
-    <div class="admin-page" id="page-pricing">
-      <h3 style="margin:0 0 6px;color:var(--navy);font-weight:800;">💰 إدارة التسعير</h3>
-      <p style="margin:0 0 20px;color:var(--text-muted);font-size:.88rem;">أي تغيير هنا يؤثر فوراً على ما يراه الزبون في التطبيق</p>
 
-      <!-- Print pricing -->
-      <div style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.03);margin-bottom:16px;">
-        <h4 style="margin:0 0 16px;color:var(--navy);font-weight:800;">🖨️ أسعار الطباعة</h4>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
-          <div>
-            <label style="font-size:.8rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">الحد الأدنى للصفحات (≤ X صفحة)</label>
-            <input type="number" id="pr-min-pages" value="5" min="1" style="margin-bottom:0;">
-          </div>
-          <div>
-            <label style="font-size:.8rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">سعر الحد الأدنى (د.ع)</label>
-            <input type="number" id="pr-min-price" value="1000" min="0" step="250" style="margin-bottom:0;">
-          </div>
-        </div>
-        <p style="margin:0 0 10px;font-size:.85rem;font-weight:800;color:var(--navy);">🌈 شرائح الطباعة الملونة (سعر/صفحة):</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
-          <div style="background:#fef9c3;border-radius:12px;padding:12px;">
-            <label style="font-size:.78rem;color:#854d0e;font-weight:800;display:block;margin-bottom:6px;">≤ 25 صفحة</label>
-            <input type="number" id="pr-c1" value="150" min="0" style="margin-bottom:0;background:#fffbeb;">
-          </div>
-          <div style="background:#fef9c3;border-radius:12px;padding:12px;">
-            <label style="font-size:.78rem;color:#854d0e;font-weight:800;display:block;margin-bottom:6px;">26 – 40 صفحة</label>
-            <input type="number" id="pr-c2" value="130" min="0" style="margin-bottom:0;background:#fffbeb;">
-          </div>
-          <div style="background:#fef9c3;border-radius:12px;padding:12px;">
-            <label style="font-size:.78rem;color:#854d0e;font-weight:800;display:block;margin-bottom:6px;">41 – 70 صفحة</label>
-            <input type="number" id="pr-c3" value="120" min="0" style="margin-bottom:0;background:#fffbeb;">
-          </div>
-          <div style="background:#fef9c3;border-radius:12px;padding:12px;">
-            <label style="font-size:.78rem;color:#854d0e;font-weight:800;display:block;margin-bottom:6px;">> 70 صفحة</label>
-            <input type="number" id="pr-c4" value="100" min="0" style="margin-bottom:0;background:#fffbeb;">
-          </div>
-        </div>
-
-        <p style="margin:0 0 10px;font-size:.85rem;font-weight:800;color:var(--navy);">⚪ الطباعة بالأبيض والأسود (سعر/صفحة):</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div style="background:#f1f5f9;border-radius:12px;padding:12px;">
-            <label style="font-size:.78rem;color:var(--text-muted);font-weight:800;display:block;margin-bottom:6px;">📄 وجه واحد</label>
-            <input type="number" id="pr-bw1" value="90" min="0" style="margin-bottom:0;background:#f8fafc;">
-          </div>
-          <div style="background:#f1f5f9;border-radius:12px;padding:12px;">
-            <label style="font-size:.78rem;color:var(--text-muted);font-weight:800;display:block;margin-bottom:6px;">📖 وجهين</label>
-            <input type="number" id="pr-bw2" value="75" min="0" style="margin-bottom:0;background:#f8fafc;">
-          </div>
-        </div>
-      </div>
-
-      <!-- Delivery & fees -->
-      <div style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.03);margin-bottom:16px;">
-        <h4 style="margin:0 0 16px;color:var(--navy);font-weight:800;">🚚 رسوم التوصيل والخدمات</h4>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div>
-            <label style="font-size:.8rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">رسوم التوصيل (د.ع)</label>
-            <input type="number" id="pr-del" value="1000" min="0" step="250" style="margin-bottom:0;">
-          </div>
-          <div>
-            <label style="font-size:.8rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">حد التوصيل المجاني (د.ع)</label>
-            <input type="number" id="pr-del-free" value="10000" min="0" step="500" style="margin-bottom:0;">
-          </div>
-          <div>
-            <label style="font-size:.8rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:5px;">⚡ رسوم الطلب العاجل (د.ع)</label>
-            <input type="number" id="pr-express" value="1500" min="0" step="250" style="margin-bottom:0;">
-          </div>
-        </div>
-      </div>
-
-      <!-- Packaging fees -->
-      <div style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.03);margin-bottom:20px;">
-        <h4 style="margin:0 0 16px;color:var(--navy);font-weight:800;">📦 رسوم التغليف</h4>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;">
-          <div style="background:#f0fdf4;border-radius:12px;padding:12px;">
-            <label style="font-size:.78rem;color:#166534;font-weight:800;display:block;margin-bottom:6px;">🗜️ كبس فقط</label>
-            <input type="number" id="pr-pkg-none" value="0" min="0" step="250" style="margin-bottom:0;background:#dcfce7;">
-          </div>
-          <div style="background:#fff7ed;border-radius:12px;padding:12px;">
-            <label style="font-size:.78rem;color:#9a3412;font-weight:800;display:block;margin-bottom:6px;">📦 مقوى ونايلون</label>
-            <input type="number" id="pr-pkg-cardboard" value="500" min="0" step="250" style="margin-bottom:0;background:#ffedd5;">
-          </div>
-          <div style="background:#faf5ff;border-radius:12px;padding:12px;">
-            <label style="font-size:.78rem;color:#6b21a8;font-weight:800;display:block;margin-bottom:6px;">🔩 سبايرول</label>
-            <input type="number" id="pr-pkg-spiral" value="1500" min="0" step="250" style="margin-bottom:0;background:#f3e8ff;">
-          </div>
-        </div>
-      </div>
-
-      <!-- Preview & Save -->
-      <div style="background:linear-gradient(135deg,var(--navy),#1e40af);border-radius:18px;padding:20px;margin-bottom:16px;color:#fff;">
-        <h4 style="margin:0 0 14px;font-weight:800;font-size:.95rem;">👁️ معاينة مباشرة — مثال 30 صفحة ملون وجه واحد</h4>
-        <div id="pr-preview" style="font-size:.9rem;line-height:2;opacity:.9;">—</div>
-      </div>
-
-      <button class="bmain" style="background:var(--green);color:#fff;" onclick="savePricing()">💾 حفظ التسعير وتطبيقه فوراً</button>
-      <div id="pr-msg" style="display:none;margin-top:12px;padding:12px;border-radius:12px;font-weight:700;text-align:center;font-size:.9rem;"></div>
-    </div>
 
     <!-- ══════════════ 4. PAGE: MARKET ══════════════ -->
     <div class="admin-page" id="page-market">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
-    <h3 style="margin:0;color:var(--navy);font-weight:800;">🛒 إدارة المتجر الطلابي</h3>
+    <h3 style="margin:0;color:var(--navy);font-weight:800;">🛒 إدارة قرطاسية الشاطر</h3>
       </div>
  
       <!-- Market sub-tabs -->
@@ -956,8 +791,9 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
 <!-- ══════════════ PAGE: SETTINGS (موحدة) ══════════════ -->
 <div class="admin-page" id="page-settings">
   <!-- ① إدارة الموظفين -->
-  <div class="settings-section">
-    <h4>👥 إدارة الموظفين</h4>
+  <div class="acc-section">
+  <button class="acc-header" onclick="toggleAcc(this)"><span>👥 إدارة الموظفين</span><span class="acc-icon">▼</span></button>
+  <div class="acc-body" style="display:none">
     <div id="staff-list"></div>
     <div style="margin-top:14px;">
       <h4 style="margin:0 0 12px;border-bottom:none;padding-bottom:0;font-size:.88rem;">➕ إضافة حساب موظف جديد</h4>
@@ -979,7 +815,7 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
           <input type="checkbox" id="perm-canc" value="any→cancelled"> إلغاء الطلبات
         </label>
         <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;padding:8px;background:#f0fdf4;border-radius:10px;border:1px solid #86efac;">
-          <input type="checkbox" id="perm-market" value="manage_market"> إدارة المتجر 🛒
+          <input type="checkbox" id="perm-market" value="manage_market"> إدارة قرطاسية 📦
         </label>
         <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;padding:8px;background:#fef3c7;border-radius:10px;border:1px solid #fde68a;">
           <input type="checkbox" id="perm-supplies" value="manage_supplies"> إدارة المخزن 🗄️
@@ -1001,9 +837,10 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
     </div>
   </div>
 
-  <!-- ② إدارة المتجر -->
-  <div class="settings-section">
-    <h4>🛒 إدارة المتجر الطلابي</h4>
+  <!-- ② قرطاسية الشاطر -->
+  <div class="acc-section">
+  <button class="acc-header" onclick="toggleAcc(this)"><span>📦 قرطاسية الشاطر</span><span class="acc-icon">▼</span></button>
+  <div class="acc-body" style="display:none">
     <!-- Add Product Form at TOP -->
     <div id="product-form-section-s" style="margin-bottom:18px;">
       <h4 id="prod-form-title-s" style="margin:0 0 14px;font-size:.88rem;border-bottom:none;padding-bottom:0;">➕ إضافة منتج جديد</h4>
@@ -1040,6 +877,20 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
             <input type="checkbox" id="prod-suggested-s"> <span style="font-weight:700;color:#c2410c;">⭐ منتج مقترح (يظهر في صفحة الطلب)</span>
           </label>
         </div>
+
+        <div style="grid-column:span 2;background:#fef3c7;border-radius:12px;padding:12px;border:1px solid #fde68a;">
+          <p style="margin:0 0 8px;font-size:.82rem;font-weight:800;color:#b45309;">🏷️ الخصم والهدية</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div><label style="font-size:.72rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:4px;">خصم % (0=بلا)</label>
+              <input type="number" id="prod-discount-s" placeholder="0" min="0" max="90" style="margin-bottom:0;background:#fffbeb;"></div>
+            <div><label style="font-size:.72rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:4px;">ينتهي الخصم</label>
+              <input type="date" id="prod-discount-expires-s" style="margin-bottom:0;background:#fffbeb;"></div>
+            <div><label style="font-size:.72rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:4px;">🎁 اسم الهدية</label>
+              <input type="text" id="prod-gift-name-s" placeholder="قلم ملون" style="margin-bottom:0;background:#fffbeb;"></div>
+            <div><label style="font-size:.72rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:4px;">كمية الهدية</label>
+              <input type="number" id="prod-gift-qty-s" placeholder="0" min="0" style="margin-bottom:0;background:#fffbeb;"></div>
+          </div>
+        </div>
         <div style="grid-column:span 2;">
           <label style="font-size:.75rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:4px;">📷 رابط صورة (اختياري)</label>
           <div style="display:flex;gap:8px;align-items:center;">
@@ -1063,9 +914,10 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
     <div id="products-list-s"><div style="text-align:center;padding:30px;color:var(--text-muted);">جاري التحميل...</div></div>
   </div>
 
-  <!-- ③ إدارة المخزن -->
-  <div class="settings-section">
-    <h4>🗄️ مخزن مواد الاستنساخ</h4>
+  <!-- ③ المخزن -->
+  <div class="acc-section">
+  <button class="acc-header" onclick="toggleAcc(this)"><span>🗄️ مخزن مواد الاستنساخ</span><span class="acc-icon">▼</span></button>
+  <div class="acc-body" style="display:none">
     <!-- Add Supply at TOP -->
     <div style="margin-bottom:18px;">
       <h4 style="margin:0 0 12px;font-size:.88rem;border-bottom:none;padding-bottom:0;">➕ إضافة مادة جديدة</h4>
@@ -1110,8 +962,9 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
   </div>
 
   <!-- ④ التسعير -->
-  <div class="settings-section" id="pricing-settings-section">
-    <h4>💰 إدارة التسعير</h4>
+  <div class="acc-section" id="pricing-settings-section">
+  <button class="acc-header" onclick="toggleAcc(this)"><span>💰 إدارة التسعير</span><span class="acc-icon">▼</span></button>
+  <div class="acc-body" style="display:none">
     <p style="margin:0 0 14px;color:var(--text-muted);font-size:.85rem;">أي تغيير يؤثر فوراً على ما يراه الزبون</p>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
       <div>
@@ -1151,8 +1004,9 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
   </div>
 
   <!-- ⑤ الكوبونات -->
-  <div class="settings-section">
-    <h4>🎟️ إدارة الكوبونات</h4>
+  <div class="acc-section">
+  <button class="acc-header" onclick="toggleAcc(this)"><span>🎟️ إدارة الكوبونات</span><span class="acc-icon">▼</span></button>
+  <div class="acc-body" style="display:none">
     <div style="margin-bottom:16px;">
       <h4 style="margin:0 0 12px;font-size:.88rem;border-bottom:none;padding-bottom:0;">➕ إنشاء كوبون جديد</h4>
       <input type="text" id="cpn-code" placeholder="🎟️ كود الكوبون (مثل: WELCOME50)" style="text-transform:uppercase;">
@@ -1166,6 +1020,7 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
       <button class="bmain" style="background:var(--teal);color:#fff;" onclick="createCoupon()">✅ إنشاء الكوبون</button>
     </div>
     <div id="coupon-list-s"></div>
+  </div>
   </div>
 </div>
 <!-- ══ END PAGE: SETTINGS ══ -->
@@ -1199,6 +1054,13 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
 // ══════════════════════════════════
 //  🔒 SECURITY: Escape HTML to prevent XSS
 // ══════════════════════════════════
+function toggleAcc(btn) {
+  const body = btn.nextElementSibling;
+  const isOpen = btn.classList.contains('open');
+  document.querySelectorAll('.acc-header.open').forEach(b => { b.classList.remove('open'); b.nextElementSibling.style.display='none'; });
+  if (!isOpen) { btn.classList.add('open'); body.style.display='block'; }
+}
+
 function esc(s) {
   if (s == null) return '';
   const d = document.createElement('div');
@@ -1427,6 +1289,8 @@ function enterDashboard(profile) {
       document.getElementById('tab-dash-btn').style.display     = '';
       document.getElementById('tab-reports-btn').style.display  = '';
       document.getElementById('tab-settings-btn').style.display = '';
+      document.getElementById('tab-market-btn').style.display   = '';
+      document.getElementById('tab-supplies-btn').style.display = '';
       document.getElementById('settings-fab').style.display     = 'flex';
       loadPricingAdmin();
     }
@@ -1749,6 +1613,8 @@ function switchPage(name, el) {
     loadPricingAdmin();
   }
   if (name === 'orders')   { fetchAllOrders(); }
+  if (name === 'market')   { loadAdminProducts(); }
+  if (name === 'supplies') { loadSupplies(); }
 }
 
 // ══════════════════════════════════
@@ -2049,12 +1915,7 @@ async function fetchOrders() {
   const p = allOrders.filter(o => ['received','printing','delivering'].includes(o.status)).length;
   document.getElementById('pcnt').innerText = p;
 
-  // Also refresh market orders
-  try {
-    const {data:md} = await sb.from('market_orders').select('*').order('created_at',{ascending:false}).limit(200);
-    allMktOrders = md || [];
-  } catch(_) {}
-
+  allMktOrders = allOrders.filter(o => o.order_type === 'market');
   renderOrders();
   calcStats();
   renderStaffDashboard();
@@ -2092,8 +1953,8 @@ function calcStats() {
   document.getElementById('s-total').innerText     = allOrders.length;
   document.getElementById('s-pending').style.color = pendingOrds.length > 0 ? 'var(--orange)' : 'var(--green)';
 
-  // Market + combined counts
-  const mktCount  = allMktOrders.length;
+  // Market count from unified orders table
+  const mktCount  = allOrders.filter(o => o.order_type === 'market').length;
   const combinedCount = allOrders.filter(o => o.order_type === 'combined').length;
   const deliveredCount = allOrders.filter(o => o.status === 'delivered').length;
   const cancelledCount = allOrders.filter(o => o.status === 'cancelled').length;
@@ -2141,7 +2002,7 @@ function calcStats() {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;">
       ${couponsUsed > 0 ? `<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:12px;text-align:center;"><div style="font-size:1.4rem;font-weight:800;color:#166534;">${couponsUsed}</div><div style="font-size:.73rem;color:#166534;">استخدام الكوبونات</div></div>` : ''}
       ${expressCount > 0 ? `<div style="background:#f5f3ff;border:1px solid #c4b5fd;border-radius:12px;padding:12px;text-align:center;"><div style="font-size:1.4rem;font-weight:800;color:#7c3aed;">${expressCount}</div><div style="font-size:.73rem;color:#7c3aed;">طلبات عاجلة ⚡</div></div>` : ''}
-      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:12px;text-align:center;"><div style="font-size:1.4rem;font-weight:800;color:#166534;">${allMktOrders.length}</div><div style="font-size:.73rem;color:#166534;">طلبات المتجر 🛍️</div></div>
+      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:12px;text-align:center;"><div style="font-size:1.4rem;font-weight:800;color:#166534;">${allOrders.filter(o=>o.order_type==='market').length}</div><div style="font-size:.73rem;color:#166534;">طلبات القرطاسية 📦</div></div>
       <div style="background:#f5f3ff;border:1px solid #c4b5fd;border-radius:12px;padding:12px;text-align:center;"><div style="font-size:1.4rem;font-weight:800;color:#7c3aed;">${allOrders.filter(o=>o.order_type==='combined').length}</div><div style="font-size:.73rem;color:#7c3aed;">طلبات مشتركة 🔀</div></div>
     </div>
   `;
@@ -2179,8 +2040,8 @@ function showStatDetail(type) {
       cols: ['id','name','phone','status','total']
     },
     market: {
-      title: '🛍️ طلبات المتجر',
-      data: allMktOrders,
+      title: '📦 طلبات القرطاسية',
+      data: allOrders.filter(o=>o.order_type==='market'),
       cols: ['id','name','phone','status','total']
     },
     combined: {
@@ -2367,15 +2228,12 @@ function renderOrders() {
 // ══ Market orders in unified view ══
 async function fetchAllOrders() {
   await fetchOrders();
-  try {
-    const {data} = await sb.from('market_orders').select('*').order('created_at',{ascending:false}).limit(200);
-    allMktOrders = data || [];
-  } catch(_){}
+  // allMktOrders set in fetchOrders() from allOrders filter
 }
 
 function renderMarketOrdersUnified() {
   const cont = document.getElementById('olist');
-  let list = allMktOrders;
+  let list = allOrders.filter(o => o.order_type === 'market');
   if (curMktStatusFilter !== 'all') list = list.filter(o => o.status === curMktStatusFilter);
   const searchQ = (document.getElementById('order-search')?.value || '').toLowerCase().trim();
   if (searchQ) list = list.filter(o => (o.id||'').toLowerCase().includes(searchQ)||(o.name||'').toLowerCase().includes(searchQ)||(o.phone||'').includes(searchQ));
@@ -2422,11 +2280,11 @@ async function markReady(orderId) {
 
 async function markMktReady(orderId) {
   if (!confirm('تأكيد: تم تجهيز الطلب؟')) return;
-  const { error } = await sb.from('market_orders').update({ is_ready: true }).eq('id', orderId);
+  const { error } = await sb.from('orders').update({ is_ready: true }).eq('id', orderId);
   if (error) return showToast('❌ ' + error.message);
   showToast('✅ تم تحديد الطلب كجاهز');
-  const { data } = await sb.from('market_orders').select('telegram_id').eq('id', orderId).maybeSingle();
-  if (data?.telegram_id) await tgSend(String(data.telegram_id), `✅ تم تجهيز طلبك #${orderId} وهو جاهز للتوصيل!`);
+  const ord = allOrders.find(o => o.id === orderId);
+  if (ord?.telegram_id) await tgSend(String(ord.telegram_id), `✅ تم تجهيز طلبك #${orderId} وهو جاهز للتوصيل!`);
   await fetchAllOrders();
   renderMarketOrdersUnified();
 }
@@ -2902,7 +2760,7 @@ function renderProductsS() {
               <span class="${p.active?'ok-badge':'low-badge'}">${p.active?'نشط':'مخفي'}</span>
             </div>
           </div>
-          <div style="font-size:.82rem;font-weight:800;color:var(--orange);margin-top:3px;">${(p.price||0).toLocaleString()} د.ع / ${esc(p.unit||'قطعة')}</div>
+          <div style="font-size:.82rem;font-weight:800;color:var(--orange);margin-top:3px;">${p.discount_percent>0?`<span style='text-decoration:line-through;color:#94a3b8;font-size:.78rem;'>${(p.price||0).toLocaleString()}</span> <span style='color:var(--green);'>${Math.round(p.price*(1-p.discount_percent/100)).toLocaleString()}</span>`:p.price.toLocaleString()} د.ع / ${esc(p.unit||'قطعة')} ${p.discount_percent>0?`<span style='background:#dcfce7;color:#166534;border-radius:5px;font-size:.6rem;padding:1px 5px;'>خصم ${p.discount_percent}%</span>':''} ${p.gift_name?`<span style='background:#fef3c7;color:#b45309;border-radius:5px;font-size:.6rem;padding:1px 5px;'>🎁 ${esc(p.gift_name)}</span>':''}</div>
           <div style="font-size:.78rem;font-weight:700;color:${stockColor};">مخزون: ${p.stock}</div>
         </div>
       </div>
@@ -2925,6 +2783,11 @@ function editProductS(id) {
   sv('prod-desc-s', p.description); sv('prod-img-s', p.image_url||'');
   const sugEl = document.getElementById('prod-suggested-s');
   if (sugEl) sugEl.checked = !!p.is_suggested;
+  const sv2=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
+  sv2('prod-discount-s',p.discount_percent||0);
+  sv2('prod-discount-expires-s',p.discount_expires_at?p.discount_expires_at.substring(0,10):'');
+  sv2('prod-gift-name-s',p.gift_name||'');
+  sv2('prod-gift-qty-s',p.gift_qty||0);
   updateProdImgPreview(p.image_url||'', 'prod-img-preview-s');
   document.getElementById('prod-form-title-s').innerText = '✏️ تعديل المنتج';
   document.getElementById('save-prod-btn-s').innerText = '💾 حفظ التعديلات';
@@ -2939,6 +2802,8 @@ function clearProductFormS() {
   const es = document.getElementById('prod-stock-s'); if(es) es.value='';
   const ec = document.getElementById('prod-cat-s'); if(ec) ec.value='notebooks';
   const sg = document.getElementById('prod-suggested-s'); if(sg) sg.checked=false;
+  ['prod-discount-s','prod-gift-qty-s'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='0';});
+  ['prod-discount-expires-s','prod-gift-name-s'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('prod-img-preview-s').innerHTML = '📦';
   document.getElementById('prod-form-title-s').innerText = '➕ إضافة منتج جديد';
   document.getElementById('save-prod-btn-s').innerText = '✅ إضافة المنتج';
@@ -2955,12 +2820,16 @@ async function saveProductS() {
   const desc  = g('prod-desc-s');
   const img   = g('prod-img-s');
   const isSug = document.getElementById('prod-suggested-s')?.checked || false;
+  const discPct = parseInt(document.getElementById('prod-discount-s')?.value)||0;
+  const discExp = document.getElementById('prod-discount-expires-s')?.value||null;
+  const giftName = document.getElementById('prod-gift-name-s')?.value?.trim()||null;
+  const giftQty = parseInt(document.getElementById('prod-gift-qty-s')?.value)||0;
   if (!name) return showToast('❌ أدخل اسم المنتج');
   if (!price) return showToast('❌ أدخل سعراً');
   const btn = document.getElementById('save-prod-btn-s');
   btn.disabled = true; btn.innerText = '⏳ جاري الحفظ...';
   try {
-    const payload = { name, category:cat, unit, price, stock, description:desc||null, image_url:img||null, active:true, is_suggested:isSug };
+    const payload = { name, category:cat, unit, price, stock, description:desc||null, image_url:img||null, active:true, is_suggested:isSug, discount_percent:discPct, discount_expires_at:discExp||null, gift_name:giftName, gift_qty:giftQty };
     if (_editingProdIdS) {
       const {error} = await sb.from('market_products').update(payload).eq('id', _editingProdIdS);
       if (error) throw error;
@@ -3062,12 +2931,37 @@ let _adminMktOrders = [];
 let _editingProdId = null;
 let _mktOrderFilter = 'all';
 
+
+function renderMktOrdersPanel() {
+  const box = document.getElementById('market-orders-list');
+  if (!box) return;
+  let list = allOrders.filter(o => o.order_type === 'market');
+  if (_mktOrderFilter !== 'all') list = list.filter(o => o.status === _mktOrderFilter);
+  if (!list.length) { box.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;"><div style="font-size:3rem;opacity:.3;">📋</div><p>لا توجد طلبات</p></div>'; return; }
+  box.innerHTML = list.map(o => {
+    const s = MKT_ST[o.status]||MKT_ST.pending;
+    const dt = new Date(o.created_at).toLocaleString('ar-IQ',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    const items = (o.cart_items||o.suggested_items||[]).map(i=>`${esc(i.name||'')} ×${i.qty||1}`).join(' · ');
+    const sp = 'event.stopPropagation()';
+    return `<div class="ocard">
+      <div class="ohdr"><div><b style="color:var(--navy);">#${esc(o.id)}</b> <span class="order-type-badge otb-market">📦 قرطاسية</span></div><span class="sbdg ${s.c}">${s.i} ${s.l}</span></div>
+      <div class="infogrid"><div class="ii">👤 ${esc(o.name)}</div><div class="ii">📞 ${esc(o.phone)}</div><div class="ii">🏠 ${esc(o.region)}</div><div class="ii" style="color:var(--orange);font-weight:700;">💰 ${(o.total||0).toLocaleString()} د.ع</div></div>
+      ${items?`<div style="font-size:.82rem;color:var(--text-muted);background:#f8fafc;padding:8px;border-radius:8px;margin-bottom:8px;">📦 ${items}</div>`:''}
+      <div class="arow">
+        ${o.status==='received'?`<button onclick="${sp};updateMktOrderStatus('${esc(o.id)}','delivering')" class="abtn adeliv">🛵 توصيل</button>`:''}
+        ${o.status==='delivering'?`<button onclick="${sp};updateMktOrderStatus('${esc(o.id)}','delivered')" class="abtn adone">✔ تسليم</button>`:''}
+        ${!['delivered','cancelled'].includes(o.status)?`<button onclick="${sp};cancelMktOrder('${esc(o.id)}')" class="abtn acanc">❌ إلغاء</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
 function switchMarketSubTab(tab, el) {
   document.getElementById('mkt-products-section').style.display = tab === 'products' ? 'block' : 'none';
   document.getElementById('mkt-orders-section').style.display   = tab === 'orders'   ? 'block' : 'none';
   document.querySelectorAll('#page-market .ftab').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
-  if (tab === 'orders') loadMarketOrders();
+  if (tab === 'orders') { fetchAllOrders().then(() => renderMktOrdersPanel()); }
 }
 
 async function loadAdminProducts() {
@@ -3251,15 +3145,10 @@ async function confirmAdjProductStock() {
   await loadAdminProducts();
 }
 
-async function loadMarketOrders() {
-  const box = document.getElementById('market-orders-list');
-  if (!box) return;
-  box.innerHTML = '<div style="text-align:center;padding:30px;color:var(--teal);"><b>جاري التحميل...</b></div>';
-  try {
-    const {data, error} = await sb.from('market_orders').select('*').order('created_at',{ascending:false}).limit(100);
+// loadMarketOrders removed).limit(100);
     if (error) throw error;
     _adminMktOrders = data||[];
-    renderMarketOrders();
+    renderMktOrdersPanel();
   } catch(e) {
     box.innerHTML = `<div style="text-align:center;padding:30px;color:var(--red);"><b>❌ ${esc(e.message)}</b></div>`;
   }
@@ -3269,7 +3158,7 @@ function setMktOrderFilter(f, el) {
   _mktOrderFilter = f;
   document.querySelectorAll('#mkt-order-filter .ftab').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
-  renderMarketOrders();
+  renderMktOrdersPanel();
 }
 
 const MKT_ST = {
@@ -3277,17 +3166,7 @@ const MKT_ST = {
   delivering:{l:'توصيل',c:'sd',i:'🛵'}, delivered:{l:'مسلّم',c:'sv',i:'✔'}, cancelled:{l:'ملغى',c:'sc',i:'❌'}
 };
 
-function renderMarketOrders() {
-  const box = document.getElementById('market-orders-list');
-  let list = _adminMktOrders;
-  if (_mktOrderFilter !== 'all') list = list.filter(o => o.status === _mktOrderFilter);
-  if (!list.length) {
-    box.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;"><div style="font-size:3rem;opacity:.3;">📋</div><p style="font-weight:600;">لا توجد طلبات</p></div>';
-    return;
-  }
-  box.innerHTML = list.map(o => {
-    const s  = MKT_ST[o.status]||MKT_ST.pending;
-    const dt = new Date(o.created_at).toLocaleString('ar-IQ',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+// renderMarketOrders removed);
     const items = (o.items||[]).map(i=>`${esc(i.name)} ×${i.qty}`).join(' · ');
     return `
     <div class="ocard">
@@ -3315,19 +3194,16 @@ function renderMarketOrders() {
 }
 
 async function updateMktOrderStatus(id, status) {
-  const o = _adminMktOrders.find(x=>x.id===id);
-  const history = [...(o?.status_history||[]), {status, time:new Date().toISOString()}];
-  const {error} = await sb.from('market_orders').update({status, status_history:history}).eq('id', id);
+  const o = allOrders.find(x=>x.id===id);
+  const history = [...(o?.status_history||[]), {status, time:new Date().toISOString(), by:ROLES[currentRole]?.label||currentRole}];
+  const {error} = await sb.from('orders').update({status, status_history:history}).eq('id', id);
   if (error) return showToast('❌ ' + error.message);
-  // إشعار الزبون
   const chatId = o?.telegram_id;
-  const msgMap = {confirmed:'✅ تم تأكيد طلب المتجر', delivering:'🛵 طلبك في الطريق إليك', delivered:'🎉 تم تسليم طلب المتجر بنجاح!'};
-  if (chatId && msgMap[status]) {
-    await sb.functions.invoke('send-tg', {body:{chatId:String(chatId), message:`${msgMap[status]}
-رقم الطلب: #${id}`}}).catch(()=>{});
-  }
+  const msgMap = {delivering:'🛵 طلب القرطاسية في الطريق إليك!', delivered:'🎉 تم تسليم طلب القرطاسية بنجاح!'};
+  if (chatId && msgMap[status]) await sb.functions.invoke('send-tg',{body:{chatId:String(chatId),message:msgMap[status]+`\nرقم الطلب: #${id}`}}).catch(()=>{});
   showToast('✅ تم تحديث حالة الطلب');
-  await loadMarketOrders();
+  await fetchAllOrders();
+  renderMktOrdersPanel();
 }
 
 async function cancelMktOrder(id) {
@@ -3787,6 +3663,7 @@ async function deleteMktCat(idx) {
 </script>
 </body>
 </html>
+
 
 
 
