@@ -1140,9 +1140,12 @@ let _detOrderId = null, _detOrderTgId = null;
 
 // ══ DEBOUNCE البحث ════════════════════════════════
 let _searchT;
-document.getElementById('order-search').addEventListener('input', () => {
-  clearTimeout(_searchT);
-  _searchT = setTimeout(renderOrders, 300);
+document.addEventListener('DOMContentLoaded', () => {
+  const _srchEl = document.getElementById('order-search');
+  if (_srchEl) _srchEl.addEventListener('input', () => {
+    clearTimeout(_searchT);
+    _searchT = setTimeout(renderOrders, 300);
+  });
 });
 
 // ══════════════════════════════════
@@ -3517,17 +3520,6 @@ async function saveSupplyEdit() {
   } catch(e) { showToast('❌ ' + e.message); }
 }
 
-async function deleteSupply(id) {
-  const s = _supplies.find(x => x.id === id);
-  if (!confirm(`حذف "${s?.name}"؟ لا يمكن التراجع.`)) return;
-  try {
-    const { error } = await sb.from('supplies').delete().eq('id', id);
-    if (error) throw error;
-    showToast('🗑️ تم الحذف');
-    await loadSupplies();
-  } catch(e) { showToast('❌ ' + e.message); }
-}
-
 function openSupplyLog(id) {
   const s = _supplies.find(x => x.id === id);
   if (!s) return;
@@ -3637,7 +3629,6 @@ async function deleteMktCat(idx) {
 </script>
 </body>
 </html>
-
 
 
 
