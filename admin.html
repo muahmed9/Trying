@@ -2147,6 +2147,7 @@ function renderOrders() {
   // Type filter
   if (curTypeFilter === 'print')    list = list.filter(o => !o.order_type || o.order_type === 'print');
   else if (curTypeFilter === 'combined') list = list.filter(o => o.order_type === 'combined');
+  else if (curTypeFilter === 'market')   list = list.filter(o => o.order_type === 'market');
   // Status sub-filter
   if (curFilter !== 'all') list = list.filter(o => o.status === curFilter);
   // Search
@@ -3663,10 +3664,3 @@ async function deleteMktCat(idx) {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
