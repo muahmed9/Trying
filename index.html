@@ -592,6 +592,16 @@ input:checked+.togs:before{transform:translateX(-24px);}
       </div>
     </div>
     <div id="research-err" style="display:none;background:#fef2f2;color:var(--red);padding:10px;border-radius:10px;font-size:.88rem;font-weight:700;margin-bottom:12px;text-align:center;"></div>
+
+    <!-- رسالة تأكيد الإرسال -->
+    <div id="res-confirm-box" style="display:none;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1.5px solid #86efac;border-radius:18px;padding:20px;margin-bottom:16px;text-align:center;animation:pop .4s ease;">
+      <div style="font-size:3rem;margin-bottom:8px;">✅</div>
+      <h3 style="color:#166534;margin:0 0 6px;font-weight:800;">تم استلام طلبك بنجاح!</h3>
+      <p style="color:#15803d;margin:0 0 10px;font-size:.92rem;font-weight:600;">سيقوم فريقنا بمراجعة طلبك والتواصل معك في أقرب وقت ممكن</p>
+      <div style="background:rgba(255,255,255,.7);border-radius:12px;padding:10px;display:inline-flex;align-items:center;gap:8px;font-size:.88rem;color:#166534;font-weight:700;">
+        <span style="font-size:1.2rem;">📞</span> سيتم التواصل معك على الرقم المُدخل
+      </div>
+    </div>
     <input type="text" id="res-name" placeholder="✍️ اسمك الكامل" maxlength="60">
     <input type="tel" id="res-phone" placeholder="📞 رقم هاتفك (11 رقم)" maxlength="11">
     <input type="text" id="res-subject" placeholder="📖 موضوع البحث / التقرير">
@@ -1282,9 +1292,30 @@ function setS(v) {
 
 // ══ LOCATION ═════════════════════════════════════
 function getLoc() {
+  const btn = document.getElementById('locbtn');
+  btn.innerText = '⏳ جاري تحديد الموقع...';
+  btn.disabled  = true;
+  btn.style.background = '#94a3b8';
   navigator.geolocation.getCurrentPosition(
-    p => { locUrl = `https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`; const b=document.getElementById('locbtn'); b.innerText='✅ تم حفظ الموقع بنجاح';b.style.background='var(--green)';hideErr(); },
-    () => showErr('❌ يرجى تفعيل GPS والسماح بالوصول للموقع')
+    p => {
+      locUrl = `https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`;
+      btn.innerText = '✅ تم حفظ الموقع بنجاح';
+      btn.style.background = 'var(--green)';
+      btn.disabled = false;
+      hideErr();
+    },
+    err => {
+      btn.innerText = '📍 تحديد موقعي على الخريطة';
+      btn.style.background = '#64748b';
+      btn.disabled = false;
+      const msgs = {
+        1: '❌ يرجى السماح بالوصول للموقع من إعدادات المتصفح',
+        2: '❌ تعذّر تحديد الموقع — تأكد من تفعيل GPS',
+        3: '❌ انتهت المهلة — يرجى المحاولة مجدداً',
+      };
+      showErr(msgs[err.code] || '❌ يرجى تفعيل GPS والسماح بالوصول للموقع');
+    },
+    { timeout: 12000, enableHighAccuracy: true, maximumAge: 0 }
   );
 }
 
@@ -1600,20 +1631,27 @@ async function sendOrder() {
     const pkgLabelsMsg = {none:'كبس فقط', cardboard:'ورق مقوى ونايلون 📦', spiral:'سبايرول 🔩'};
     const orderTypeBadge = orderType==='combined'?'🔀 مشترك':orderType==='print'?'🖨️ استنساخ':'🛍️ مستلزمات';
     const sugTxt = allCartItems?.length ? '\n\n📦 القرطاسية:\n' + allCartItems.map(i=>`• ${i.name} ×${i.qty} = ${(i.price*i.qty).toLocaleString()} د.ع`).join('\n') : '';
-    await tgMsg(ADMIN,
-      `🆕 طلب جديد ${orderTypeBadge} #${oid}${isExpress?' ⚡عاجل':''}\n${isFO?'🚚 توصيل مجاني — أول طلب\n':''}` +
-      `👤 ${name}\n📞 ${phone}\n🏠 ${region}\n` +
-      (hasPrint ? `🎨 ${color==='c'?'ملون':'أسود'} — ${side==='1'?'وجه':'وجهين'}\n📦 التغليف: ${pkgLabelsMsg[pkgType||'none']}\n` : '') +
-      `💰 ${(tot||0).toLocaleString()} د.ع\n📍 ${locUrl}\n` +
-      (appliedCoupon ? `🎟️ كوبون: ${appliedCoupon.code}\n` : '') +
-      (hasPrint ? `\n📋 الملفات:\n${flist}\n\n📦 رابط التحميل:\n${zipUrl}` : '') +
-      sugTxt
-    );
-    if (tgU?.id) await tgMsg(String(tgU.id),
-      orderType === 'combined'
-        ? `✅ تم استلام طلبك #${oid} بنجاح!\n💰 ${(tot||0).toLocaleString()} د.ع${pe>0?`\n💎 ستكسب ${pe} نقطة ولاء عند التسليم!`:''}\nسنُخطرك بكل تحديث 🔔`
-        : `✅ تم استلام طلبك #${oid} بنجاح!\n💰 ${(tot||0).toLocaleString()} د.ع\n${pe>0?`💎 ستكسب ${pe} نقطة ولاء عند التسليم!\n`:''}سنُخطرك بكل تحديث 🔔`
-    );
+
+    // إرسال إشعارات Telegram — غير حرجة، لا توقف إكمال الطلب عند الفشل
+    try {
+      await tgMsg(ADMIN,
+        `🆕 طلب جديد ${orderTypeBadge} #${oid}${isExpress?' ⚡عاجل':''}\n${isFO?'🚚 توصيل مجاني — أول طلب\n':''}` +
+        `👤 ${name}\n📞 ${phone}\n🏠 ${region}\n` +
+        (hasPrint ? `🎨 ${color==='c'?'ملون':'أسود'} — ${side==='1'?'وجه':'وجهين'}\n📦 التغليف: ${pkgLabelsMsg[pkgType||'none']}\n` : '') +
+        `💰 ${(tot||0).toLocaleString()} د.ع\n📍 ${locUrl||'—'}\n` +
+        (appliedCoupon ? `🎟️ كوبون: ${appliedCoupon.code}\n` : '') +
+        (hasPrint ? `\n📋 الملفات:\n${flist}\n\n📦 رابط التحميل:\n${zipUrl}` : '') +
+        sugTxt
+      );
+    } catch(_tgErr) { console.warn('Admin TG notification failed (non-fatal):', _tgErr); }
+
+    try {
+      if (tgU?.id) await tgMsg(String(tgU.id),
+        orderType === 'combined'
+          ? `✅ تم استلام طلبك #${oid} بنجاح!\n💰 ${(tot||0).toLocaleString()} د.ع${pe>0?`\n💎 ستكسب ${pe} نقطة ولاء عند التسليم!`:''}\nسنُخطرك بكل تحديث 🔔`
+          : `✅ تم استلام طلبك #${oid} بنجاح!\n💰 ${(tot||0).toLocaleString()} د.ع\n${pe>0?`💎 ستكسب ${pe} نقطة ولاء عند التسليم!\n`:''}سنُخطرك بكل تحديث 🔔`
+      );
+    } catch(_tgErr2) { console.warn('Customer TG notification failed (non-fatal):', _tgErr2); }
 
     document.getElementById('pbar').style.width = '100%';
     lastOrderTime = Date.now();
@@ -2073,37 +2111,68 @@ async function sendResearchOrder() {
   const phone   = document.getElementById('res-phone')?.value.trim();
   const subject = document.getElementById('res-subject')?.value.trim();
   const type    = document.getElementById('res-type')?.value;
-  const pages   = document.getElementById('res-pages')?.value;
-  const deadline= document.getElementById('res-deadline')?.value;
+  const pages   = parseInt(document.getElementById('res-pages')?.value) || null;
+  const deadline= document.getElementById('res-deadline')?.value || null;
   const details = document.getElementById('res-details')?.value.trim();
   const errEl   = document.getElementById('research-err');
 
   const showRErr = m => { errEl.style.display='block'; errEl.innerText=m; };
   errEl.style.display = 'none';
-  if (!name || name.length < 3) return showRErr('❌ يرجى إدخال اسمك الكامل');
+  if (!name || name.length < 3)  return showRErr('❌ يرجى إدخال اسمك الكامل');
   if (!phone || phone.length !== 11 || isNaN(+phone)) return showRErr('❌ رقم الهاتف يجب أن يكون 11 رقمًا');
   if (!subject) return showRErr('❌ يرجى إدخال موضوع البحث');
-  if (!type) return showRErr('❌ يرجى اختيار نوع الطلب');
+  if (!type)    return showRErr('❌ يرجى اختيار نوع الطلب');
   if (Date.now() - _lastResTime < 30000) return showRErr('❌ انتظر قليلاً قبل إرسال طلب جديد');
 
   const btn = document.getElementById('res-btn');
   btn.disabled = true; btn.innerText = 'جاري الإرسال...';
   try {
-    await tgMsg(ADMIN,
-      `📝 طلب ${type} جديد!\n👤 ${name}\n📞 ${phone}\n📖 الموضوع: ${subject}\n📄 الصفحات: ${pages||'غير محدد'}\n⏰ الموعد: ${deadline||'غير محدد'}\n📋 التفاصيل: ${details||'—'}`
-    );
-    if (tgU?.id) await tgMsg(String(tgU.id),
-      `✅ تم استلام طلب بحثك!\n📖 ${subject}\nسيتواصل معك فريقنا قريباً 🔔`
-    );
+    // ① حفظ الطلب في Supabase
+    await sb.from('research_orders').insert({
+      user_id:  userId,
+      name, phone, subject, type,
+      pages:    pages || null,
+      deadline: deadline || null,
+      details:  details || null,
+      status:   'new',
+      created_at: new Date().toISOString()
+    });
+
+    // ② إشعار المدير عبر Telegram (غير حرج)
+    try {
+      await tgMsg(ADMIN,
+        `📝 طلب ${type} جديد!\n👤 ${name}\n📞 ${phone}\n📖 الموضوع: ${subject}\n📄 الصفحات: ${pages||'غير محدد'}\n⏰ الموعد: ${deadline||'غير محدد'}\n📋 التفاصيل: ${details||'—'}`
+      );
+    } catch(_te) {}
+
+    // ③ إشعار الزبون (غير حرج)
+    try {
+      if (tgU?.id) await tgMsg(String(tgU.id),
+        `✅ تم استلام طلب بحثك!\n📖 ${subject}\nسيتواصل معك فريقنا قريباً 🔔`
+      );
+    } catch(_te2) {}
+
     _lastResTime = Date.now();
-    showToast('✅ تم إرسال طلب البحث بنجاح!');
+
+    // ④ مسح الفورم
     ['res-name','res-phone','res-subject','res-pages','res-details'].forEach(id => {
       const el = document.getElementById(id); if(el) el.value='';
     });
     document.getElementById('res-type').value='';
     document.getElementById('res-deadline').value='';
+
+    // ⑤ إظهار رسالة تأكيد واضحة للزبون
+    const confirmBox = document.getElementById('res-confirm-box');
+    if (confirmBox) {
+      confirmBox.style.display = 'block';
+      confirmBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => { confirmBox.style.display = 'none'; }, 8000);
+    }
+    showToast('✅ تم إرسال طلب البحث بنجاح!');
+
   } catch(e) {
     showRErr('❌ حدث خطأ. يرجى المحاولة مجدداً.');
+    console.error('Research order error:', e);
   }
   btn.disabled = false; btn.innerText = '📨 إرسال طلب البحث';
 }
@@ -2486,16 +2555,33 @@ function changeCartQtyDirect(pid, delta) {
  
 // ── تحديد الموقع للسلة ──
 function getCartLoc() {
+  const btn = document.getElementById('cart-loc-btn');
+  btn.innerText  = '⏳ جاري تحديد الموقع...';
+  btn.disabled   = true;
+  btn.style.background = '#94a3b8';
   navigator.geolocation.getCurrentPosition(
     p => {
       _cartLocUrl = `https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`;
-      const btn = document.getElementById('cart-loc-btn');
-      btn.innerText = '✅ تم حفظ الموقع'; btn.style.background = 'var(--green)';
-    },
-    () => {
+      btn.innerText = '✅ تم حفظ الموقع';
+      btn.style.background = 'var(--green)';
+      btn.disabled = false;
       const e = document.getElementById('cart-err');
-      e.style.display = 'block'; e.innerText = '❌ يرجى السماح بالوصول للموقع';
-    }
+      e.style.display = 'none';
+    },
+    err => {
+      btn.innerText = '📍 تحديد موقعي';
+      btn.style.background = '#64748b';
+      btn.disabled = false;
+      const e = document.getElementById('cart-err');
+      const msgs = {
+        1: '❌ يرجى السماح بالوصول للموقع من إعدادات المتصفح',
+        2: '❌ تعذّر تحديد الموقع — تأكد من تفعيل GPS',
+        3: '❌ انتهت المهلة — يرجى المحاولة مجدداً',
+      };
+      e.style.display = 'block';
+      e.innerText = msgs[err.code] || '❌ يرجى السماح بالوصول للموقع';
+    },
+    { timeout: 12000, enableHighAccuracy: true, maximumAge: 0 }
   );
 }
  
@@ -2586,6 +2672,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 
