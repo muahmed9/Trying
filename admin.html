@@ -374,6 +374,7 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
       <button class="atab" id="tab-settings-btn" onclick="switchPage('settings',this)" style="display:none;">⚙️ الإعدادات</button>
       <button class="atab" id="tab-market-btn" onclick="switchPage('market',this)" style="display:none;">📦 قرطاسية الشاطر</button>
       <button class="atab" id="tab-supplies-btn" onclick="switchPage('supplies',this)" style="display:none;">🗄️ المخزن</button>
+      <button class="atab" id="tab-research-btn" onclick="switchPage('research',this)" style="display:none;">📝 البحوث والتقارير</button>
     </div>
 
     <!-- Page: Orders -->
@@ -573,10 +574,11 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
     <h3 style="margin:0;color:var(--navy);font-weight:800;">🛒 إدارة قرطاسية الشاطر</h3>
       </div>
  
-      <!-- Market sub-tabs - طلبات المتجر removed (موجودة في الطلبات الرئيسية) -->
-      <div style="display:flex;gap:8px;margin-bottom:18px;">
+      <!-- Market sub-tabs -->
+      <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;">
         <button class="ftab active" id="mkt-tab-products" onclick="switchMarketSubTab('products',this)">📦 إدارة المنتجات</button>
         <button class="ftab" id="mkt-tab-settings" onclick="switchMarketSubTab('settings',this)">⚙️ إعدادات القرطاسية</button>
+        <button class="ftab" id="mkt-tab-reports" onclick="switchMarketSubTab('reports',this)">📊 تقارير القرطاسية</button>
       </div>
  
       <!-- PRODUCTS SUB-PAGE -->
@@ -678,7 +680,7 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
       </div>
  
       <!-- SETTINGS SUB-PAGE for قرطاسية الشاطر -->
-      <div id="mkt-orders-section" style="display:none;">
+      <div id="mkt-settings-section" style="display:none;">
         <div style="background:var(--card);border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.03);margin-bottom:18px;">
           <h4 style="margin:0 0 16px;color:var(--navy);font-weight:800;">🚚 إعدادات التوصيل والرسوم</h4>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
@@ -702,6 +704,57 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
           <div id="mkt-suggested-summary"><p style="color:var(--text-muted);font-size:.85rem;text-align:center;padding:10px;">جاري التحميل...</p></div>
         </div>
       </div>
+
+      <!-- REPORTS SUB-PAGE for قرطاسية الشاطر -->
+      <div id="mkt-reports-section" style="display:none;">
+        <!-- Stats Summary -->
+        <div class="sgrid" style="margin-bottom:18px;">
+          <div class="scard"><div class="snum" id="mktrp-total" style="color:var(--navy);">—</div><div class="slbl">إجمالي المنتجات</div></div>
+          <div class="scard"><div class="snum" id="mktrp-active" style="color:var(--green);">—</div><div class="slbl">نشطة</div></div>
+          <div class="scard"><div class="snum" id="mktrp-low" style="color:var(--orange);">—</div><div class="slbl">مخزون منخفض</div></div>
+          <div class="scard"><div class="snum" id="mktrp-value" style="color:var(--teal);">—</div><div class="slbl">قيمة المخزن (ألف)</div></div>
+        </div>
+        <!-- Products inventory table -->
+        <div style="background:var(--card);border-radius:18px;padding:18px;margin-bottom:18px;box-shadow:0 4px 12px rgba(0,0,0,.04);overflow-x:auto;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+            <h4 style="margin:0;color:var(--navy);font-weight:800;">📦 جدول مخزون القرطاسية</h4>
+            <button onclick="exportMktReport()" style="background:var(--green);color:#fff;border:none;padding:9px 16px;border-radius:12px;font-weight:800;cursor:pointer;font-family:'Tajawal',sans-serif;font-size:.85rem;">⬇️ تصدير CSV</button>
+          </div>
+          <table id="mktrp-table" style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:600px;">
+            <thead>
+              <tr style="background:var(--teal);color:#fff;text-align:right;">
+                <th style="padding:10px;border-radius:0 8px 0 0;">المنتج</th>
+                <th style="padding:10px;">الفئة</th>
+                <th style="padding:10px;">الوحدة</th>
+                <th style="padding:10px;">المخزون</th>
+                <th style="padding:10px;">السعر</th>
+                <th style="padding:10px;">القيمة الكلية</th>
+                <th style="padding:10px;border-radius:8px 0 0 0;">الحالة</th>
+              </tr>
+            </thead>
+            <tbody id="mktrp-body">
+              <tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted);">جاري التحميل...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- Orders analysis -->
+        <div style="background:var(--card);border-radius:18px;padding:18px;box-shadow:0 4px 12px rgba(0,0,0,.04);overflow-x:auto;">
+          <h4 style="margin:0 0 14px;color:var(--navy);font-weight:800;">🛒 تحليل طلبات القرطاسية</h4>
+          <table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:400px;">
+            <thead>
+              <tr style="background:var(--navy);color:#fff;text-align:right;">
+                <th style="padding:10px;">المنتج</th>
+                <th style="padding:10px;">عدد الطلبات</th>
+                <th style="padding:10px;">الكمية المباعة</th>
+                <th style="padding:10px;">الإيرادات</th>
+              </tr>
+            </thead>
+            <tbody id="mktrp-sales-body">
+              <tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted);">جاري التحميل...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 </div>
  
 <!-- ══════════════ 5. PAGE: SUPPLIES ══════════════ -->
@@ -710,8 +763,16 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
     <h3 style="margin:0;color:var(--navy);font-weight:800;">🗄️ مخزن مواد الاستنساخ</h3>
     <button onclick="exportSuppliesReport()" style="background:var(--green);color:#fff;border:none;padding:10px 16px;border-radius:12px;font-weight:800;cursor:pointer;font-family:'Tajawal',sans-serif;font-size:.85rem;">⬇️ تصدير تقرير</button>
       </div>
-      <p style="margin:0 0 18px;color:var(--text-muted);font-size:.88rem;">إدارة مواد الورق والأحبار والسبايرول والكلبس وغيرها</p>
- 
+      <p style="margin:0 0 14px;color:var(--text-muted);font-size:.88rem;">إدارة مواد الورق والأحبار والسبايرول والكلبس وغيرها</p>
+
+      <!-- Supplies sub-tabs -->
+      <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;">
+        <button class="ftab active" id="sup-tab-manage" onclick="switchSuppliesSubTab('manage',this)">🗄️ إدارة المخزن</button>
+        <button class="ftab" id="sup-tab-reports" onclick="switchSuppliesSubTab('reports',this)">📊 تقارير المخزن</button>
+      </div>
+
+      <!-- MANAGEMENT SUB-PAGE -->
+      <div id="sup-manage-section">
 
       <!-- Supply Category Manager -->
       <div style="background:var(--card);border-radius:18px;padding:18px;box-shadow:0 4px 12px rgba(0,0,0,.03);margin-bottom:18px;">
@@ -799,6 +860,89 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
     </div>
     <button class="bmain" style="background:var(--navy);color:#fff;margin-top:14px;" onclick="createSupply()">✅ إضافة للمخزن</button>
       </div>
+      </div><!-- end sup-manage-section -->
+
+      <!-- REPORTS SUB-PAGE for المخزن -->
+      <div id="sup-reports-section" style="display:none;">
+        <!-- Stats -->
+        <div class="sgrid" style="margin-bottom:18px;">
+          <div class="scard"><div class="snum" id="suprp-total" style="color:var(--navy);">—</div><div class="slbl">إجمالي المواد</div></div>
+          <div class="scard"><div class="snum" id="suprp-low" style="color:var(--orange);">—</div><div class="slbl">منخفضة المخزون</div></div>
+          <div class="scard"><div class="snum" id="suprp-ok" style="color:var(--green);">—</div><div class="slbl">مخزون كافي</div></div>
+          <div class="scard"><div class="snum" id="suprp-value" style="color:var(--teal);">—</div><div class="slbl">قيمة المخزن (ألف)</div></div>
+        </div>
+        <!-- Low stock alert in reports -->
+        <div id="suprp-low-alert" style="display:none;background:#fef2f2;border:1.5px solid #fecaca;border-radius:14px;padding:16px;margin-bottom:18px;">
+          <p style="color:#991b1b;font-weight:800;margin:0 0 10px;">⚠️ مواد تستوجب الإعادة الفورية</p>
+          <div id="suprp-low-list"></div>
+        </div>
+        <!-- Full inventory table -->
+        <div style="background:var(--card);border-radius:18px;padding:18px;margin-bottom:18px;box-shadow:0 4px 12px rgba(0,0,0,.04);overflow-x:auto;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+            <h4 style="margin:0;color:var(--navy);font-weight:800;">📋 جدول المخزن الكامل</h4>
+            <button onclick="exportSuppliesReport()" style="background:var(--green);color:#fff;border:none;padding:9px 16px;border-radius:12px;font-weight:800;cursor:pointer;font-family:'Tajawal',sans-serif;font-size:.85rem;">⬇️ تصدير CSV</button>
+          </div>
+          <table id="suprp-table" style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:700px;">
+            <thead>
+              <tr style="background:var(--navy);color:#fff;text-align:right;">
+                <th style="padding:10px;border-radius:0 8px 0 0;">المادة</th>
+                <th style="padding:10px;">الفئة</th>
+                <th style="padding:10px;">الوحدة</th>
+                <th style="padding:10px;">المخزون الحالي</th>
+                <th style="padding:10px;">الحد الأدنى</th>
+                <th style="padding:10px;">التكلفة/وحدة</th>
+                <th style="padding:10px;">القيمة الكلية</th>
+                <th style="padding:10px;border-radius:8px 0 0 0;">الحالة</th>
+              </tr>
+            </thead>
+            <tbody id="suprp-body">
+              <tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted);">جاري التحميل...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- Category breakdown chart -->
+        <div style="background:var(--card);border-radius:18px;padding:18px;box-shadow:0 4px 12px rgba(0,0,0,.04);">
+          <h4 style="margin:0 0 14px;color:var(--navy);font-weight:800;">🏷️ توزيع المخزون حسب الفئة</h4>
+          <div id="suprp-cat-breakdown"></div>
+        </div>
+      </div>
+</div>
+
+<!-- ══════════════ PAGE: RESEARCH ORDERS ══════════════ -->
+<div class="admin-page" id="page-research">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:10px;">
+    <h3 style="margin:0;color:var(--navy);font-weight:800;">📝 طلبات البحوث والتقارير</h3>
+    <button onclick="exportResearchOrders()" style="background:var(--green);color:#fff;border:none;padding:10px 16px;border-radius:12px;font-weight:800;cursor:pointer;font-family:'Tajawal',sans-serif;font-size:.85rem;">⬇️ تصدير CSV</button>
+  </div>
+  <p style="margin:0 0 16px;color:var(--text-muted);font-size:.88rem;">طلبات إعداد البحوث الأكاديمية والتقارير من الزبائن</p>
+
+  <!-- Stats -->
+  <div class="sgrid" style="margin-bottom:18px;">
+    <div class="scard"><div class="snum" id="res-s-total" style="color:var(--navy);">—</div><div class="slbl">إجمالي الطلبات</div></div>
+    <div class="scard"><div class="snum" id="res-s-new" style="color:var(--orange);">—</div><div class="slbl">طلبات جديدة</div></div>
+    <div class="scard"><div class="snum" id="res-s-contacted" style="color:var(--teal);">—</div><div class="slbl">تم التواصل</div></div>
+    <div class="scard"><div class="snum" id="res-s-done" style="color:var(--green);">—</div><div class="slbl">مكتملة</div></div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="fbar" id="res-filter-bar" style="margin-bottom:16px;">
+    <button class="ftab active" onclick="setResFilter('all',this)">الكل</button>
+    <button class="ftab" onclick="setResFilter('new',this)">🆕 جديد</button>
+    <button class="ftab" onclick="setResFilter('contacted',this)">📞 تم التواصل</button>
+    <button class="ftab" onclick="setResFilter('in_progress',this)">⚙️ قيد التنفيذ</button>
+    <button class="ftab" onclick="setResFilter('done',this)">✅ مكتمل</button>
+    <button class="ftab" onclick="setResFilter('cancelled',this)">❌ ملغى</button>
+  </div>
+
+  <!-- Search -->
+  <div style="margin-bottom:14px;">
+    <input type="text" id="res-search" placeholder="🔍 بحث بالاسم أو الهاتف أو الموضوع..." oninput="renderResearchOrders()" style="margin-bottom:0;">
+  </div>
+
+  <!-- Orders list -->
+  <div id="res-orders-list">
+    <div style="text-align:center;padding:50px;color:var(--text-muted);">جاري التحميل...</div>
+  </div>
 </div>
 
 <!-- ══════════════ PAGE: SETTINGS (موحدة) ══════════════ -->
@@ -811,8 +955,7 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
     <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
       <button class="ftab active" id="staff-sub-roles" onclick="switchStaffSub('roles',this)">🏷️ الأدوار المتاحة</button>
       <button class="ftab" id="staff-sub-accounts" onclick="switchStaffSub('accounts',this)">👥 حسابات الموظفين</button>
-      <button class="ftab" id="staff-sub-add" onclick="switchStaffSub('add',this)">➕ إضافة موظف</button>
-      <button class="ftab" id="staff-sub-perms" onclick="switchStaffSub('perms',this)">🔑 الصلاحيات</button>
+      <button class="ftab" id="staff-sub-add" onclick="switchStaffSub('add',this)">➕ إضافة موظف وصلاحياته</button>
     </div>
     <!-- محتوى الأدوار -->
     <div id="staff-sub-roles-content">
@@ -822,49 +965,57 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
     <div id="staff-sub-accounts-content" style="display:none">
       <div id="custom-accounts-list"></div>
     </div>
-    <!-- محتوى الإضافة -->
+    <!-- محتوى الإضافة (مدمج مع الصلاحيات) -->
     <div id="staff-sub-add-content" style="display:none">
-      <h4 style="margin:0 0 12px;border-bottom:none;padding-bottom:0;font-size:.88rem;">➕ إضافة حساب موظف جديد</h4>
-      <input type="text"     id="new-staff-name"  placeholder="✍️ اسم الموظف">
-      <input type="text"     id="new-staff-user"  placeholder="📧 البريد الإلكتروني">
-      <input type="password" id="new-staff-pass"  placeholder="🔑 كلمة المرور (6+ أحرف)">
-      <select id="new-staff-emoji" style="margin-bottom:12px;">
-        <option value="👤">👤 موظف عام</option>
-        <option value="🖨️">🖨️ موظف استنساخ</option>
-        <option value="🛵">🛵 مندوب توصيل</option>
-        <option value="🎁">🎁 مجهّز طلبات</option>
-        <option value="🏪">🏪 أمين مخزن</option>
-        <option value="☎️">☎️ خدمة عملاء</option>
-      </select>
-      <button class="bmain" style="background:var(--navy);color:#fff;margin-bottom:10px;" onclick="createCustomAccount()">✅ إنشاء الحساب</button>
-    </div>
-    <!-- محتوى الصلاحيات -->
-    <div id="staff-sub-perms-content" style="display:none">
-      <p style="font-size:.85rem;color:var(--text-muted);margin:0 0 14px;">اختر صلاحيات الموظف الجديد هنا، ثم اضغط "إضافة موظف" للإنشاء.</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
-        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;padding:8px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
-          <input type="checkbox" id="perm-rp" value="received→printing"> تأكيد استلام وطباعة
-        </label>
-        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;padding:8px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
-          <input type="checkbox" id="perm-pd" value="printing→delivering"> إرسال للتوصيل
-        </label>
-        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;padding:8px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
-          <input type="checkbox" id="perm-dd" value="delivering→delivered"> تأكيد التسليم
-        </label>
-        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;padding:8px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
-          <input type="checkbox" id="perm-canc" value="any→cancelled"> إلغاء الطلبات
-        </label>
-        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;padding:8px;background:#f0fdf4;border-radius:10px;border:1px solid #86efac;">
-          <input type="checkbox" id="perm-market" value="manage_market"> إدارة قرطاسية 📦
-        </label>
-        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;padding:8px;background:#fef3c7;border-radius:10px;border:1px solid #fde68a;">
-          <input type="checkbox" id="perm-supplies" value="manage_supplies"> إدارة المخزن 🗄️
-        </label>
-        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;padding:8px;background:#f3e8ff;border-radius:10px;border:1px solid #e9d5ff;">
-          <input type="checkbox" id="perm-ready" value="confirm_ready"> تأكيد التجهيز ✅
-        </label>
+      <h4 style="margin:0 0 14px;border-bottom:none;padding-bottom:0;font-size:.92rem;color:var(--navy);">➕ إضافة حساب موظف جديد</h4>
+      
+      <!-- معلومات الموظف الأساسية -->
+      <div style="background:#f8fafc;border-radius:14px;padding:14px;margin-bottom:14px;border:1px solid #e2e8f0;">
+        <p style="margin:0 0 10px;font-size:.82rem;font-weight:800;color:var(--navy);">👤 معلومات الموظف</p>
+        <input type="text"     id="new-staff-name"  placeholder="✍️ اسم الموظف الكامل">
+        <input type="text"     id="new-staff-user"  placeholder="📧 البريد الإلكتروني">
+        <input type="password" id="new-staff-pass"  placeholder="🔑 كلمة المرور (6+ أحرف)">
+        <!-- وظيفة الموظف — dropdown مدمجة -->
+        <label style="font-size:.78rem;color:var(--text-muted);font-weight:700;display:block;margin-bottom:6px;">🏷️ وظيفة الموظف</label>
+        <select id="new-staff-emoji" style="margin-bottom:0;" onchange="applyRolePreset(this.value)">
+          <option value="👤">👤 موظف عام</option>
+          <option value="🖨️">🖨️ موظف استنساخ</option>
+          <option value="🛵">🛵 مندوب توصيل</option>
+          <option value="🎁">🎁 مجهّز طلبات</option>
+          <option value="🏪">🏪 أمين مخزن</option>
+          <option value="☎️">☎️ خدمة عملاء</option>
+        </select>
       </div>
-      <button class="bmain" style="background:var(--teal);color:#fff;" onclick="switchStaffSub('add',document.getElementById('staff-sub-add'))">← الذهاب لإضافة الموظف</button>
+
+      <!-- الصلاحيات مدمجة في نفس الفورم -->
+      <div style="background:#fff;border-radius:14px;padding:14px;border:1.5px solid var(--teal);margin-bottom:14px;">
+        <p style="margin:0 0 10px;font-size:.82rem;font-weight:800;color:var(--teal);">🔑 صلاحيات الموظف</p>
+        <p style="font-size:.78rem;color:var(--text-muted);margin:0 0 12px;">تُحدَّد تلقائياً بحسب الوظيفة — يمكن تعديلها يدوياً</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;padding:8px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
+            <input type="checkbox" id="perm-rp" value="received→printing"> تأكيد استلام وطباعة
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;padding:8px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
+            <input type="checkbox" id="perm-pd" value="printing→delivering"> إرسال للتوصيل
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;padding:8px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
+            <input type="checkbox" id="perm-dd" value="delivering→delivered"> تأكيد التسليم
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;padding:8px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
+            <input type="checkbox" id="perm-canc" value="any→cancelled"> إلغاء الطلبات
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;padding:8px;background:#f0fdf4;border-radius:10px;border:1px solid #86efac;">
+            <input type="checkbox" id="perm-market" value="manage_market"> إدارة قرطاسية 📦
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;padding:8px;background:#fef3c7;border-radius:10px;border:1px solid #fde68a;">
+            <input type="checkbox" id="perm-supplies" value="manage_supplies"> إدارة المخزن 🗄️
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;padding:8px;background:#f3e8ff;border-radius:10px;border:1px solid #e9d5ff;grid-column:span 2;">
+            <input type="checkbox" id="perm-ready" value="confirm_ready"> تأكيد تجهيز الطلبات ✅
+          </label>
+        </div>
+      </div>
+      <button class="bmain" style="background:var(--navy);color:#fff;" onclick="createCustomAccount()">✅ إنشاء حساب الموظف</button>
     </div>
   </div>
 
@@ -1445,6 +1596,7 @@ function enterDashboard(profile) {
       document.getElementById('tab-settings-btn').style.display = '';
       document.getElementById('tab-market-btn').style.display   = '';
       document.getElementById('tab-supplies-btn').style.display = '';
+      document.getElementById('tab-research-btn').style.display = '';
       document.getElementById('settings-fab').style.display     = 'flex';
       loadPricingAdmin();
     }
@@ -1759,6 +1911,7 @@ function switchPage(name, el) {
   if (name === 'stats')    calcStats();
   if (name === 'dash')     renderStaffDashboard();
   if (name === 'reports')  renderReports();
+  if (name === 'research') { loadResearchOrders(); }
   if (name === 'settings') {
     renderStaffList();
     loadAdminProductsS();
@@ -1768,7 +1921,11 @@ function switchPage(name, el) {
   }
   if (name === 'orders')   { fetchAllOrders(); }
   if (name === 'market')   { loadAdminProducts(); }
-  if (name === 'supplies') { loadSupplies(); }
+  if (name === 'supplies') {
+    loadSupplies();
+    // activate manage sub-tab by default
+    switchSuppliesSubTab('manage', document.getElementById('sup-tab-manage'));
+  }
 }
 
 // ══════════════════════════════════
@@ -3175,8 +3332,18 @@ function switchMarketSubTab(tab, el) {
   document.querySelectorAll('[id^="mkt-tab-"]').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('mkt-products-section').style.display = tab === 'products' ? 'block' : 'none';
-  document.getElementById('mkt-orders-section').style.display   = tab === 'settings'  ? 'block' : 'none';
+  document.getElementById('mkt-settings-section').style.display = tab === 'settings' ? 'block' : 'none';
+  document.getElementById('mkt-reports-section').style.display  = tab === 'reports'  ? 'block' : 'none';
   if (tab === 'settings') loadMktSettingsSummary();
+  if (tab === 'reports')  loadMktReports();
+}
+
+function switchSuppliesSubTab(tab, el) {
+  document.querySelectorAll('[id^="sup-tab-"]').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  document.getElementById('sup-manage-section').style.display  = tab === 'manage'  ? 'block' : 'none';
+  document.getElementById('sup-reports-section').style.display = tab === 'reports' ? 'block' : 'none';
+  if (tab === 'reports') loadSuppliesReports();
 }
 
 async function loadAdminProducts() {
@@ -3831,7 +3998,402 @@ async function deleteMktCat(idx) {
   showToast('🗑️ تم حذف الفئة');
 }
 
+// ══════════════════════════════════════════════════════════════
+//  🔑 ROLE PRESET — تعبئة الصلاحيات تلقائياً بحسب الوظيفة
+// ══════════════════════════════════════════════════════════════
+function applyRolePreset(emoji) {
+  const presets = {
+    '🖨️': ['perm-rp','perm-pd','perm-canc'],
+    '🛵': ['perm-dd'],
+    '🎁': ['perm-ready'],
+    '🏪': ['perm-supplies'],
+    '☎️': [],
+    '👤': ['perm-rp','perm-pd','perm-dd','perm-canc']
+  };
+  const all = ['perm-rp','perm-pd','perm-dd','perm-canc','perm-market','perm-supplies','perm-ready'];
+  const active = presets[emoji] || [];
+  all.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.checked = active.includes(id);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+//  📊 MARKET REPORTS — تقارير قرطاسية الشاطر
+// ══════════════════════════════════════════════════════════════
+let _adminProductsForReports = [];
+
+async function loadMktReports() {
+  try {
+    const { data: products } = await sb.from('market_products').select('*').order('name');
+    _adminProductsForReports = products || [];
+
+    // Stats
+    const active = products.filter(p => p.active);
+    const low    = products.filter(p => p.active && p.stock > 0 && p.stock <= 5);
+    const totalVal = products.reduce((s, p) => s + ((p.price||0) * (p.stock||0)), 0);
+    const sv = (id,v) => { const el=document.getElementById(id); if(el) el.innerText=v; };
+    sv('mktrp-total',  products.length);
+    sv('mktrp-active', active.length);
+    sv('mktrp-low',    low.length);
+    sv('mktrp-value',  (totalVal/1000).toFixed(1) + 'K');
+
+    // Products table
+    const catLabel = id => _mktCatsDef.find(c=>c.id===id)?.label || id;
+    const tbody = document.getElementById('mktrp-body');
+    if (tbody) {
+      tbody.innerHTML = products.length ? products.map(p => {
+        const stockVal  = (p.price||0) * (p.stock||0);
+        const isLow     = p.active && p.stock > 0 && p.stock <= 5;
+        const isZero    = p.stock === 0;
+        const statusBadge = isZero
+          ? '<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:8px;font-size:.7rem;font-weight:800;">نفد</span>'
+          : isLow
+            ? '<span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:8px;font-size:.7rem;font-weight:800;">منخفض</span>'
+            : '<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:8px;font-size:.7rem;font-weight:800;">كافٍ</span>';
+        return `<tr style="border-bottom:1px solid #f1f5f9;${isZero?'background:#fff5f5;':isLow?'background:#fffbeb;':''}">
+          <td style="padding:9px 10px;font-weight:700;">${esc(p.name)}</td>
+          <td style="padding:9px 10px;">${esc(catLabel(p.category))}</td>
+          <td style="padding:9px 10px;color:var(--text-muted);">${esc(p.unit||'—')}</td>
+          <td style="padding:9px 10px;font-weight:800;color:${isZero?'var(--red)':isLow?'var(--orange)':'var(--navy)'};">${p.stock||0}</td>
+          <td style="padding:9px 10px;color:var(--orange);font-weight:700;">${(p.price||0).toLocaleString()}</td>
+          <td style="padding:9px 10px;font-weight:700;color:var(--teal);">${stockVal.toLocaleString()}</td>
+          <td style="padding:9px 10px;">${statusBadge}</td>
+        </tr>`;
+      }).join('') : '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted);">لا توجد منتجات</td></tr>';
+    }
+
+    // Sales analysis from orders
+    const { data: orders } = await sb.from('orders')
+      .select('suggested_items, items, order_type')
+      .not('status', 'eq', 'cancelled');
+    const salesMap = {};
+    (orders||[]).forEach(o => {
+      const items = [...(o.suggested_items||[]), ...(o.items||[])];
+      items.forEach(item => {
+        if (!item?.name) return;
+        if (!salesMap[item.name]) salesMap[item.name] = { orders:0, qty:0, revenue:0 };
+        salesMap[item.name].orders++;
+        salesMap[item.name].qty     += item.qty||1;
+        salesMap[item.name].revenue += (item.price||0) * (item.qty||1);
+      });
+    });
+    const salesBody = document.getElementById('mktrp-sales-body');
+    if (salesBody) {
+      const sorted = Object.entries(salesMap).sort((a,b) => b[1].revenue - a[1].revenue);
+      salesBody.innerHTML = sorted.length ? sorted.map(([name, s]) => `
+        <tr style="border-bottom:1px solid #f1f5f9;">
+          <td style="padding:9px 10px;font-weight:700;">${esc(name)}</td>
+          <td style="padding:9px 10px;text-align:center;">${s.orders}</td>
+          <td style="padding:9px 10px;text-align:center;font-weight:800;color:var(--navy);">${s.qty}</td>
+          <td style="padding:9px 10px;font-weight:800;color:var(--orange);">${s.revenue.toLocaleString()} د.ع</td>
+        </tr>`).join('')
+        : '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted);">لا توجد بيانات مبيعات</td></tr>';
+    }
+  } catch(e) { showToast('❌ خطأ في تحميل تقارير القرطاسية: ' + e.message); }
+}
+
+function exportMktReport() {
+  if (!_adminProductsForReports.length) return showToast('❌ لا توجد بيانات للتصدير');
+  const catLabel = id => _mktCatsDef.find(c=>c.id===id)?.label || id;
+  const rows = [['المنتج','الفئة','الوحدة','المخزون','السعر','القيمة الكلية','الحالة']];
+  _adminProductsForReports.forEach(p => {
+    const status = p.stock === 0 ? 'نفد' : p.stock <= 5 ? 'منخفض' : 'كافٍ';
+    rows.push([p.name, catLabel(p.category), p.unit||'', p.stock, p.price||0,
+      (p.price||0)*(p.stock||0), status]);
+  });
+  const csv = '\uFEFF' + rows.map(r => r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
+  a.download = `قرطاسية_الشاطر_${new Date().toLocaleDateString('en-CA')}.csv`;
+  a.click();
+  showToast('⬇️ جاري تحميل تقرير القرطاسية...');
+}
+
+// ══════════════════════════════════════════════════════════════
+//  📊 SUPPLIES REPORTS — تقارير مخزن الاستنساخ
+// ══════════════════════════════════════════════════════════════
+async function loadSuppliesReports() {
+  try {
+    const { data: supplies } = await sb.from('supplies').select('*').order('name');
+    if (!supplies) return;
+
+    const catLabel = id => _supCats.find(c=>c.id===id)?.label || id;
+    const low = supplies.filter(s => s.stock <= (s.min_stock||0) && s.stock > 0);
+    const ok  = supplies.filter(s => s.stock > (s.min_stock||0));
+    const totalVal = supplies.reduce((sum,s) => sum + (s.stock||0)*(s.cost||0), 0);
+
+    const sv = (id,v) => { const el=document.getElementById(id); if(el) el.innerText=v; };
+    sv('suprp-total', supplies.length);
+    sv('suprp-low',   low.length);
+    sv('suprp-ok',    ok.length);
+    sv('suprp-value', (totalVal/1000).toFixed(1) + 'K');
+
+    // Low stock alert
+    const alertBox  = document.getElementById('suprp-low-alert');
+    const alertList = document.getElementById('suprp-low-list');
+    if (alertBox && alertList) {
+      const critical = supplies.filter(s => s.stock <= (s.min_stock||0));
+      alertBox.style.display = critical.length ? 'block' : 'none';
+      alertList.innerHTML = critical.map(s => `
+        <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #fecaca;font-size:.85rem;">
+          <span style="font-weight:700;color:#991b1b;">${esc(s.name)}</span>
+          <span>المتبقي: <b style="color:#991b1b;">${s.stock}</b> ${esc(s.unit||'')} (الحد: ${s.min_stock||0})</span>
+        </div>`).join('');
+    }
+
+    // Full inventory table
+    const tbody = document.getElementById('suprp-body');
+    if (tbody) {
+      tbody.innerHTML = supplies.length ? supplies.map(s => {
+        const isLow  = s.stock <= (s.min_stock||0) && s.stock > 0;
+        const isZero = s.stock === 0;
+        const totalV = (s.stock||0) * (s.cost||0);
+        const statusBadge = isZero
+          ? '<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:8px;font-size:.7rem;font-weight:800;">نفد</span>'
+          : isLow
+            ? '<span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:8px;font-size:.7rem;font-weight:800;">منخفض ⚠️</span>'
+            : '<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:8px;font-size:.7rem;font-weight:800;">كافٍ ✅</span>';
+        return `<tr style="border-bottom:1px solid #f1f5f9;${isZero?'background:#fff5f5;':isLow?'background:#fffbeb;':''}">
+          <td style="padding:9px 10px;font-weight:700;">${esc(s.name)}</td>
+          <td style="padding:9px 10px;">${esc(catLabel(s.category))}</td>
+          <td style="padding:9px 10px;color:var(--text-muted);">${esc(s.unit||'—')}</td>
+          <td style="padding:9px 10px;font-weight:800;color:${isZero?'var(--red)':isLow?'var(--orange)':'var(--navy)'};">${s.stock||0}</td>
+          <td style="padding:9px 10px;color:var(--text-muted);">${s.min_stock||0}</td>
+          <td style="padding:9px 10px;color:var(--text-muted);">${(s.cost||0).toLocaleString()}</td>
+          <td style="padding:9px 10px;font-weight:700;color:var(--teal);">${totalV.toLocaleString()}</td>
+          <td style="padding:9px 10px;">${statusBadge}</td>
+        </tr>`;
+      }).join('') : '<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted);">لا توجد مواد مسجّلة</td></tr>';
+    }
+
+    // Category breakdown
+    const catBreak = document.getElementById('suprp-cat-breakdown');
+    if (catBreak) {
+      const catMap = {};
+      supplies.forEach(s => {
+        const cl = catLabel(s.category);
+        if (!catMap[cl]) catMap[cl] = { count:0, value:0 };
+        catMap[cl].count++;
+        catMap[cl].value += (s.stock||0)*(s.cost||0);
+      });
+      const maxVal = Math.max(...Object.values(catMap).map(c=>c.value), 1);
+      catBreak.innerHTML = Object.entries(catMap).map(([cat, d]) => `
+        <div style="margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:.85rem;">
+            <span style="font-weight:700;">${esc(cat)}</span>
+            <span style="color:var(--text-muted);">${d.count} مادة · <b style="color:var(--teal);">${d.value.toLocaleString()} د.ع</b></span>
+          </div>
+          <div style="background:#f1f5f9;border-radius:6px;height:8px;overflow:hidden;">
+            <div style="background:linear-gradient(90deg,var(--teal),var(--navy));height:100%;border-radius:6px;width:${Math.round((d.value/maxVal)*100)}%;transition:width .5s;"></div>
+          </div>
+        </div>`).join('');
+    }
+  } catch(e) { showToast('❌ خطأ في تحميل تقارير المخزن: ' + e.message); }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  📝 RESEARCH ORDERS — إدارة طلبات البحوث والتقارير
+// ══════════════════════════════════════════════════════════════
+let _researchOrders = [];
+let _resFilter = 'all';
+let _curResId = null;
+
+const RES_STATUS = {
+  new:         { l:'جديد',         c:'#dbeafe', tc:'#1e40af', i:'🆕' },
+  contacted:   { l:'تم التواصل',   c:'#e0f2fe', tc:'#0369a1', i:'📞' },
+  in_progress: { l:'قيد التنفيذ',  c:'#fef3c7', tc:'#b45309', i:'⚙️' },
+  done:        { l:'مكتمل',        c:'#dcfce7', tc:'#166534', i:'✅' },
+  cancelled:   { l:'ملغى',         c:'#fee2e2', tc:'#991b1b', i:'❌' },
+};
+
+async function loadResearchOrders() {
+  const box = document.getElementById('res-orders-list');
+  if (box) box.innerHTML = '<div style="text-align:center;padding:40px;color:var(--teal);"><b>جاري التحميل...</b></div>';
+  try {
+    const { data, error } = await sb.from('research_orders')
+      .select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    _researchOrders = data || [];
+    updateResStats();
+    renderResearchOrders();
+  } catch(e) {
+    if (box) box.innerHTML = `<div style="text-align:center;padding:40px;color:var(--red);font-weight:700;">❌ ${esc(e.message)}<br><small style="color:var(--text-muted);font-weight:400;margin-top:8px;display:block;">تأكد من وجود جدول research_orders في Supabase</small></div>`;
+  }
+}
+
+function updateResStats() {
+  const sv = (id,v) => { const el=document.getElementById(id); if(el) el.innerText=v; };
+  sv('res-s-total',     _researchOrders.length);
+  sv('res-s-new',       _researchOrders.filter(r=>r.status==='new'||!r.status).length);
+  sv('res-s-contacted', _researchOrders.filter(r=>r.status==='contacted').length);
+  sv('res-s-done',      _researchOrders.filter(r=>r.status==='done').length);
+}
+
+function setResFilter(f, el) {
+  _resFilter = f;
+  document.querySelectorAll('#res-filter-bar .ftab').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderResearchOrders();
+}
+
+function renderResearchOrders() {
+  const box = document.getElementById('res-orders-list');
+  if (!box) return;
+  const searchQ = (document.getElementById('res-search')?.value||'').toLowerCase().trim();
+
+  let list = _researchOrders;
+  if (_resFilter !== 'all') {
+    if (_resFilter === 'new') list = list.filter(r => !r.status || r.status === 'new');
+    else list = list.filter(r => r.status === _resFilter);
+  }
+  if (searchQ) list = list.filter(r =>
+    (r.name||'').toLowerCase().includes(searchQ) ||
+    (r.phone||'').includes(searchQ) ||
+    (r.subject||'').toLowerCase().includes(searchQ)
+  );
+
+  if (!list.length) {
+    box.innerHTML = '<div style="text-align:center;padding:50px;color:var(--text-muted);">لا توجد طلبات في هذا القسم</div>';
+    return;
+  }
+
+  const now = Date.now();
+  box.innerHTML = list.map(r => {
+    const st   = RES_STATUS[r.status||'new'] || RES_STATUS.new;
+    const dt   = new Date(r.created_at).toLocaleDateString('ar-IQ',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    const isNew = now - new Date(r.created_at).getTime() < 24*60*60*1000;
+    return `<div class="ocard ${isNew?'isnew':''}" onclick="openResDetail('${esc(r.id)}')">
+      <div class="ohdr">
+        <div>
+          <b style="color:var(--navy);">#RES-${esc(r.id?.toString().slice(-6)||'?')}</b>
+          ${isNew?'<span class="newbdg">جديد</span>':''}
+          <span style="background:${st.c};color:${st.tc};padding:2px 9px;border-radius:20px;font-size:.72rem;font-weight:800;margin-right:6px;">${st.i} ${st.l}</span>
+        </div>
+        <span style="font-size:.75rem;color:var(--text-muted);">${dt}</span>
+      </div>
+      <div class="infogrid">
+        <div class="ii">👤 ${esc(r.name||'—')}</div>
+        <div class="ii">📞 ${esc(r.phone||'—')}</div>
+        <div class="ii" style="grid-column:span 2;font-weight:700;color:var(--navy);">📖 ${esc(r.subject||'—')}</div>
+        <div class="ii">📋 ${esc(r.type||'—')}</div>
+        <div class="ii">📄 ${r.pages||'غير محدد'} صفحة</div>
+        ${r.deadline?`<div class="ii" style="grid-column:span 2;">⏰ الموعد: ${esc(r.deadline)}</div>`:''}
+      </div>
+      ${r.details?`<div style="font-size:.78rem;color:var(--orange);background:rgba(232,107,36,.06);padding:5px 8px;border-radius:8px;margin-top:4px;">📝 ${esc(r.details).substring(0,80)}${(r.details.length>80?'...':'')}</div>`:''}
+      <div class="arow">
+        <a href="tel:${esc(r.phone||'')}" onclick="event.stopPropagation()" class="abtn" style="background:#dcfce7;color:#166534;text-decoration:none;text-align:center;">📞 اتصال</a>
+        <a href="https://wa.me/964${esc((r.phone||'').replace(/^0/,''))}" target="_blank" onclick="event.stopPropagation()" class="abtn" style="background:#d1fae5;color:#065f46;text-decoration:none;text-align:center;">💬 واتساب</a>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openResDetail(id) {
+  const r = _researchOrders.find(x => String(x.id) === String(id));
+  if (!r) return;
+  _curResId = id;
+  const st = RES_STATUS[r.status||'new'] || RES_STATUS.new;
+  const dt = new Date(r.created_at).toLocaleString('ar-IQ');
+  document.getElementById('res-detail-body').innerHTML = `
+    <div style="background:#f8fafc;border-radius:14px;padding:14px;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <b style="color:var(--navy);font-size:1rem;">${esc(r.name||'—')}</b>
+        <span style="background:${st.c};color:${st.tc};padding:3px 10px;border-radius:20px;font-size:.78rem;font-weight:800;">${st.i} ${st.l}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.85rem;">
+        <div><span style="color:var(--text-muted);">📞 الهاتف:</span> <b>${esc(r.phone||'—')}</b></div>
+        <div><span style="color:var(--text-muted);">📋 النوع:</span> <b>${esc(r.type||'—')}</b></div>
+        <div style="grid-column:span 2;"><span style="color:var(--text-muted);">📖 الموضوع:</span> <b style="color:var(--navy);">${esc(r.subject||'—')}</b></div>
+        <div><span style="color:var(--text-muted);">📄 الصفحات:</span> <b>${r.pages||'غير محدد'}</b></div>
+        <div><span style="color:var(--text-muted);">⏰ الموعد:</span> <b>${esc(r.deadline||'غير محدد')}</b></div>
+        <div style="grid-column:span 2;"><span style="color:var(--text-muted);">📅 تاريخ الطلب:</span> ${dt}</div>
+      </div>
+      ${r.details?`<div style="margin-top:10px;padding:10px;background:#fff;border-radius:10px;border:1px solid #e2e8f0;font-size:.85rem;"><b style="color:var(--navy);display:block;margin-bottom:4px;">📝 التفاصيل:</b>${esc(r.details)}</div>`:''}
+      ${r.admin_note?`<div style="margin-top:10px;padding:10px;background:#fef9c3;border-radius:10px;border:1px solid #fde68a;font-size:.85rem;"><b style="color:#b45309;display:block;margin-bottom:4px;">🗒️ ملاحظة الأدمن:</b>${esc(r.admin_note)}</div>`:''}
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:8px;">
+      <a href="tel:${esc(r.phone||'')}" style="flex:1;background:#dcfce7;color:#166534;padding:10px;border-radius:12px;font-weight:800;text-decoration:none;text-align:center;font-size:.88rem;">📞 اتصال</a>
+      <a href="https://wa.me/964${esc((r.phone||'').replace(/^0/,''))}" target="_blank" style="flex:1;background:#d1fae5;color:#065f46;padding:10px;border-radius:12px;font-weight:800;text-decoration:none;text-align:center;font-size:.88rem;">💬 واتساب</a>
+    </div>`;
+  const noteEl = document.getElementById('res-admin-note');
+  if (noteEl) noteEl.value = r.admin_note || '';
+  document.getElementById('res-detail-modal').classList.add('open');
+}
+
+async function updateResStatus(status) {
+  if (!_curResId) return;
+  try {
+    const { error } = await sb.from('research_orders')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', _curResId);
+    if (error) throw error;
+    const r = _researchOrders.find(x => String(x.id) === String(_curResId));
+    if (r) r.status = status;
+    updateResStats();
+    renderResearchOrders();
+    openResDetail(_curResId);
+    showToast('✅ تم تحديث حالة الطلب');
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+async function saveResNote() {
+  if (!_curResId) return;
+  const note = document.getElementById('res-admin-note')?.value.trim() || '';
+  try {
+    const { error } = await sb.from('research_orders')
+      .update({ admin_note: note || null }).eq('id', _curResId);
+    if (error) throw error;
+    const r = _researchOrders.find(x => String(x.id) === String(_curResId));
+    if (r) r.admin_note = note;
+    showToast('💾 تم حفظ الملاحظة');
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+function exportResearchOrders() {
+  if (!_researchOrders.length) return showToast('❌ لا توجد بيانات للتصدير');
+  const rows = [['الاسم','الهاتف','النوع','الموضوع','الصفحات','الموعد','التفاصيل','الحالة','تاريخ الطلب']];
+  _researchOrders.forEach(r => rows.push([
+    r.name||'', r.phone||'', r.type||'', r.subject||'',
+    r.pages||'', r.deadline||'', r.details||'',
+    RES_STATUS[r.status||'new']?.l||r.status||'جديد',
+    new Date(r.created_at).toLocaleDateString('ar-IQ')
+  ]));
+  const csv = '\uFEFF' + rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download = `طلبات_البحوث_${new Date().toLocaleDateString('en-CA')}.csv`;
+  a.click();
+  showToast('⬇️ جاري تحميل التقرير...');
+}
+
+// SQL migration hint for research_orders table
+/*
+  ══ REQUIRED DB MIGRATION ══
+  CREATE TABLE IF NOT EXISTS research_orders (
+    id          BIGSERIAL PRIMARY KEY,
+    user_id     TEXT,
+    name        TEXT NOT NULL,
+    phone       TEXT NOT NULL,
+    subject     TEXT NOT NULL,
+    type        TEXT,
+    pages       INTEGER,
+    deadline    DATE,
+    details     TEXT,
+    status      TEXT DEFAULT 'new',
+    admin_note  TEXT,
+    created_at  TIMESTAMPTZ DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ DEFAULT NOW()
+  );
+  ALTER TABLE research_orders ENABLE ROW LEVEL SECURITY;
+  CREATE POLICY "anon insert" ON research_orders FOR INSERT WITH CHECK (true);
+  CREATE POLICY "auth read"   ON research_orders FOR SELECT USING (auth.role() = 'authenticated');
+  CREATE POLICY "auth update" ON research_orders FOR UPDATE USING (auth.role() = 'authenticated');
+  ══════════════════════════
+*/
+
 </script>
 </body>
 </html>
+
 
