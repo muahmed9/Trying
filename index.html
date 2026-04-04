@@ -1,17 +1,4 @@
 <!DOCTYPE html>
-<!-- 
-  ══ DATABASE MIGRATIONS REQUIRED ══════════════════════════════
-  Run once in Supabase SQL Editor:
-
-  -- 1. Add is_suggested flag to market_products
-  ALTER TABLE market_products ADD COLUMN IF NOT EXISTS is_suggested BOOLEAN DEFAULT false;
-
-  -- 2. Add order_type and suggested_items to orders
-  ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_type TEXT DEFAULT 'print';
-  ALTER TABLE orders ADD COLUMN IF NOT EXISTS suggested_items JSONB;
-  ALTER TABLE orders ADD COLUMN IF NOT EXISTS suggested_total INTEGER DEFAULT 0;
-  ══════════════════════════════════════════════════════════════
--->
 <html lang="ar" dir="rtl" data-theme="light">
 <head>
 <meta charset="UTF-8">
@@ -1582,46 +1569,23 @@ async function sendOrder() {
     const {error:dbErr} = await sb.from('orders').insert(order);
     if (dbErr) throw dbErr;
 
-    // ── خصم مخزون التغليف (كبس/سبايرول/مقوى) من جدول supplies ──
-    if (pkgType && pkgType !== 'none') {
-      const pkgSupplyMap = { spiral: 'سبايرول', cardboard: 'أغلفة' };
-      const pkgCat = pkgSupplyMap[pkgType];
-      if (pkgCat) {
-        try {
-          const {data:supItems} = await sb.from('supplies')
-            .select('id,stock')
-            .eq('category', pkgType === 'spiral' ? 'binding' : 'cover')
-            .limit(1);
-          if (supItems?.length) {
-            const s = supItems[0];
-            await sb.from('supplies').update({ stock: Math.max(0, (s.stock||0) - 1) }).eq('id', s.id);
-          }
-        } catch(_) { /* non-fatal */ }
-      }
-    }
+    // 🔒 كل العمليات الجانبية تتم على الخادم عبر دالة آمنة (SECURITY DEFINER)
+    // هذا يمنع أي تلاعب من المتصفح بالمخزون أو الكوبونات أو النقاط
+    const { data: rpcData, error: rpcErr } = await sb.rpc('process_order_side_effects', {
+      p_order_id:    oid,
+      p_user_id:     userId,
+      p_pts_used:    pu || 0,
+      p_coupon_code: appliedCoupon?.code || null,
+      p_packaging:   pkgType || 'none',
+      p_total:       tot || 0,
+      p_user_name:   name,
+      p_user_phone:  phone,
+      p_cart_items:  allCartItems.length ? allCartItems : []
+    });
+    if (rpcErr) console.warn('Side effects RPC warning (non-fatal):', rpcErr);
 
-    // ── خصم مخزون القرطاسية (مقترحة + سلة) ──
-    if (allCartItems.length) {
-      await Promise.all(allCartItems.map(item =>
-        sb.from('market_products')
-          .update({ stock: Math.max(0, (item.stock||0) - item.qty) })
-          .eq('id', item.id)
-      ));
-    }
-
-    // Update coupon usage
-    if (appliedCoupon) {
-      await sb.from('coupons').update({used_count: (appliedCoupon.used_count||0) + 1}).eq('id', appliedCoupon.id);
-    }
-
-    const np = Math.max(0, (uDoc.loyalty_points||0) - pu);
-    try {
-      await sb.from('users').update({
-        loyalty_points:np, total_orders:(uDoc.total_orders||0)+1,
-        total_spent:(uDoc.total_spent||0)+(tot||0),
-        first_order_done:true, name, phone
-      }).eq('id', userId);
-    } catch(_uErr) { console.warn('Users update non-fatal:', _uErr); }
+    // تحديث بيانات المستخدم المحلية من الخادم
+    const np = Math.max(0, (uDoc.loyalty_points||0) - (pu||0));
     uDoc.loyalty_points = np; uDoc.first_order_done = true;
 
     if (region) saveAddr(region);
@@ -2585,98 +2549,8 @@ function getCartLoc() {
   );
 }
  
-// ── checkoutMarket الآن جزء من sendOrder الموحدة ──
-let _lastMktOrder = 0;
-async function checkoutMarket_DEPRECATED() {
-  const name   = document.getElementById('cart-name').value.trim();
-  const phone  = document.getElementById('cart-phone').value.trim();
-  const region = document.getElementById('cart-region').value.trim();
-  const notes  = document.getElementById('cart-notes').value.trim();
-  const errEl  = document.getElementById('cart-err');
- 
-  const showErr = msg => { errEl.style.display='block'; errEl.innerText=msg; };
-  errEl.style.display = 'none';
- 
-  if (!name || name.length < 3) return showErr('❌ أدخل اسمك الكامل (3 أحرف+)');
-  if (!phone || phone.length !== 11 || isNaN(+phone)) return showErr('❌ رقم الهاتف يجب أن يكون 11 رقماً');
-  if (!region) return showErr('❌ أدخل المنطقة/الحي');
-  if (!_cartLocUrl) return showErr('❌ يرجى تحديد موقعك على الخريطة');
-  if (!cart.length) return showErr('❌ السلة فارغة');
- 
-  // Rate limiting
-  if (Date.now() - _lastMktOrder < 30000) return showErr('❌ انتظر قليلاً قبل إرسال طلب جديد');
- 
-  const btn = document.getElementById('checkout-btn');
-  btn.disabled = true; btn.innerText = 'جاري الإرسال...';
- 
-  try {
-    const subtotal = cart.reduce((s, c) => s + c.price * c.qty, 0);
-    const delFee   = subtotal >= getMktFree() ? 0 : getMktFee();
-    const total    = subtotal + delFee;
-    const oid      = 'MKT-' + Date.now().toString(36).toUpperCase();
-    const items    = cart.map(c => ({ id: c.id, name: c.name, qty: c.qty, price: c.price, unit: c.unit }));
- 
-    const { error } = await sb.from('orders').insert({
-      id: oid, user_id: userId, telegram_id: userId,
-      items, total, delivery_fee: delFee,
-      name, phone, region, loc_url: _cartLocUrl,
-      notes: notes||null, status: 'pending',
-      status_history: [{ status:'pending', time: new Date().toISOString() }]
-    });
-    if (error) throw error;
- 
-    // Update product stock
-    await Promise.all(cart.map(c =>
-      sb.from('market_products').update({ stock: Math.max(0, c.stock - c.qty) }).eq('id', c.id)
-    ));
- 
-    // إشعار المدير
-    const itemsTxt = items.map(i => `• ${i.name} ×${i.qty} = ${(i.price*i.qty).toLocaleString()} د.ع`).join('\n');
-    await sb.functions?.invoke('send-tg', { body: {
-      chatId: ADMIN,
-      message: `🛒 طلب متجر جديد #${oid}\n👤 ${name}\n📞 ${phone}\n🏠 ${region}\n\nالمنتجات:\n${itemsTxt}\n\n💰 المجموع: ${total.toLocaleString()} د.ع\n📍 ${_cartLocUrl}${notes?'\n📝 '+notes:''}`
-    }}).catch(()=>{});
- 
-    // إشعار الزبون
-    if (tgU?.id) {
-      await sb.functions?.invoke('send-tg', { body: {
-        chatId: String(tgU.id),
-        message: `✅ تم استلام طلب المتجر #${oid}!\n💰 ${total.toLocaleString()} د.ع\n\nسيتم التواصل معك قريباً لتأكيد الطلب 🔔`
-      }}).catch(()=>{});
-    }
- 
-    _lastMktOrder = Date.now();
-    cart = [];
-    updateCartUI();
-    showToast('✅ تم إرسال طلب المتجر بنجاح!');
- 
-    // Success screen in cart
-    document.getElementById('cart-items-list').innerHTML = `
-      <div style="text-align:center;padding:30px;">
-        <div style="font-size:4rem;margin-bottom:10px;">🎉</div>
-        <h3 style="color:var(--navy);font-weight:800;margin:0 0 6px;">تم إرسال طلبك!</h3>
-        <p style="color:var(--text-muted);font-size:.9rem;margin:0 0 14px;">رقم طلب المتجر: <b style="color:var(--orange);">#${oid}</b></p>
-        <p style="color:var(--teal);font-size:.85rem;font-weight:600;">ستصلك رسالة تأكيد على تيليجرام 📱</p>
-      </div>`;
-    document.getElementById('cart-checkout-area').style.display = 'none';
- 
-  } catch(e) {
-    console.error('Market checkout error:', e);
-    showErr('❌ حدث خطأ: ' + (e.message || 'يرجى المحاولة مجدداً'));
-    btn.disabled = false; btn.innerText = '🛒 تأكيد الطلب';
-  }
-}
-
 // ══ START ════════════════════════════════════════
 init();
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
