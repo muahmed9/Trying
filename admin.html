@@ -1898,17 +1898,22 @@ async function createCustomAccount() {
       const el = document.getElementById(id); if(el) el.checked = false;
     });
     renderStaffList();
-    showToast('✅ تم إنشاء حساب ' + name);
   } catch(e) {
     console.error(e); showToast('❌ حدث خطأ. يرجى المحاولة مجدداً.');
   }
 }
 
 async function deleteCustomAccount(userId) {
-  if (!confirm('حذف هذا الحساب؟')) return;
+  if (!confirm('حذف هذا الحساب؟ ملاحظة: يجب حذفه يدوياً من Supabase Dashboard → Authentication أيضاً.')) return;
   try {
-    await sb.from('profiles').delete().eq('id', userId);
-    showToast('🗑️ تم حذف الحساب');
+    // حذف من جدول الصلاحيات
+    const { error } = await sb.from('profiles').delete().eq('id', userId);
+    if (error) throw error;
+    // محاولة حذف المستخدم من Auth عبر Edge Function إن وُجدت
+    try {
+      await sb.functions.invoke('delete-staff', { body: { userId } });
+    } catch(_) { /* Edge Function غير متاحة — يُحذف يدوياً من Supabase Dashboard */ }
+    showToast('🗑️ تم حذف الحساب من الصلاحيات. أكمل الحذف من Supabase Dashboard إن لزم.');
     renderStaffList();
   } catch(e) {
     console.error(e); showToast('❌ حدث خطأ. يرجى المحاولة مجدداً.');

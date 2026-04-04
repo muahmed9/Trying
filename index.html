@@ -1412,17 +1412,18 @@ function calcUI() {
   const expressFee = isExpress ? (PRICING.express_fee||1500) : 0;
   const pkgFee = files.length ? ((PRICING.packaging||{})[packaging]||0) : 0;
 
-  // Coupon discount
+  // Coupon discount — يُطبَّق على إجمالي الطلب كاملاً (طباعة + قرطاسية)
+  const _orderSubtotal = pp + getSugTotal();
   let couponDisc = 0;
-  if (appliedCoupon && pp > 0) {
+  if (appliedCoupon && _orderSubtotal > 0) {
     const _minOrd = appliedCoupon.min_order_amount || 0;
-    if (_minOrd > 0 && pp < _minOrd) {
+    if (_minOrd > 0 && _orderSubtotal < _minOrd) {
       // min order not met — show warning but don't apply
       const _cmsg = document.getElementById('coupon-msg');
       if (_cmsg) { _cmsg.style.display='block'; _cmsg.style.background='#fef2f2'; _cmsg.style.color='#991b1b'; _cmsg.style.border='1px solid #fecaca'; _cmsg.innerText=`⚠️ الحد الأدنى للكوبون ${_minOrd.toLocaleString()} د.ع — لم يُطبق بعد`; }
     } else {
-      if (appliedCoupon.discount_type === 'percent') couponDisc = Math.round(pp * appliedCoupon.discount_value / 100);
-      else couponDisc = Math.min(appliedCoupon.discount_value, pp);
+      if (appliedCoupon.discount_type === 'percent') couponDisc = Math.round(_orderSubtotal * appliedCoupon.discount_value / 100);
+      else couponDisc = Math.min(appliedCoupon.discount_value, _orderSubtotal);
     }
   }
 
@@ -1457,6 +1458,7 @@ function calcUI() {
       <span>💎 نقاط ستكسبها (عند التسليم):</span>
       <b style="color:${hasDiscount?'#94a3b8':'#ffd700'};">${hasDiscount?'0 (خصم مطبّق)':'+'+pe}</b>
     </div>`;
+  const hasPrint = files.length > 0;
   const hasSugItemsNow = Object.keys(_sugCart).length > 0 || cart.length > 0;
   const allCartForCalc = [...getSugCartItems(), ...cart.map(c=>({...c,price:c.effective_price||c.price}))];
   const cartTotalCalc  = allCartForCalc.reduce((s,i)=>s+(i.price*i.qty),0);
@@ -1492,7 +1494,7 @@ async function sendOrder() {
   // 🔒 Input validation
   if (!name)                               return showErr('❌ يرجى كتابة الاسم');
   if (name.length < 3)                     return showErr('❌ الاسم يجب أن يكون 3 أحرف على الأقل');
-  if (phone.length!==11 || isNaN(+phone)) return showErr('❌ رقم الهاتف يجب أن يكون 11 رقمًا');
+  if (phone.length!==11 || isNaN(+phone) || !phone.startsWith('07')) return showErr('❌ رقم الهاتف يجب أن يكون 11 رقمًا ويبدأ بـ 07');
   if (!region)                              return showErr('❌ يرجى إدخال اسم المنطقة');
   if (!files.length && !Object.keys(_sugCart).length && !cart.length) return showErr('❌ يرجى رفع ملف للطباعة أو اختيار منتج على الأقل');
   if (!locUrl)                              return showErr('❌ يرجى تحديد موقعك على الخريطة');
@@ -1521,10 +1523,9 @@ async function sendOrder() {
     const hasPrint = files.length > 0;
     const hasSug  = Object.keys(_sugCart).length > 0;
     const hasCart  = cart.length > 0;
-    const allCartItems = [
-      ...getSugCartItems(),
-      ...cart.map(c => ({id:c.id, name:c.name, qty:c.qty, price:c.effective_price||c.price, original_price:c.original_price||c.price, unit:c.unit, stock:c.stock}))
-    ];
+    const sugCartItems  = getSugCartItems();
+    const marketCartItems = cart.map(c => ({id:c.id, name:c.name, qty:c.qty, price:c.effective_price||c.price, original_price:c.original_price||c.price, unit:c.unit, stock:c.stock}));
+    const allCartItems = [...sugCartItems, ...marketCartItems];
     const orderType = hasPrint && (hasSug || hasCart) ? 'combined' : hasPrint ? 'print' : 'market';
 
     let meta = [], zipUrl = '';
@@ -1569,9 +1570,9 @@ async function sendOrder() {
       loyalty_points_earned:pe||0,
       is_first_order:!!isFO,
       order_type: orderType,
-      cart_items: allCartItems.length ? allCartItems : null,
-      suggested_items: allCartItems.length ? allCartItems : null,
-      suggested_total: allCartItems.reduce((s,i)=>s+(i.price*i.qty),0),
+      cart_items: marketCartItems.length ? marketCartItems : null,
+      suggested_items: sugCartItems.length ? sugCartItems : null,
+      suggested_total: sugCartItems.reduce((s,i)=>s+(i.price*i.qty),0),
       notes: document.getElementById('uNotes')?.value?.trim()||null,
       status:'received',
       status_history:[{status:'received', time:new Date().toISOString()}]
