@@ -48,9 +48,102 @@
   --navy:#0d3b66; --teal:#5ab3c4; --orange:#e86b24;
   --bg:#f4f7f9; --card:#fff; --text-main:#1e293b; --text-muted:#64748b;
   --green:#10b981; --red:#ef4444; --light-teal:#eef9fa; --border:rgba(0,0,0,.04);
+  --shadow:rgba(13,59,102,0.07); --input-bg:#f8fafc;
 }
+[data-theme="dark"] {
+  --navy:#60b4f0; --teal:#5ab3c4; --orange:#ff8c42;
+  --bg:#0f172a; --card:#1e293b; --text-main:#e2e8f0; --text-muted:#94a3b8;
+  --green:#34d399; --red:#f87171; --light-teal:rgba(90,179,196,0.1);
+  --border:rgba(255,255,255,0.07); --shadow:rgba(0,0,0,0.3); --input-bg:#273549;
+}
+[data-theme="dark"] body { background:var(--bg); color:var(--text-main); }
+[data-theme="dark"] .scard,
+[data-theme="dark"] .ocard,
+[data-theme="dark"] .prod-card,
+[data-theme="dark"] .sup-card,
+[data-theme="dark"] .staff-card,
+[data-theme="dark"] .settings-section,
+[data-theme="dark"] .acc-header,
+[data-theme="dark"] .acc-body { background:var(--card); border-color:rgba(255,255,255,.07); color:var(--text-main); }
+[data-theme="dark"] .acc-header { color:var(--text-main); }
+[data-theme="dark"] .acc-header:hover { background:rgba(90,179,196,0.1); }
+[data-theme="dark"] .loginwrap { background:linear-gradient(135deg,#0a1628,#0f172a); }
+[data-theme="dark"] .logincard { background:var(--card); }
+[data-theme="dark"] .topbar { background:#0d2a45; }
+[data-theme="dark"] .atab { background:var(--card); border-color:#334155; color:var(--text-muted); }
+[data-theme="dark"] .atab.active { background:#1e40af; border-color:#1e40af; color:#fff; }
+[data-theme="dark"] .ftab { background:var(--card); border-color:#334155; color:var(--text-muted); }
+[data-theme="dark"] .ftab.active { background:var(--navy); border-color:var(--navy); color:#fff; }
+[data-theme="dark"] .ii { background:#273549; color:var(--text-muted); }
+[data-theme="dark"] input[type=text],
+[data-theme="dark"] input[type=password],
+[data-theme="dark"] input[type=number],
+[data-theme="dark"] input[type=date],
+[data-theme="dark"] textarea,
+[data-theme="dark"] select { background:var(--input-bg); border-color:#334155; color:var(--text-main); }
+[data-theme="dark"] .mbox2, [data-theme="dark"] .cancel-box,
+[data-theme="dark"] .stats-modal-box { background:var(--card); }
+[data-theme="dark"] #toast { background:#1e40af; }
+[data-theme="dark"] .sr{background:rgba(30,64,175,.25);color:#93c5fd;}
+[data-theme="dark"] .sp{background:rgba(161,98,7,.25);color:#fde047;}
+[data-theme="dark"] .sd{background:rgba(194,65,12,.2);color:#fdba74;}
+[data-theme="dark"] .sv{background:rgba(22,101,52,.2);color:#86efac;}
+[data-theme="dark"] .sc{background:rgba(153,27,27,.2);color:#fca5a5;}
+[data-theme="dark"] .alert-low { background:#3b1f1f; border-color:#7f1d1d; }
+[data-theme="dark"] .alert-low-title { color:#f87171; }
+
+/* ── Dark Mode Toggle ── */
+#dm-toggle-btn {
+  background:rgba(255,255,255,.12);
+  border:1.5px solid rgba(255,255,255,.2);
+  color:#fff; padding:7px 13px;
+  border-radius:10px; cursor:pointer;
+  font-size:.82rem; font-weight:700;
+  font-family:'Tajawal',sans-serif;
+  display:flex; align-items:center; gap:6px;
+  transition:background .2s;
+}
+#dm-toggle-btn:hover { background:rgba(255,255,255,.2); }
+
+/* ── New Order Flash Banner ── */
+#new-order-banner {
+  position:fixed; top:65px; left:50%; transform:translateX(-50%) translateY(-100px);
+  z-index:999; background:linear-gradient(135deg,#e86b24,#dc2626);
+  color:#fff; padding:14px 24px; border-radius:18px;
+  font-weight:800; font-size:1rem; text-align:center;
+  box-shadow:0 8px 30px rgba(232,107,36,.5);
+  transition:transform .45s cubic-bezier(.175,.885,.32,1.275);
+  pointer-events:none; min-width:260px;
+}
+#new-order-banner.show { transform:translateX(-50%) translateY(0); }
+
+/* ── Connectivity Badge ── */
+#conn-badge {
+  position:fixed; bottom:20px; right:20px;
+  padding:8px 16px; border-radius:20px;
+  font-size:.82rem; font-weight:800;
+  z-index:500; display:none;
+  box-shadow:0 4px 14px rgba(0,0,0,.15);
+  font-family:'Tajawal',sans-serif;
+}
+#conn-badge.offline { background:#fee2e2; color:#991b1b; border:1.5px solid #fecaca; display:block; }
+#conn-badge.online  { background:#dcfce7; color:#166534; border:1.5px solid #86efac; display:block; }
+
+/* ── Map Quick Button ── */
+.map-quick-btn {
+  display:inline-flex; align-items:center; gap:5px;
+  background:#dbeafe; color:#1e40af;
+  border:none; border-radius:9px;
+  padding:8px 12px; font-size:.82rem; font-weight:800;
+  cursor:pointer; font-family:'Tajawal',sans-serif;
+  text-decoration:none; white-space:nowrap;
+  transition:background .15s;
+}
+.map-quick-btn:hover { background:#bfdbfe; }
+.map-quick-btn:active { opacity:.75; }
+
 * { box-sizing:border-box; margin:0; padding:0; font-family:'Tajawal',sans-serif; }
-body { background:var(--bg); color:var(--text-main); min-height:100vh; }
+body { background:var(--bg); color:var(--text-main); min-height:100vh; transition:background .3s,color .3s; }
 
 /* ── LOGIN ── */
 .loginwrap { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; background:linear-gradient(135deg,var(--light-teal),var(--bg)); }
@@ -316,6 +409,14 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
   </div>
 </div>
   
+<!-- NEW ORDER FLASH BANNER -->
+<div id="new-order-banner">
+  <div id="new-order-banner-text">🆕 طلب جديد وصل!</div>
+</div>
+
+<!-- CONNECTIVITY BADGE -->
+<div id="conn-badge"></div>
+
 <!-- ════════════════════════════
      LOGIN
 ════════════════════════════ -->
@@ -348,6 +449,9 @@ input:focus,textarea:focus,select:focus { border-color:var(--teal); }
       <div style="background:rgba(255,255,255,.15);padding:6px 14px;border-radius:20px;font-size:.82rem;">
         <span class="ldot"></span><span id="pcnt">0</span> معلق
       </div>
+      <button id="dm-toggle-btn" onclick="toggleAdminDark()" title="الوضع الليلي">
+        <span id="dm-icon-adm">🌙</span><span id="dm-lbl-adm">ليلي</span>
+      </button>
       <button onclick="doLogout()" style="background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.2);color:#fff;padding:8px 14px;border-radius:10px;cursor:pointer;font-size:.82rem;font-weight:700;font-family:'Tajawal',sans-serif;">خروج</button>
     </div>
   </div>
@@ -1358,6 +1462,59 @@ function esc(s) {
 }
 
 // ══════════════════════════════════
+//  🌙 DARK MODE
+// ══════════════════════════════════
+function applyAdminTheme(dark) {
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  const icon = document.getElementById('dm-icon-adm');
+  const lbl  = document.getElementById('dm-lbl-adm');
+  if (icon) icon.innerText = dark ? '☀️' : '🌙';
+  if (lbl)  lbl.innerText  = dark ? 'نهاري' : 'ليلي';
+}
+function toggleAdminDark() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  localStorage.setItem('adm-dark', String(!isDark));
+  applyAdminTheme(!isDark);
+}
+// تطبيق الثيم المحفوظ فور تحميل الصفحة
+applyAdminTheme(localStorage.getItem('adm-dark') === 'true');
+
+// ══════════════════════════════════
+//  🔔 NEW ORDER FLASH BANNER
+// ══════════════════════════════════
+let _bannerTimer = null;
+function flashNewOrderBanner(msg) {
+  const banner = document.getElementById('new-order-banner');
+  const text   = document.getElementById('new-order-banner-text');
+  if (!banner) return;
+  if (text) text.innerText = msg || '🆕 طلب جديد وصل!';
+  banner.classList.add('show');
+  // اهتزاز الجهاز إن كان مدعوماً (للمندوب على الموبايل)
+  if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+  clearTimeout(_bannerTimer);
+  _bannerTimer = setTimeout(() => banner.classList.remove('show'), 4500);
+}
+
+// ══════════════════════════════════
+//  📡 CONNECTIVITY INDICATOR
+// ══════════════════════════════════
+function _updateConnBadge(online) {
+  const b = document.getElementById('conn-badge');
+  if (!b) return;
+  if (online) {
+    b.className = 'online';
+    b.innerText = '✅ اتصال الإنترنت يعمل';
+    setTimeout(() => { b.className = ''; b.style.display = ''; }, 3000);
+  } else {
+    b.className = 'offline';
+    b.innerText = '❌ لا يوجد اتصال بالإنترنت';
+  }
+}
+window.addEventListener('online',  () => _updateConnBadge(true));
+window.addEventListener('offline', () => _updateConnBadge(false));
+if (!navigator.onLine) _updateConnBadge(false);
+
+// ══════════════════════════════════
 //  🔔 SOUND NOTIFICATION
 // ══════════════════════════════════
 // AudioContext مشترك لتجنب تسرب الذاكرة
@@ -2194,7 +2351,9 @@ async function startListening() {
         playAdminAlert('received');
         const n = payload.new;
         if (n && n.name) {
-          showToast(`🆕 طلب جديد #${esc(n.id)} — ${esc(n.name)}${n.is_express?' ⚡عاجل':''}`);
+          const msg = `🆕 طلب جديد #${n.id?.slice(-6)||'?'} — ${n.name}${n.is_express?' ⚡عاجل':''}`;
+          showToast(msg);
+          flashNewOrderBanner(msg);
         }
       } else if (payload.eventType === 'UPDATE' && payload.new?.status) {
         playAdminAlert(payload.new.status);
@@ -2513,6 +2672,13 @@ function renderOrders() {
         ${o.packaging&&o.packaging!=='none'?`<div class="ii" style="color:#7c3aed;grid-column:span 2;">📦 ${({cardboard:'ورق مقوى ونايلون 📦',spiral:'سبايرول 🔩'})[o.packaging]||''}</div>`:''}
       </div>
       ${o.notes?`<div style="font-size:.78rem;color:var(--orange);background:rgba(232,107,36,.06);padding:5px 8px;border-radius:8px;margin-top:4px;">📝 ${esc(o.notes).substring(0,50)}${o.notes.length>50?'...':''}</div>`:''}
+      ${o.loc_url && o.status === 'delivering' ? `
+        <a href="${esc(o.loc_url)}" target="_blank" onclick="event.stopPropagation()" class="map-quick-btn" style="margin-top:8px;width:100%;justify-content:center;">
+          🗺️ فتح موقع الزبون — اضغط هنا للتوصيل
+        </a>` : o.loc_url ? `
+        <a href="${esc(o.loc_url)}" target="_blank" onclick="event.stopPropagation()" class="map-quick-btn" style="margin-top:8px;">
+          📍 عرض الموقع
+        </a>` : ''}
       ${act?`<div class="arow">${act}</div>`:''}
     </div>`;
   }).join('');
@@ -4358,3 +4524,5 @@ function exportResearchOrders() {
 </script>
 </body>
 </html>
+
+
