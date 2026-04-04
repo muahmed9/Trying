@@ -390,7 +390,7 @@ input:checked+.togs:before{transform:translateX(-24px);}
         <li>عد للتطبيق واختر <b>"تصفح (Browse)"</b></li>
       </ol>
     </div>
-    <input type="file" id="fileinp" multiple style="display:none">
+    <input type="file" id="fileinp" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.webp,image/*" style="display:none">
   </div>
   <div id="flist" style="display:none;"></div>
 
@@ -1998,7 +1998,6 @@ async function showDet(oid) {
     </div>` : ''}
     ${reorderBtn}`;
 }
-}
 function closeDet() {
   const ov = document.getElementById('det-ov');
   ov.classList.remove('open');
@@ -2587,6 +2586,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 
