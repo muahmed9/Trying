@@ -397,13 +397,13 @@ input:checked+.togs:before{transform:translateX(-24px);}
   <!-- ══ سلة القرطاسية الموحدة ══ -->
   <div id="unified-cart-section">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <b style="color:var(--navy);font-size:.95rem;">🛒 سلة القرطاسية</b>
-      <button onclick="goTab('market')" style="border:none;background:var(--light-teal);color:var(--teal);padding:6px 12px;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;font-family:'Tajawal',sans-serif;">+ إضافة منتجات</button>
+      <b style="color:var(--navy);font-size:.95rem;">🛒 قرطاسيتي المختارة</b>
+      <button onclick="goTab('market')" style="border:none;background:var(--light-teal);color:var(--teal);padding:6px 12px;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;font-family:'Tajawal',sans-serif;">+ إضافة</button>
     </div>
     <div id="unified-cart-items"></div>
-    <div style="background:var(--light-teal);border-radius:12px;padding:12px;margin-top:10px;display:flex;justify-content:space-between;align-items:center;">
-      <span style="font-size:.88rem;color:var(--navy);font-weight:700;">إجمالي القرطاسية:</span>
-      <b id="ucart-subtotal" style="color:var(--orange);font-size:1rem;">0 د.ع</b>
+    <div style="background:var(--light-teal);border-radius:12px;padding:10px 14px;margin-top:10px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:.85rem;color:var(--navy);font-weight:700;">📦 المختارة:</span>
+      <b id="ucart-subtotal" style="color:var(--teal);font-size:.9rem;">—</b>
     </div>
   </div>
 
@@ -566,6 +566,50 @@ input:checked+.togs:before{transform:translateX(-24px);}
   </div>
 </div>
 
+<!-- TAB: البحوث والتقارير -->
+<div class="tab" id="tab-research">
+  <div class="card">
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="font-size:3.5rem;margin-bottom:8px;">📝</div>
+      <h2 style="color:var(--navy);margin:0 0 6px;font-weight:800;">طلب بحث أو تقرير</h2>
+      <p style="color:var(--text-muted);margin:0;font-size:.9rem;font-weight:500;">اطلب إعداد بحثك أو تقريرك الأكاديمي من فريقنا المتخصص</p>
+    </div>
+    <div style="background:linear-gradient(135deg,rgba(90,179,196,.1),rgba(13,59,102,.05));border:1.5px solid var(--teal);border-radius:16px;padding:16px;margin-bottom:16px;">
+      <b style="color:var(--navy);font-size:.95rem;">📌 ما الذي نقدمه؟</b>
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;font-size:.88rem;color:var(--text-muted);font-weight:500;">
+          <span style="width:28px;height:28px;background:var(--teal);color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.85rem;">📚</span>
+          إعداد البحوث العلمية والأكاديمية
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:.88rem;color:var(--text-muted);font-weight:500;">
+          <span style="width:28px;height:28px;background:var(--orange);color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.85rem;">📊</span>
+          إعداد التقارير والملخصات
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:.88rem;color:var(--text-muted);font-weight:500;">
+          <span style="width:28px;height:28px;background:var(--navy);color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.85rem;">✏️</span>
+          تنسيق وتدقيق الأبحاث
+        </div>
+      </div>
+    </div>
+    <div id="research-err" style="display:none;background:#fef2f2;color:var(--red);padding:10px;border-radius:10px;font-size:.88rem;font-weight:700;margin-bottom:12px;text-align:center;"></div>
+    <input type="text" id="res-name" placeholder="✍️ اسمك الكامل" maxlength="60">
+    <input type="tel" id="res-phone" placeholder="📞 رقم هاتفك (11 رقم)" maxlength="11">
+    <input type="text" id="res-subject" placeholder="📖 موضوع البحث / التقرير">
+    <select id="res-type" style="margin-bottom:12px;">
+      <option value="">نوع الطلب...</option>
+      <option value="بحث أكاديمي">📚 بحث أكاديمي</option>
+      <option value="تقرير">📊 تقرير</option>
+      <option value="ملخص">📋 ملخص</option>
+      <option value="تنسيق وتدقيق">✏️ تنسيق وتدقيق</option>
+      <option value="أخرى">📦 أخرى</option>
+    </select>
+    <input type="number" id="res-pages" placeholder="📄 عدد الصفحات المطلوبة (تقريباً)" min="1">
+    <input type="date" id="res-deadline" style="margin-bottom:12px;">
+    <textarea id="res-details" placeholder="📝 تفاصيل إضافية، متطلبات خاصة، مراجع مطلوبة..." rows="3" style="resize:none;"></textarea>
+    <button class="bmain btn-action" onclick="sendResearchOrder()" id="res-btn">📨 إرسال طلب البحث</button>
+  </div>
+</div>
+
 <!-- TAB 2 — طلباتي -->
 <div class="tab" id="tab-orders">
   <h2 style="color:var(--navy);margin:0 0 14px;font-weight:800;">📋 طلباتي</h2>
@@ -670,15 +714,18 @@ input:checked+.togs:before{transform:translateX(-24px);}
 <!-- BOTTOM NAV -->
 <nav class="bnav">
   <button class="nbtn active" id="nav-order" onclick="goTab('order')"><span class="ni">🖨️</span><span>الرئيسية</span></button>
+  <button class="nbtn" id="nav-research" onclick="goTab('research')">
+    <span class="ni">📝</span><span>بحوث</span>
+  </button>
   <button class="nbtn" id="nav-orders" onclick="goTab('orders')" style="position:relative;">
     <span class="ni">📋</span><span>طلباتي</span>
     <span id="ordbadge" style="display:none;background:var(--orange);color:#fff;border-radius:10px;font-size:.62rem;font-weight:800;padding:2px 6px;position:absolute;top:4px;margin-right:-14px;"></span>
   </button>
-  <button class="nbtn" id="nav-points" onclick="goTab('points')"><span class="ni">🏆</span><span>المكافآت</span></button>
   <button class="nbtn" id="nav-market" onclick="goTab('market')" style="position:relative;">
     <span class="ni">📦</span><span>القرطاسية</span>
     <span id="mkt-badge" style="display:none;background:var(--orange);color:#fff;border-radius:10px;font-size:.62rem;font-weight:800;padding:2px 6px;position:absolute;top:4px;margin-right:-14px;"></span>
   </button>
+  <button class="nbtn" id="nav-points" onclick="goTab('points')"><span class="ni">🏆</span><span>مكافآت</span></button>
   <button class="nbtn" id="nav-dm" onclick="toggleDark()">
     <span class="ni" id="dm-icon">🌙</span><span id="dm-lbl">ليلي</span>
   </button>
@@ -1067,7 +1114,8 @@ function goTab(t) {
   document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
   document.querySelectorAll('.nbtn').forEach(x => x.classList.remove('active'));
   document.getElementById('tab-' + t).classList.add('active');
-  document.getElementById('nav-' + t).classList.add('active');
+  const navEl = document.getElementById('nav-' + t);
+  if (navEl) navEl.classList.add('active');
   if (t === 'orders') loadOrders();
   if (t === 'points') loadPtsTab();
   if (t === 'market') { if(!_mktProducts.length) loadMktProducts(); }
@@ -1380,11 +1428,14 @@ function calcUI() {
       <span>💎 نقاط ستكسبها (عند التسليم):</span>
       <b style="color:${hasDiscount?'#94a3b8':'#ffd700'};">${hasDiscount?'0 (خصم مطبّق)':'+'+pe}</b>
     </div>`;
-  const hasSugItemsNow = Object.keys(_sugCart).length > 0;
-  const totalLabel = (!files.length && hasSugItemsNow)
-    ? `إجمالي المستلزمات: ${tot.toLocaleString()} د.ع`
-    : (files.length && hasSugItemsNow)
-      ? `المجموع الكلي (طباعة + مستلزمات): ${tot.toLocaleString()} د.ع`
+  const hasSugItemsNow = Object.keys(_sugCart).length > 0 || cart.length > 0;
+  const allCartForCalc = [...getSugCartItems(), ...cart.map(c=>({...c,price:c.effective_price||c.price}))];
+  const cartTotalCalc  = allCartForCalc.reduce((s,i)=>s+(i.price*i.qty),0);
+
+  const totalLabel = hasPrint && hasSugItemsNow
+    ? `إجمالي الطلب (استنساخ ${pp.toLocaleString()} + قرطاسية ${cartTotalCalc.toLocaleString()}): ${tot.toLocaleString()} د.ع`
+    : !hasPrint && hasSugItemsNow
+      ? `إجمالي القرطاسية: ${tot.toLocaleString()} د.ع`
       : `المجموع النهائي: ${tot.toLocaleString()} د.ع`;
   document.getElementById('totlbl').innerText = totalLabel;
   window._ord = {pp, df, td, pd, couponDisc, expressFee, pkgFee, packaging, tot, pe, isFO, sugItems: getSugCartItems(), sugTotal: getSugTotal(), cartItems: cart.map(c=>({...c})) };
@@ -1559,7 +1610,9 @@ async function sendOrder() {
       sugTxt
     );
     if (tgU?.id) await tgMsg(String(tgU.id),
-      `✅ تم استلام طلبك #${oid} بنجاح!\n💰 ${(tot||0).toLocaleString()} د.ع\n\n${pe>0?`💎 ستكسب ${pe} نقطة ولاء عند التسليم!\n`:''}سنُخطرك بكل تحديث 🔔`
+      orderType === 'combined'
+        ? `✅ تم استلام طلبك #${oid} بنجاح!\n💰 ${(tot||0).toLocaleString()} د.ع${pe>0?`\n💎 ستكسب ${pe} نقطة ولاء عند التسليم!`:''}\nسنُخطرك بكل تحديث 🔔`
+        : `✅ تم استلام طلبك #${oid} بنجاح!\n💰 ${(tot||0).toLocaleString()} د.ع\n${pe>0?`💎 ستكسب ${pe} نقطة ولاء عند التسليم!\n`:''}سنُخطرك بكل تحديث 🔔`
     );
 
     document.getElementById('pbar').style.width = '100%';
@@ -1792,20 +1845,26 @@ function renderUserOrders() {
     }
 
     return `<div class="ocard ${o.is_express?'express-card':''}" onclick="showDet('${esc(o.id)}')">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <b style="color:var(--navy);font-size:1.1rem;">#${esc(o.id)}</b>
+          <b style="color:var(--navy);font-size:1.05rem;">#${esc(o.id)}</b>
           ${o.is_express?'<span class="express-badge">⚡ عاجل</span>':''}
           ${o.order_type==='combined'?'<span style="background:linear-gradient(135deg,var(--teal),var(--navy));color:#fff;border-radius:20px;padding:2px 10px;font-size:.68rem;font-weight:800;">🔀 مشترك</span>':o.order_type==='market'?'<span style="background:var(--green);color:#fff;border-radius:20px;padding:2px 10px;font-size:.68rem;font-weight:800;">🛍️ مستلزمات</span>':''}
         </div>
         <span class="sbadge ${s.c}">${s.i} ${s.l}</span>
       </div>
-      <div style="background:var(--input-bg);padding:10px;border-radius:10px;display:flex;justify-content:space-between;font-size:.85rem;color:var(--text-muted);font-weight:500;">
-        <span>📅 ${dt}</span><span>📋 ${o.files?.length||0} ملف</span>
+      <div style="background:var(--input-bg);padding:10px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;font-size:.85rem;color:var(--text-muted);font-weight:500;margin-bottom:8px;">
+        <span>📅 ${dt}</span>
+        ${o.order_type!=='market' ? `<span>📋 ${o.files?.length||0} ملف — ${(o.files||[]).reduce((s,f)=>s+(f.pages||0),0)} ص</span>` : `<span>🛍️ ${(o.suggested_items||[]).length} صنف</span>`}
         <b style="color:var(--navy);">${(o.total||0).toLocaleString()} د.ع</b>
       </div>
+      ${o.zip_url && o.order_type!=='market' ? `
+      <a href="${esc(o.zip_url)}" target="_blank" onclick="event.stopPropagation()"
+         style="display:flex;align-items:center;justify-content:center;gap:7px;background:var(--navy);color:#fff;padding:9px;border-radius:10px;font-weight:800;text-decoration:none;font-size:.85rem;margin-bottom:8px;">
+        📥 تحميل الملفات
+      </a>` : ''}
       ${mpHtml}
-      <div style="font-size:.83rem;color:var(--orange);margin-top:10px;font-weight:700;">💎 ${o.loyalty_points_earned||0} نقطة (${ptsNote})</div>
+      <div style="font-size:.83rem;color:var(--orange);margin-top:8px;font-weight:700;">💎 ${o.loyalty_points_earned||0} نقطة (${ptsNote})</div>
     </div>`;
   }).join('');
 
@@ -1816,7 +1875,9 @@ function renderUserOrders() {
 
 // ══ ORDER DETAIL ═════════════════════════════════
 async function showDet(oid) {
-  document.getElementById('det-ov').classList.add('open');
+  const ov = document.getElementById('det-ov');
+  ov.style.display = 'flex';
+  ov.classList.add('open');
   document.getElementById('det-body').innerHTML = '<div style="text-align:center;padding:40px;color:var(--teal);"><b>جاري جلب التفاصيل...</b></div>';
   const steps = [{k:'received',l:'استلام الطلب',i:'📥'},{k:'printing',l:'جاري الطباعة',i:'🖨️'},{k:'delivering',l:'في الطريق إليك',i:'🛵'},{k:'delivered',l:'تم التسليم',i:'✅'}];
   const {data:o} = await sb.from('orders').select('*').eq('id', oid).maybeSingle();
@@ -1840,21 +1901,19 @@ async function showDet(oid) {
 
   let cancelBox = '';
   if (o.status === 'cancelled') {
-    // ── Cancelled: show reason + contact ──
     cancelBox = `
     <div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:18px;padding:18px;margin-bottom:18px;">
       <div style="text-align:center;margin-bottom:14px;">
         <div style="font-size:2.5rem;margin-bottom:6px;">❌</div>
         <h3 style="margin:0 0 4px;color:#991b1b;font-weight:800;font-size:1.1rem;">تم إلغاء هذا الطلب</h3>
       </div>
-      ${o.cancel_reason ? `
-      <div style="background:#fff5f5;border:1px solid #fecaca;border-radius:14px;padding:14px;margin-bottom:14px;">
+      ${o.cancel_reason ? `<div style="background:#fff5f5;border:1px solid #fecaca;border-radius:14px;padding:14px;margin-bottom:14px;">
         <p style="margin:0 0 6px;font-size:.82rem;color:#991b1b;font-weight:800;">📋 سبب الإلغاء:</p>
         <p style="margin:0;font-size:.95rem;color:#b91c1c;font-weight:700;line-height:1.7;">${esc(o.cancel_reason)}</p>
       </div>` : ''}
       <p style="margin:0 0 10px;font-size:.88rem;color:#991b1b;font-weight:700;text-align:center;">للاستفسار أو إعادة الطلب تواصل معنا:</p>
       <div style="display:flex;flex-direction:column;gap:8px;">
-        <a href="tel:07752564099" style="display:block;background:#ef4444;color:#fff;text-decoration:none;padding:12px;border-radius:12px;font-weight:700;font-size:.92rem;text-align:center;">📞 اتصل بنا (07752564099)</a>
+        <a href="tel:07752564099" style="display:block;background:#ef4444;color:#fff;text-decoration:none;padding:12px;border-radius:12px;font-weight:700;font-size:.92rem;text-align:center;">📞 اتصل بنا</a>
         <div style="display:flex;gap:8px;">
           <a href="https://wa.me/9647752564099" target="_blank" style="flex:1;background:#25D366;color:#fff;text-decoration:none;padding:10px;border-radius:12px;font-weight:700;font-size:.88rem;display:flex;align-items:center;justify-content:center;gap:5px;">💬 واتساب</a>
           <a href="https://t.me/+9647752564099" target="_blank" style="flex:1;background:#0088cc;color:#fff;text-decoration:none;padding:10px;border-radius:12px;font-weight:700;font-size:.88rem;display:flex;align-items:center;justify-content:center;gap:5px;">✈️ تيليجرام</a>
@@ -1864,31 +1923,9 @@ async function showDet(oid) {
   } else if (['received','printing','delivering'].includes(o.status)) {
     cancelBox = `<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:16px;padding:14px;margin-bottom:18px;text-align:center;">
       <b style="color:#991b1b;font-size:.92rem;display:block;margin-bottom:10px;">هل ترغب في تعديل أو إلغاء الطلب؟</b>
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <a href="tel:07752564099" style="display:block;background:#ef4444;color:#fff;text-decoration:none;padding:10px;border-radius:12px;font-weight:700;font-size:.9rem;">📞 اتصل بنا (07752564099)</a>
-        <div style="display:flex;gap:8px;">
-          <a href="https://wa.me/9647752564099" target="_blank" style="flex:1;background:#25D366;color:#fff;text-decoration:none;padding:10px;border-radius:12px;font-weight:700;font-size:.88rem;display:flex;align-items:center;justify-content:center;gap:5px;">💬 واتساب</a>
-          <a href="https://t.me/+9647752564099" target="_blank" style="flex:1;background:#0088cc;color:#fff;text-decoration:none;padding:10px;border-radius:12px;font-weight:700;font-size:.88rem;display:flex;align-items:center;justify-content:center;gap:5px;">✈️ تيليجرام</a>
-        </div>
-      </div>
-    </div>`;
-  } else if (o.status === 'cancelled') {
-    cancelBox = `<div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:16px;padding:18px;margin-bottom:18px;">
-      <div style="text-align:center;margin-bottom:12px;">
-        <div style="font-size:2.5rem;margin-bottom:6px;">❌</div>
-        <b style="color:#991b1b;font-size:1.05rem;">تم إلغاء هذا الطلب</b>
-      </div>
-      ${o.cancel_reason ? `<div style="background:#fff;border:1px solid #fecaca;border-radius:12px;padding:12px;margin-bottom:14px;">
-        <p style="margin:0 0 4px;font-size:.82rem;color:#94a3b8;font-weight:700;">📋 سبب الإلغاء:</p>
-        <p style="margin:0;font-size:.95rem;color:#991b1b;font-weight:800;line-height:1.6;">${esc(o.cancel_reason)}</p>
-      </div>` : ''}
-      <p style="margin:0 0 10px;font-size:.88rem;color:#78350f;font-weight:700;text-align:center;">📞 للاستفسار أو إعادة الطلب تواصل معنا:</p>
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <a href="tel:07752564099" style="display:block;background:#ef4444;color:#fff;text-decoration:none;padding:10px;border-radius:12px;font-weight:700;font-size:.9rem;text-align:center;">📞 اتصل بنا (07752564099)</a>
-        <div style="display:flex;gap:8px;">
-          <a href="https://wa.me/9647752564099" target="_blank" style="flex:1;background:#25D366;color:#fff;text-decoration:none;padding:10px;border-radius:12px;font-weight:700;font-size:.88rem;display:flex;align-items:center;justify-content:center;gap:5px;">💬 واتساب</a>
-          <a href="https://t.me/+9647752564099" target="_blank" style="flex:1;background:#0088cc;color:#fff;text-decoration:none;padding:10px;border-radius:12px;font-weight:700;font-size:.88rem;display:flex;align-items:center;justify-content:center;gap:5px;">✈️ تيليجرام</a>
-        </div>
+      <div style="display:flex;gap:8px;justify-content:center;">
+        <a href="https://wa.me/9647752564099" target="_blank" style="flex:1;background:#25D366;color:#fff;text-decoration:none;padding:10px;border-radius:12px;font-weight:700;font-size:.88rem;display:flex;align-items:center;justify-content:center;gap:5px;">💬 واتساب</a>
+        <a href="https://t.me/+9647752564099" target="_blank" style="flex:1;background:#0088cc;color:#fff;text-decoration:none;padding:10px;border-radius:12px;font-weight:700;font-size:.88rem;display:flex;align-items:center;justify-content:center;gap:5px;">✈️ تيليجرام</a>
       </div>
     </div>`;
   }
@@ -1905,40 +1942,68 @@ async function showDet(oid) {
     ratingHtml = `<button onclick="showRateModal('${esc(o.id)}')" class="bmain" style="background:var(--teal);color:#fff;margin-bottom:16px;font-size:.95rem;">⭐ قيّم هذا الطلب</button>`;
   }
 
-  // Re-order button
   let reorderBtn = '';
   if (o.status === 'delivered' || o.status === 'cancelled') {
     reorderBtn = `<button onclick="reOrder('${esc(o.id)}')" class="bmain" style="background:var(--navy);color:#fff;margin-bottom:14px;font-size:.95rem;">🔄 أعد هذا الطلب</button>`;
   }
 
+  // ملف ZIP — رابط مباشر
+  const zipSection = (o.zip_url && o.order_type !== 'market') ? `
+    <div style="margin-bottom:14px;">
+      <a href="${esc(o.zip_url)}" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:10px;background:var(--navy);color:#fff;padding:13px;border-radius:13px;font-weight:800;text-decoration:none;font-size:.95rem;">
+        📥 تحميل ملفاتي (ZIP)
+      </a>
+    </div>` : '';
+
+  // بناء قسم الفاتورة الموحدة (استنساخ + قرطاسية معاً)
+  const hasPrint = o.order_type !== 'market';
+  const hasSug   = o.suggested_items?.length > 0;
+  const printPrice  = o.print_price || 0;
+  const sugTotal    = o.suggested_total || (o.suggested_items?.reduce((s,i)=>s+(i.price*i.qty),0)||0);
+
+  let invoiceRows = '';
+  if (hasPrint) {
+    invoiceRows += `<div class="il" style="color:var(--navy);"><span>🖨️ الطباعة:</span><b>${o.color==='c'?'ملون':'أسود'} · ${o.side==='1'?'وجه واحد':'وجهين'}</b></div>
+    <div class="il" style="color:var(--navy);margin-top:4px;"><span>💰 سعر الاستنساخ:</span><b>${printPrice.toLocaleString()} د.ع</b></div>
+    <div class="il" style="color:var(--navy);margin-top:4px;"><span>📦 التغليف:</span><b>${({none:'كبس فقط',cardboard:'ورق مقوى ونايلون 📦',spiral:'سبايرول 🔩'})[o.packaging||'none']||'كبس فقط'}</b></div>`;
+  }
+  if (hasSug) {
+    invoiceRows += `<div style="margin-top:${hasPrint?'10px':'0'};${hasPrint?'border-top:1px solid rgba(90,179,196,.3);padding-top:10px;':''}">
+      <b style="color:var(--navy);font-size:.88rem;display:block;margin-bottom:6px;">🛍️ القرطاسية:</b>
+      ${o.suggested_items.map(i=>`<div style="display:flex;justify-content:space-between;font-size:.83rem;padding:3px 0;color:var(--text-muted);">
+        <span>• ${esc(i.name)} ×${i.qty} ${esc(i.unit||'قطعة')}</span>
+        <b style="color:var(--orange);">${(i.price*i.qty).toLocaleString()} د.ع</b>
+      </div>`).join('')}
+      ${hasPrint?`<div class="il" style="color:var(--teal);margin-top:4px;font-size:.82rem;"><span>إجمالي القرطاسية:</span><b>${sugTotal.toLocaleString()} د.ع</b></div>`:''}
+    </div>`;
+  }
+
   document.getElementById('det-body').innerHTML = `
     ${o.is_express?'<div style="text-align:center;margin-bottom:12px;"><span class="express-badge" style="font-size:.85rem;padding:6px 16px;">⚡ طلب عاجل</span></div>':''}
-    ${o.order_type==='combined'?'<div style="text-align:center;margin-bottom:12px;"><span style="background:linear-gradient(135deg,var(--teal),var(--navy));color:#fff;border-radius:20px;padding:5px 18px;font-size:.82rem;font-weight:800;">🔀 طلب مشترك (طباعة + مستلزمات)</span></div>':o.order_type==='market'?'<div style="text-align:center;margin-bottom:12px;"><span style="background:var(--green);color:#fff;border-radius:20px;padding:5px 18px;font-size:.82rem;font-weight:800;">🛍️ طلب مستلزمات دراسية</span></div>':''}
+    ${o.order_type==='combined'?'<div style="text-align:center;margin-bottom:12px;"><span style="background:linear-gradient(135deg,var(--teal),var(--navy));color:#fff;border-radius:20px;padding:5px 18px;font-size:.82rem;font-weight:800;">🔀 طلب مشترك</span></div>':o.order_type==='market'?'<div style="text-align:center;margin-bottom:12px;"><span style="background:var(--green);color:#fff;border-radius:20px;padding:5px 18px;font-size:.82rem;font-weight:800;">🛍️ مستلزمات دراسية</span></div>':''}
     ${tl}${cancelBox}${ratingHtml}
+    ${zipSection}
     <div style="background:var(--light-teal);border:1px solid rgba(90,179,196,.2);border-radius:16px;padding:16px;margin-bottom:16px;">
-      ${o.order_type !== 'market' ? `
-      <div class="il" style="color:var(--navy);"><span>الطباعة:</span><b>${o.color==='c'?'ملون':'أسود'} • ${o.side==='1'?'وجه واحد':'وجهين'}</b></div>
-      <div class="il" style="color:var(--navy);margin-top:8px;"><span>📦 التغليف:</span><b>${({none:'كبس فقط',cardboard:'ورق مقوى ونايلون 📦',spiral:'سبايرول 🔩'})[o.packaging||'none']||'كبس فقط'}</b></div>
-      ` : ''}
-      ${o.suggested_items?.length ? `
-      <div style="margin-top:${o.order_type!=='market'?'10px':'0'};padding-top:${o.order_type!=='market'?'10px':'0'};${o.order_type!=='market'?'border-top:1px solid rgba(90,179,196,.3);':''}">
-        <b style="color:var(--navy);font-size:.88rem;display:block;margin-bottom:6px;">🛍️ المستلزمات الدراسية:</b>
-        ${o.suggested_items.map(i=>`<div style="display:flex;justify-content:space-between;font-size:.83rem;padding:4px 0;color:var(--text-muted);">
-          <span>• ${esc(i.name)} ×${i.qty} ${esc(i.unit||'قطعة')}</span>
-          <b style="color:var(--orange);">${(i.price*i.qty).toLocaleString()} د.ع</b>
-        </div>`).join('')}
-      </div>` : ''}
-      <div class="il" style="color:var(--navy);margin-top:8px;border-top:1px solid rgba(90,179,196,.3);padding-top:8px;"><span>المجموع:</span><b style="font-size:1.15rem;color:var(--orange);">${(o.total||0).toLocaleString()} د.ع</b></div>
-      <div class="il" style="color:var(--green);margin-top:8px;"><span>💎 نقاط:</span><b style="background:#dcfce7;padding:3px 10px;border-radius:8px;">${o.loyalty_points_earned||0} نقطة</b></div>
+      ${invoiceRows}
+      <div class="il" style="color:var(--navy);margin-top:10px;border-top:1.5px solid rgba(90,179,196,.4);padding-top:10px;">
+        <span style="font-weight:800;">💰 المجموع الكلي:</span>
+        <b style="font-size:1.2rem;color:var(--orange);">${(o.total||0).toLocaleString()} د.ع</b>
+      </div>
+      <div class="il" style="color:var(--green);margin-top:6px;"><span>💎 نقاط:</span><b style="background:#dcfce7;padding:3px 10px;border-radius:8px;">${o.loyalty_points_earned||0} نقطة</b></div>
     </div>
-    ${o.order_type !== 'market' ? `
-    <h4 style="margin:0 0 10px;color:var(--navy);font-weight:800;">الملفات (${o.files?.length||0})</h4>
+    ${hasPrint ? `
+    <h4 style="margin:0 0 10px;color:var(--navy);font-weight:800;">📂 الملفات (${o.files?.length||0})</h4>
     <div style="background:var(--card);border-radius:14px;padding:8px 14px;border:1px solid var(--border);margin-bottom:14px;">
-      ${o.files?.map(f=>`<div style="padding:10px 0;border-bottom:1px solid var(--border);font-size:.88rem;display:flex;justify-content:space-between;align-items:center;"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:65%;">📄 ${esc(f.name)}</span><span style="color:var(--text-muted);font-size:.83rem;background:var(--input-bg);padding:3px 8px;border-radius:6px;">${f.pages}ص × <b style="color:var(--navy);">${f.copies}</b>ن</span></div>`).join('')||''}
+      ${o.files?.map(f=>`<div style="padding:10px 0;border-bottom:1px solid var(--border);font-size:.88rem;display:flex;justify-content:space-between;align-items:center;"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:65%;">📄 ${esc(f.name)}</span><span style="color:var(--text-muted);font-size:.83rem;background:var(--input-bg);padding:3px 8px;border-radius:6px;">${f.pages}ص × <b style="color:var(--navy);">${f.copies}</b>ن</span></div>`).join('')||'<p style="color:var(--text-muted);font-size:.88rem;text-align:center;padding:8px;">لا توجد ملفات</p>'}
     </div>` : ''}
     ${reorderBtn}`;
 }
-function closeDet() { document.getElementById('det-ov').classList.remove('open'); }
+}
+function closeDet() {
+  const ov = document.getElementById('det-ov');
+  ov.classList.remove('open');
+  setTimeout(() => { ov.style.display = 'none'; }, 300);
+}
 
 // ══ RE-ORDER ═════════════════════════════════════
 async function reOrder(oid) {
@@ -2002,6 +2067,48 @@ async function loadPtsTab() {
   } catch(e) { console.error('Points load error:', e); }
 }
 
+// ══ RESEARCH ORDER ═══════════════════════════════
+let _lastResTime = 0;
+async function sendResearchOrder() {
+  const name    = document.getElementById('res-name')?.value.trim();
+  const phone   = document.getElementById('res-phone')?.value.trim();
+  const subject = document.getElementById('res-subject')?.value.trim();
+  const type    = document.getElementById('res-type')?.value;
+  const pages   = document.getElementById('res-pages')?.value;
+  const deadline= document.getElementById('res-deadline')?.value;
+  const details = document.getElementById('res-details')?.value.trim();
+  const errEl   = document.getElementById('research-err');
+
+  const showRErr = m => { errEl.style.display='block'; errEl.innerText=m; };
+  errEl.style.display = 'none';
+  if (!name || name.length < 3) return showRErr('❌ يرجى إدخال اسمك الكامل');
+  if (!phone || phone.length !== 11 || isNaN(+phone)) return showRErr('❌ رقم الهاتف يجب أن يكون 11 رقمًا');
+  if (!subject) return showRErr('❌ يرجى إدخال موضوع البحث');
+  if (!type) return showRErr('❌ يرجى اختيار نوع الطلب');
+  if (Date.now() - _lastResTime < 30000) return showRErr('❌ انتظر قليلاً قبل إرسال طلب جديد');
+
+  const btn = document.getElementById('res-btn');
+  btn.disabled = true; btn.innerText = 'جاري الإرسال...';
+  try {
+    await tgMsg(ADMIN,
+      `📝 طلب ${type} جديد!\n👤 ${name}\n📞 ${phone}\n📖 الموضوع: ${subject}\n📄 الصفحات: ${pages||'غير محدد'}\n⏰ الموعد: ${deadline||'غير محدد'}\n📋 التفاصيل: ${details||'—'}`
+    );
+    if (tgU?.id) await tgMsg(String(tgU.id),
+      `✅ تم استلام طلب بحثك!\n📖 ${subject}\nسيتواصل معك فريقنا قريباً 🔔`
+    );
+    _lastResTime = Date.now();
+    showToast('✅ تم إرسال طلب البحث بنجاح!');
+    ['res-name','res-phone','res-subject','res-pages','res-details'].forEach(id => {
+      const el = document.getElementById(id); if(el) el.value='';
+    });
+    document.getElementById('res-type').value='';
+    document.getElementById('res-deadline').value='';
+  } catch(e) {
+    showRErr('❌ حدث خطأ. يرجى المحاولة مجدداً.');
+  }
+  btn.disabled = false; btn.innerText = '📨 إرسال طلب البحث';
+}
+
 // ══ HELPERS ══════════════════════════════════════
 function showErr(m) { const e=document.getElementById('errbox'); e.innerText=m; e.style.display='block'; }
 function hideErr()  { document.getElementById('errbox').style.display='none'; }
@@ -2022,16 +2129,17 @@ function renderUnifiedCart() {
 
   itemsBox.innerHTML = cart.map(item => {
     const hasDisc = item.original_price && item.original_price !== item.price;
+    const unitLabel = esc(item.unit || 'قطعة');
     return `<div class="ucart-item">
       <div style="flex:1;min-width:0;">
         <b style="font-size:.88rem;color:var(--navy);">${esc(item.name)}</b>
-        <div style="font-size:.78rem;margin-top:2px;">
-          ${hasDisc ? `<span style="text-decoration:line-through;color:#94a3b8;font-size:.73rem;">${item.original_price.toLocaleString()}</span> ` : ''}
-          <span style="color:var(--orange);font-weight:800;">${item.price.toLocaleString()} د.ع</span>
+        <div style="font-size:.78rem;margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          ${hasDisc ? `<span style="text-decoration:line-through;color:#94a3b8;font-size:.73rem;">${item.original_price.toLocaleString()}</span>` : ''}
+          <span style="color:var(--orange);font-weight:800;">${item.price.toLocaleString()} د.ع / ${unitLabel}</span>
           ${item.discount_percent ? `<span class="disc-badge">-${item.discount_percent}%</span>` : ''}
           ${item.gift_name ? `<span class="gift-badge">🎁 ${esc(item.gift_name)}</span>` : ''}
         </div>
-        <div style="font-size:.73rem;color:var(--text-muted);">${item.qty} ${esc(item.unit)}</div>
+        <div style="font-size:.73rem;color:var(--teal);font-weight:700;margin-top:2px;">الكمية: ${item.qty} ${unitLabel}</div>
       </div>
       <div class="ucart-qty-ctrl">
         <button class="ucqbtn" onclick="changeCartQtyDirect('${esc(item.id)}',-1)">−</button>
@@ -2042,9 +2150,10 @@ function renderUnifiedCart() {
     </div>`;
   }).join('');
 
-  const subtotal = cart.reduce((s,c) => s + c.price * c.qty, 0);
+  // إظهار عدد الأيتمات فقط — بدون السعر النهائي
+  const totalQty = cart.reduce((s,c) => s + c.qty, 0);
   const subEl = document.getElementById('ucart-subtotal');
-  if (subEl) subEl.innerText = subtotal.toLocaleString() + ' د.ع';
+  if (subEl) subEl.innerText = `${cart.length} صنف · ${totalQty} قطعة`;
 }
 
 // ══ MARKET JS ════════════════════════════════════
@@ -2102,15 +2211,24 @@ function filterMktProducts() {
   grid.innerHTML = list.map(p => {
     const inCart = cart.find(c => c.id === p.id);
     const hasStock = p.stock > 0;
+    const now = new Date();
+    const discActive = p.discount_percent > 0 && (!p.discount_expires_at || new Date(p.discount_expires_at) > now);
+    const effPrice = discActive ? Math.round(p.price*(1-p.discount_percent/100)) : p.price;
     return `<div class="mkt-card" onclick="openProductDetail('${p.id}')">
       <div class="mkt-img" style="position:relative;">
         ${p.image_url ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" onerror="this.parentElement.innerHTML='${catIcons[p.category]||'📦'}'">` : catIcons[p.category]||'📦'}
-        ${p.is_suggested ? `<span style="position:absolute;top:6px;right:6px;background:var(--orange);color:#fff;border-radius:8px;font-size:.62rem;font-weight:800;padding:2px 7px;box-shadow:0 2px 6px rgba(0,0,0,.2);">⭐ مقترح</span>` : ''}
+        ${p.is_suggested ? `<span style="position:absolute;top:6px;right:6px;background:var(--orange);color:#fff;border-radius:8px;font-size:.62rem;font-weight:800;padding:2px 7px;">⭐ مقترح</span>` : ''}
+        ${discActive ? `<span style="position:absolute;top:6px;left:6px;background:var(--green);color:#fff;border-radius:8px;font-size:.62rem;font-weight:800;padding:2px 7px;">-${p.discount_percent}%</span>` : ''}
       </div>
       <b style="font-size:.92rem;color:var(--navy);display:block;margin-bottom:4px;line-height:1.4;">${esc(p.name)}</b>
-      ${p.description ? `<p style="font-size:.75rem;color:var(--text-muted);margin:0 0 6px;line-height:1.5;">${esc(p.description.substring(0,50))}${p.description.length>50?'...':''}</p>` : ''}
-      <div class="mkt-price" style="margin-bottom:4px;">${(p.price||0).toLocaleString()} د.ع<span style="font-size:.72rem;color:var(--text-muted);font-weight:500;">/${esc(p.unit||'قطعة')}</span></div>
-      <div class="${hasStock?'mkt-stock-ok':'mkt-stock-low'}" style="margin-bottom:6px;">${hasStock?`✅ متوفر (${p.stock} ${esc(p.unit||'قطعة')})`:'❌ نفد المخزون'}</div>
+      ${p.description ? `<p style="font-size:.75rem;color:var(--text-muted);margin:0 0 4px;line-height:1.5;">${esc(p.description.substring(0,45))}${p.description.length>45?'...':''}</p>` : ''}
+      <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;flex-wrap:wrap;">
+        ${discActive ? `<span style="text-decoration:line-through;color:#94a3b8;font-size:.72rem;">${p.price.toLocaleString()}</span>` : ''}
+        <b class="mkt-price">${effPrice.toLocaleString()} د.ع</b>
+        <span style="font-size:.7rem;color:var(--text-muted);">/${esc(p.unit||'قطعة')}</span>
+      </div>
+      ${p.gift_name ? `<div style="margin-bottom:5px;"><span class="gift-badge" style="font-size:.68rem;">🎁 ${esc(p.gift_name)}</span></div>` : ''}
+      <div class="${hasStock?'mkt-stock-ok':'mkt-stock-low'}" style="margin-bottom:6px;font-size:.7rem;">${hasStock?`✅ متوفر`:'❌ نفد'}</div>
       <button class="add-cart-btn ${inCart?'in-cart':''}" onclick="event.stopPropagation();addToCart('${p.id}')" ${!hasStock?'disabled':''}>
         ${inCart ? `✅ في السلة (${inCart.qty})` : hasStock ? '🛒 أضف للسلة' : '❌ نفد'}
       </button>
@@ -2129,35 +2247,63 @@ function openProductDetail(id) {
   const hasStock = p.stock > 0;
   const inCart = cart.find(c => c.id === id);
 
-  // Similar products (same category, exclude current)
-  const similar = _mktProducts.filter(x => x.id !== id && x.category === p.category && x.active && x.stock > 0).slice(0,4);
-
   document.getElementById('pdp-title').innerText = p.name;
   const badge = document.getElementById('pdp-cart-badge');
   if (inCart) { badge.style.display='inline'; badge.innerText=`في السلة ×${inCart.qty}`; }
   else badge.style.display='none';
 
-  const imgHtml = p.image_url
-    ? `<img src="${esc(p.image_url)}" class="pdp-img" onerror="this.style.display='none'">`
-    : `<div style="width:100%;height:200px;background:var(--light-teal);display:flex;align-items:center;justify-content:center;font-size:5rem;">${catIcons[p.category]||'📦'}</div>`;
+  // بناء قسم الصور (رئيسية + إضافية)
+  const extraImgs = Array.isArray(p.extra_images) ? p.extra_images : [];
+  const allImgs = [p.image_url, ...extraImgs].filter(Boolean);
+
+  let imgHtml = '';
+  if (allImgs.length > 1) {
+    // معرض صور
+    imgHtml = `<div id="pdp-gallery" style="position:relative;width:100%;overflow:hidden;">
+      <div id="pdp-slides" style="display:flex;transition:transform .3s;width:${allImgs.length*100}%;">
+        ${allImgs.map(url=>`<div style="width:${100/allImgs.length}%;flex-shrink:0;"><img src="${esc(url)}" style="width:100%;height:240px;object-fit:cover;" onerror="this.style.display='none'"></div>`).join('')}
+      </div>
+      <div style="display:flex;justify-content:center;gap:6px;padding:8px 0;background:var(--bg);">
+        ${allImgs.map((_,i)=>`<button onclick="slidePdp(${i})" id="pdp-dot-${i}" style="width:${i===0?'20':'8'}px;height:8px;border-radius:4px;border:none;background:${i===0?'var(--navy)':'#e2e8f0'};cursor:pointer;transition:all .25s;padding:0;"></button>`).join('')}
+      </div>
+    </div>`;
+  } else if (allImgs.length === 1) {
+    imgHtml = `<img src="${esc(allImgs[0])}" class="pdp-img" onerror="this.style.display='none'">`;
+  } else {
+    imgHtml = `<div style="width:100%;height:200px;background:var(--light-teal);display:flex;align-items:center;justify-content:center;font-size:5rem;">${catIcons[p.category]||'📦'}</div>`;
+  }
+
+  const similar = _mktProducts.filter(x => x.id !== id && x.category === p.category && x.active && x.stock > 0).slice(0,4);
 
   document.getElementById('pdp-content').innerHTML = `
     ${imgHtml}
     <div class="pdp-body">
-      <h2 style="margin:0 0 6px;color:var(--navy);font-size:1.2rem;">${esc(p.name)}</h2>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
-        ${discActive ? `<span style="text-decoration:line-through;color:#94a3b8;font-size:.9rem;">${p.price.toLocaleString()} د.ع</span>
+      <h2 style="margin:0 0 8px;color:var(--navy);font-size:1.2rem;font-weight:800;">${esc(p.name)}</h2>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+        ${discActive ? `
+          <span style="text-decoration:line-through;color:#94a3b8;font-size:.9rem;">${p.price.toLocaleString()} د.ع</span>
           <b style="color:var(--green);font-size:1.3rem;">${effectivePrice.toLocaleString()} د.ع</b>
-          <span class="disc-badge">خصم ${p.discount_percent}%</span>` :
-          `<b style="color:var(--orange);font-size:1.3rem;">${(p.price||0).toLocaleString()} د.ع</b>`}
+          <span class="disc-badge" style="font-size:.85rem;padding:4px 12px;">خصم ${p.discount_percent}%</span>
+          ${p.discount_expires_at ? `<span style="font-size:.72rem;color:#94a3b8;">ينتهي ${new Date(p.discount_expires_at).toLocaleDateString('ar-IQ')}</span>` : ''}
+        ` : `<b style="color:var(--orange);font-size:1.3rem;">${(p.price||0).toLocaleString()} د.ع</b>`}
         <span style="color:var(--text-muted);font-size:.85rem;">/ ${esc(p.unit||'قطعة')}</span>
       </div>
-      ${p.gift_name ? `<div style="margin-bottom:10px;"><span class="gift-badge" style="font-size:.85rem;padding:5px 12px;">🎁 هدية مجانية: ${esc(p.gift_name)} ×${p.gift_qty||1}</span></div>` : ''}
+
+      ${p.gift_name ? `
+      <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:14px;padding:12px;margin-bottom:12px;display:flex;align-items:center;gap:10px;">
+        ${p.gift_image ? `<img src="${esc(p.gift_image)}" style="width:52px;height:52px;border-radius:10px;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">` : '<span style="font-size:1.8rem;flex-shrink:0;">🎁</span>'}
+        <div>
+          <b style="color:#b45309;font-size:.88rem;display:block;">هدية مجانية مع كل طلب!</b>
+          <span style="color:#d97706;font-size:.85rem;font-weight:700;">${esc(p.gift_name)} ×${p.gift_qty||1}</span>
+        </div>
+      </div>` : ''}
+
       <div style="margin-bottom:14px;">
         <span class="${hasStock?'ok-badge':'low-badge'}" style="font-size:.82rem;padding:4px 12px;">
           ${hasStock ? `✅ متوفر — ${p.stock} ${esc(p.unit||'قطعة')}` : '❌ نفد المخزون'}
         </span>
       </div>
+
       ${p.description ? `<div style="background:var(--input-bg);border-radius:14px;padding:14px;margin-bottom:16px;">
         <b style="color:var(--navy);font-size:.88rem;display:block;margin-bottom:6px;">📝 الوصف</b>
         <p style="margin:0;color:var(--text-muted);font-size:.9rem;line-height:1.75;">${esc(p.description)}</p>
@@ -2166,9 +2312,9 @@ function openProductDetail(id) {
       ${inCart ? `<div style="background:var(--light-teal);border-radius:14px;padding:14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
         <b style="color:var(--navy);">في السلة:</b>
         <div class="ucart-qty-ctrl">
-          <button class="ucqbtn" onclick="changeCartQtyDirect('${esc(p.id)}',-1);refreshPdpCart('${esc(p.id)}')">−</button>
+          <button class="ucqbtn" onclick="changeCartQtyDirect('${esc(p.id)}',-1);openProductDetail('${esc(p.id)}')">−</button>
           <b style="color:var(--orange);font-size:1.1rem;">${inCart.qty}</b>
-          <button class="ucqbtn" onclick="changeCartQtyDirect('${esc(p.id)}',1);refreshPdpCart('${esc(p.id)}')">+</button>
+          <button class="ucqbtn" onclick="changeCartQtyDirect('${esc(p.id)}',1);openProductDetail('${esc(p.id)}')">+</button>
         </div>
       </div>` : ''}
 
@@ -2201,9 +2347,16 @@ function openProductDetail(id) {
   document.getElementById('product-detail-page').classList.add('open');
 }
 
-function refreshPdpCart(pid) {
-  // Refresh the detail page to show updated qty
-  openProductDetail(pid);
+// تمرير صور معرض صفحة المنتج
+let _pdpSlide = 0;
+function slidePdp(idx) {
+  _pdpSlide = idx;
+  const slides = document.getElementById('pdp-slides');
+  if (slides) slides.style.transform = `translateX(${idx * -100 / slides.children.length * slides.children.length}%)`;
+  document.querySelectorAll('[id^="pdp-dot-"]').forEach((d,i) => {
+    d.style.width = i===idx ? '20px' : '8px';
+    d.style.background = i===idx ? 'var(--navy)' : '#e2e8f0';
+  });
 }
 
 function closeProductDetail() {
@@ -2434,6 +2587,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 
