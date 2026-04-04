@@ -1696,48 +1696,73 @@ function _buildSuccessHTML(currentStatus) {
   }
 
   return `
-    <div style="text-align:center;padding:40px 20px;animation:fadeInUp .5s ease;">
-      <div style="font-size:4.5rem;margin-bottom:8px;">${hdr.icon}</div>
-      <h2 style="color:var(--navy);margin:0 0 4px;font-weight:800;font-size:1.3rem;">${hdr.title}</h2>
-      <p style="color:var(--text-muted);margin:0 0 6px;font-size:.92rem;">${hdr.sub}</p>
-      <p style="color:var(--orange);margin:0 0 20px;font-weight:800;font-size:1.05rem;">طلب #${esc(_successOid)}</p>
+    <div style="text-align:center;padding:30px 16px 20px;animation:fadeInUp .5s ease;">
 
-      ${isPending ? `<p style="font-size:.82rem;color:var(--teal);font-weight:600;margin:0 0 16px;background:rgba(90,179,196,.1);padding:8px 14px;border-radius:10px;">📱 ستصلك إشعارات على تيليجرام عند كل تحديث</p>` : ''}
-      ${_successETA && isPending ? `<div style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border-radius:14px;padding:12px 18px;margin-bottom:14px;font-size:.95rem;font-weight:800;text-align:center;box-shadow:0 4px 12px rgba(245,158,11,.25);">⏱️ الوقت المتوقع للتوصيل: ${esc(_successETA)}</div>` : ''}
-
-      ${isCancelled ? `<div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:16px;padding:18px;margin-bottom:16px;text-align:right;">
-        ${_successCancelReason ? `<div style="background:#fff;border:1px solid #fecaca;border-radius:12px;padding:12px;margin-bottom:14px;">
-          <p style="margin:0 0 4px;font-size:.82rem;color:#94a3b8;font-weight:700;">📋 سبب الإلغاء:</p>
-          <p style="margin:0;font-size:.95rem;color:#991b1b;font-weight:800;line-height:1.6;">${esc(_successCancelReason)}</p>
-        </div>` : ''}
-        <p style="margin:0 0 10px;font-size:.88rem;color:#78350f;font-weight:700;text-align:center;">📞 للاستفسار تواصل معنا:</p>
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          <a href="tel:07752564099" style="display:block;background:#ef4444;color:#fff;text-decoration:none;padding:10px;border-radius:12px;font-weight:700;font-size:.9rem;text-align:center;">📞 اتصل بنا (07752564099)</a>
-          <div style="display:flex;gap:8px;">
-            <a href="https://wa.me/9647752564099" target="_blank" style="flex:1;background:#25D366;color:#fff;text-decoration:none;padding:10px;border-radius:12px;font-weight:700;font-size:.88rem;display:flex;align-items:center;justify-content:center;gap:5px;">💬 واتساب</a>
-            <a href="https://t.me/+9647752564099" target="_blank" style="flex:1;background:#0088cc;color:#fff;text-decoration:none;padding:10px;border-radius:12px;font-weight:700;font-size:.88rem;display:flex;align-items:center;justify-content:center;gap:5px;">✈️ تيليجرام</a>
-          </div>
+      ${isPending ? `
+        <!-- ✨ شاشة الاحتفال عند الإرسال الناجح -->
+        <div style="position:relative;margin-bottom:6px;">
+          <div style="font-size:5rem;animation:pop .6s cubic-bezier(.175,.885,.32,1.2);">${hdr.icon}</div>
+          <div id="confetti-wrap" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:50%;"></div>
         </div>
-      </div>` : ''}
+        <h2 style="color:var(--navy);margin:0 0 4px;font-weight:800;font-size:1.35rem;">${hdr.title}</h2>
+        <p style="color:var(--text-muted);margin:0 0 10px;font-size:.92rem;">${hdr.sub}</p>
 
-      <div id="suc-banner" style="display:none;"></div>
+        <!-- رقم الطلب بارز -->
+        <div style="background:linear-gradient(135deg,var(--navy),#1e40af);color:#fff;border-radius:18px;padding:16px 20px;margin:0 0 14px;box-shadow:0 6px 20px rgba(13,59,102,.25);">
+          <p style="margin:0 0 4px;font-size:.8rem;opacity:.8;">رقم طلبك</p>
+          <p style="margin:0;font-size:1.5rem;font-weight:800;letter-spacing:1px;">#${esc(_successOid)}</p>
+          <p style="margin:6px 0 0;font-size:.78rem;opacity:.75;">📱 ستصلك إشعارات على تيليجرام عند كل تحديث</p>
+        </div>
 
-      <div id="suc-steps" style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:16px;text-align:right;">${stepsHTML}</div>
+        <!-- وقت التوصيل المتوقع -->
+        ${_successETA ? `<div style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border-radius:14px;padding:12px 18px;margin-bottom:14px;font-size:.95rem;font-weight:800;box-shadow:0 4px 12px rgba(245,158,11,.25);">⏱️ الوقت المتوقع: ${esc(_successETA)}</div>` : ''}
 
-      ${ptsHtml}
+        <!-- تتبع المراحل -->
+        <div id="suc-steps" style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:14px;text-align:right;">${stepsHTML}</div>
 
-      <div id="suc-thx" style="display:none;"></div>
+        ${ptsHtml}
 
-      ${isDelivered ? `
-        <button onclick="location.reload()" class="bmain btn-action" style="margin-bottom:10px;">🖨️ اطلب مرة أخرى</button>
-        <button onclick="goTab('orders')" class="bmain" style="background:var(--card);color:var(--text-muted);border:1.5px solid var(--border);">📋 طلباتي</button>
-      ` : isCancelled ? `
-        <button onclick="location.reload()" class="bmain btn-action" style="margin-bottom:10px;">🔄 إنشاء طلب جديد</button>
-        <button onclick="goTab('orders')" class="bmain" style="background:var(--card);color:var(--text-muted);border:1.5px solid var(--border);">📋 طلباتي</button>
-      ` : `
+        <!-- الأزرار -->
         <button onclick="goTab('orders')" class="bmain btn-action" style="margin-bottom:10px;">📋 تتبع طلبي</button>
         <button onclick="location.reload()" class="bmain" style="background:var(--card);color:var(--text-muted);border:1.5px solid var(--border);">🆕 طلب جديد</button>
+
+      ` : isDelivered ? `
+        <!-- 🎉 شاشة التسليم الناجح -->
+        <div style="font-size:5rem;margin-bottom:8px;animation:pop .6s cubic-bezier(.175,.885,.32,1.2);">🎉</div>
+        <h2 style="color:var(--navy);margin:0 0 4px;font-weight:800;font-size:1.35rem;">${hdr.title}</h2>
+        <p style="color:var(--text-muted);margin:0 0 14px;font-size:.92rem;">${hdr.sub}</p>
+        <p style="color:var(--orange);margin:0 0 16px;font-weight:800;font-size:1rem;">طلب #${esc(_successOid)}</p>
+        <div id="suc-steps" style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:14px;text-align:right;">${stepsHTML}</div>
+        ${ptsHtml}
+        <button onclick="location.reload()" class="bmain btn-action" style="margin-bottom:10px;">🖨️ اطلب مرة أخرى</button>
+        <button onclick="goTab('orders')" class="bmain" style="background:var(--card);color:var(--text-muted);border:1.5px solid var(--border);">📋 طلباتي</button>
+
+      ` : isCancelled ? `
+        <!-- ❌ شاشة الإلغاء -->
+        <div style="font-size:4.5rem;margin-bottom:8px;">❌</div>
+        <h2 style="color:var(--navy);margin:0 0 4px;font-weight:800;font-size:1.3rem;">${hdr.title}</h2>
+        <p style="color:var(--text-muted);margin:0 0 16px;font-size:.92rem;">${hdr.sub}</p>
+        <p style="color:var(--orange);margin:0 0 16px;font-weight:800;">طلب #${esc(_successOid)}</p>
+        ${isCancelled ? `<div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:16px;padding:18px;margin-bottom:16px;text-align:right;">
+          ${_successCancelReason ? `<div style="background:#fff5f5;border:1px solid #fecaca;border-radius:14px;padding:14px;margin-bottom:14px;">
+            <p style="margin:0 0 6px;font-size:.82rem;color:#991b1b;font-weight:800;">📋 سبب الإلغاء:</p>
+            <p style="margin:0;font-size:.95rem;color:#b91c1c;font-weight:700;line-height:1.7;">${esc(_successCancelReason)}</p>
+          </div>` : ''}
+          <p style="margin:0 0 10px;font-size:.88rem;color:#78350f;font-weight:700;text-align:center;">📞 للاستفسار تواصل معنا:</p>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <a href="tel:07752564099" style="display:block;background:#ef4444;color:#fff;text-decoration:none;padding:10px;border-radius:12px;font-weight:700;font-size:.9rem;text-align:center;">📞 اتصل بنا</a>
+            <div style="display:flex;gap:8px;">
+              <a href="https://wa.me/9647752564099" target="_blank" style="flex:1;background:#25D366;color:#fff;text-decoration:none;padding:10px;border-radius:12px;font-weight:700;font-size:.88rem;display:flex;align-items:center;justify-content:center;gap:5px;">💬 واتساب</a>
+              <a href="https://t.me/+9647752564099" target="_blank" style="flex:1;background:#0088cc;color:#fff;text-decoration:none;padding:10px;border-radius:12px;font-weight:700;font-size:.88rem;display:flex;align-items:center;justify-content:center;gap:5px;">✈️ تيليجرام</a>
+            </div>
+          </div>
+        </div>` : ''}
+        <button onclick="location.reload()" class="bmain btn-action" style="margin-bottom:10px;">🔄 إنشاء طلب جديد</button>
+        <button onclick="goTab('orders')" class="bmain" style="background:var(--card);color:var(--text-muted);border:1.5px solid var(--border);">📋 طلباتي</button>
       `}
+
+      <div id="suc-banner" style="display:none;"></div>
+      <div id="suc-thx" style="display:none;"></div>
     </div>`;
 }
 
@@ -2550,7 +2575,19 @@ function getCartLoc() {
 }
  
 // ══ START ════════════════════════════════════════
+// 📡 مؤشر الاتصال بالإنترنت
+window.addEventListener('offline', () => showToast('❌ انقطع الاتصال بالإنترنت — بعض الميزات لن تعمل'));
+window.addEventListener('online',  () => showToast('✅ عاد الاتصال بالإنترنت'));
 init();
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
