@@ -1439,7 +1439,7 @@ async function sendOrder() {
     const pu   = useP ? pendingR.pts : 0;
     const isExpress = document.getElementById('expressTog')?.checked;
     const hasPrint = files.length > 0;
-    // hasSug already used above
+    const hasSug  = Object.keys(_sugCart).length > 0;
     const hasCart  = cart.length > 0;
     const allCartItems = [
       ...getSugCartItems(),
@@ -2434,6 +2434,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 
