@@ -1,0 +1,563 @@
+/**
+ * customer.css — ستايلات واجهة الزبون (index.html)
+ * يتطلب: variables.css + base.css + components.css
+ */
+
+/* ═══════════════════════════════════════
+   الشريط السفلي (Bottom Nav)
+═══════════════════════════════════════ */
+body { padding-bottom: 80px; }
+
+.bottom-nav {
+  position:    fixed;
+  bottom:      0;
+  left:        0;
+  right:       0;
+  background:  rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top:  1px solid var(--border);
+  display:     flex;
+  z-index:     200;
+  box-shadow:  0 -4px 20px var(--shadow);
+  padding:     5px 5px 14px;
+  transition:  background var(--transition-base);
+}
+
+[data-theme="dark"] .bottom-nav {
+  background: rgba(30, 41, 59, 0.97);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.nav-btn {
+  flex:        1;
+  padding:     10px 4px;
+  border:      none;
+  background:  none;
+  cursor:      pointer;
+  font-size:   var(--font-size-xs);
+  font-weight: 700;
+  font-family: var(--font-main);
+  color:       var(--text-muted);
+  display:     flex;
+  flex-direction: column;
+  align-items: center;
+  gap:         4px;
+  position:    relative;
+  transition:  color var(--transition-base);
+}
+.nav-btn .nav-icon {
+  font-size:   1.45rem;
+  transition:  transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.nav-btn.active              { color: var(--teal); }
+.nav-btn.active .nav-icon    { transform: translateY(-4px) scale(1.1); }
+
+.nav-badge {
+  position:      absolute;
+  top:           4px;
+  background:    var(--orange);
+  color:         #fff;
+  border-radius: var(--radius-full);
+  font-size:     0.62rem;
+  font-weight:   800;
+  padding:       2px 6px;
+  min-width:     18px;
+  text-align:    center;
+  margin-right:  -14px;
+}
+
+/* ═══════════════════════════════════════
+   التبويبات (.tab)
+═══════════════════════════════════════ */
+.tab { display: none; padding: 15px; }
+.tab.active {
+  display:   block;
+  animation: fadeInUp var(--transition-slow) ease;
+}
+
+/* ═══════════════════════════════════════
+   ✅ نظام الخطوات (Stepper)
+═══════════════════════════════════════ */
+.stepper-header {
+  display:       flex;
+  align-items:   center;
+  margin-bottom: 20px;
+  padding:       0 4px;
+  position:      relative;
+}
+
+/* الخط الرابط بين الخطوات */
+.stepper-header::before {
+  content:    '';
+  position:   absolute;
+  top:        18px;
+  right:      28px;
+  left:       28px;
+  height:     2px;
+  background: var(--border-soft);
+  z-index:    0;
+}
+
+.step-item {
+  flex:            1;
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  gap:             6px;
+  position:        relative;
+  z-index:         1;
+}
+
+.step-circle {
+  width:           36px;
+  height:          36px;
+  border-radius:   50%;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  font-weight:     800;
+  font-size:       0.88rem;
+  border:          2px solid var(--border-soft);
+  background:      var(--card);
+  color:           var(--text-muted);
+  transition:
+    background    var(--transition-base),
+    border-color  var(--transition-base),
+    color         var(--transition-base),
+    transform     var(--transition-fast);
+}
+
+.step-label {
+  font-size:   0.68rem;
+  font-weight: 700;
+  color:       var(--text-muted);
+  text-align:  center;
+  white-space: nowrap;
+  transition:  color var(--transition-base);
+}
+
+/* حالة: مكتمل */
+.step-item.done .step-circle {
+  background:   var(--green);
+  border-color: var(--green);
+  color:        #fff;
+}
+.step-item.done .step-label { color: var(--green); }
+
+/* حالة: نشط */
+.step-item.active .step-circle {
+  background:   var(--navy);
+  border-color: var(--navy);
+  color:        #fff;
+  transform:    scale(1.1);
+  box-shadow:   0 4px 12px rgba(13, 59, 102, 0.3);
+}
+.step-item.active .step-label {
+  color:       var(--navy);
+  font-weight: 800;
+}
+
+/* حالة: مقفل */
+.step-item.locked .step-circle {
+  opacity: 0.45;
+  cursor:  not-allowed;
+}
+
+/* الخطوة */
+.step-panel {
+  display: none;
+  animation: fadeInUp var(--transition-slow) ease;
+}
+.step-panel.active { display: block; }
+
+/* أزرار التنقل بين الخطوات */
+.stepper-nav {
+  display:    flex;
+  gap:        10px;
+  margin-top: 20px;
+}
+.btn-prev {
+  flex:         1;
+  padding:      13px;
+  border:       1.5px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  background:   var(--card);
+  color:        var(--text-muted);
+  font-weight:  800;
+  font-family:  var(--font-main);
+  cursor:       pointer;
+  font-size:    var(--font-size-base);
+  transition:   background var(--transition-fast);
+}
+.btn-prev:hover { background: var(--input-bg); }
+
+.btn-next {
+  flex:         2;
+  background:   var(--navy);
+  color:        #fff;
+}
+
+/* ═══════════════════════════════════════
+   📁 بطاقات الملفات
+═══════════════════════════════════════ */
+.file-card {
+  display:       flex;
+  align-items:   stretch;
+  gap:           12px;
+  background:    var(--input-bg);
+  border:        1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding:       12px;
+  margin-bottom: 10px;
+  animation:     popIn 0.22s ease;
+  overflow:      hidden;
+}
+
+.file-preview {
+  width:         70px;
+  min-width:     70px;
+  height:        90px;
+  border-radius: var(--radius-sm);
+  overflow:      hidden;
+  flex-shrink:   0;
+  position:      relative;
+  background:    #e2e8f0;
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+}
+.file-preview canvas,
+.file-preview img {
+  width:  100%;
+  height: 100%;
+  object-fit: cover;
+  transition: filter var(--transition-base);
+}
+.file-preview.bw canvas,
+.file-preview.bw img { filter: grayscale(1) brightness(0.95); }
+
+.file-preview-badge {
+  position:      absolute;
+  bottom:        3px;
+  right:         3px;
+  background:    rgba(0, 0, 0, 0.6);
+  color:         #fff;
+  font-size:     0.6rem;
+  padding:       1px 5px;
+  border-radius: 5px;
+  font-weight:   800;
+}
+
+.file-info {
+  flex:        1;
+  min-width:   0;
+  display:     flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.file-name {
+  font-weight:   800;
+  font-size:     0.88rem;
+  color:         var(--navy);
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+}
+[data-theme="dark"] .file-name { color: var(--teal); }
+
+.file-meta  { font-size: 0.75rem; color: var(--text-muted); margin-top: 3px; }
+
+.file-badge {
+  font-size:     0.68rem;
+  font-weight:   700;
+  padding:       2px 7px;
+  border-radius: 7px;
+  background:    var(--light-teal);
+  color:         var(--teal);
+  display:       inline-block;
+  margin-top:    4px;
+}
+
+.file-del-btn {
+  background:    #fef2f2;
+  border:        none;
+  color:         var(--red);
+  font-size:     0.78rem;
+  font-weight:   700;
+  padding:       5px 9px;
+  border-radius: var(--radius-sm);
+  cursor:        pointer;
+  font-family:   var(--font-main);
+}
+
+/* ═══════════════════════════════════════
+   📤 منطقة الرفع
+═══════════════════════════════════════ */
+.upload-zone {
+  border:        2px dashed var(--teal);
+  background:    var(--light-teal);
+  padding:       28px 20px;
+  text-align:    center;
+  color:         var(--navy);
+  cursor:        pointer;
+  border-radius: var(--radius-xl);
+  transition:    all var(--transition-base);
+}
+.upload-zone:active     { transform: scale(0.98); }
+.upload-zone:hover      { background: rgba(90, 179, 196, 0.15); }
+.upload-zone-icon       { font-size: 2.4rem; margin-bottom: 8px; display: block; }
+
+[data-theme="dark"] .upload-zone {
+  color:      var(--teal);
+  background: rgba(90, 179, 196, 0.1);
+}
+
+/* ═══════════════════════════════════════
+   📦 خيارات الطباعة
+═══════════════════════════════════════ */
+.option-group {
+  display: flex;
+  gap:     8px;
+}
+.option-btn {
+  flex:          1;
+  padding:       10px 8px;
+  border:        1.5px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  background:    var(--card);
+  color:         var(--text-muted);
+  font-weight:   700;
+  font-family:   var(--font-main);
+  cursor:        pointer;
+  font-size:     var(--font-size-sm);
+  text-align:    center;
+  transition:    all var(--transition-fast);
+}
+.option-btn.active {
+  background:   var(--navy);
+  color:        #fff;
+  border-color: var(--navy);
+}
+[data-theme="dark"] .option-btn { background: var(--card); border-color: var(--border-soft); color: var(--text-muted); }
+[data-theme="dark"] .option-btn.active { background: #2563eb; border-color: #2563eb; color: #fff; }
+
+/* ═══════════════════════════════════════
+   🛒 سلة المشتريات (Cart)
+═══════════════════════════════════════ */
+
+/* الزر العائم */
+#cart-fab {
+  position:      fixed;
+  bottom:        90px;
+  left:          16px;
+  background:    var(--orange);
+  color:         #fff;
+  width:         56px;
+  height:        56px;
+  border-radius: 50%;
+  border:        none;
+  display:       none;
+  align-items:   center;
+  justify-content: center;
+  font-size:     1.5rem;
+  cursor:        pointer;
+  box-shadow:    0 6px 18px rgba(232, 107, 36, 0.5);
+  z-index:       150;
+  animation:     pulseGlow 2s infinite;
+}
+
+.cart-item {
+  display:        flex;
+  justify-content: space-between;
+  align-items:    center;
+  padding:        12px 0;
+  border-bottom:  1px solid var(--border);
+}
+.cart-item:last-child { border-bottom: none; }
+
+.cart-total-box {
+  background:    linear-gradient(135deg, var(--navy), #1e40af);
+  color:         #fff;
+  border-radius: var(--radius-lg);
+  padding:       16px;
+  margin:        14px 0;
+}
+
+/* ═══════════════════════════════════════
+   🏪 المتجر — بطاقات المنتجات
+═══════════════════════════════════════ */
+.product-card {
+  background:    var(--card);
+  border-radius: var(--radius-lg);
+  padding:       16px;
+  border:        1px solid var(--border);
+  box-shadow:    0 3px 10px var(--shadow);
+  transition:    transform var(--transition-fast), box-shadow var(--transition-fast);
+  cursor:        pointer;
+}
+.product-card:active { transform: scale(0.97); }
+.product-card:hover  { transform: translateY(-3px); box-shadow: 0 8px 20px var(--shadow); }
+
+.product-img {
+  width:           100%;
+  height:          140px;
+  border-radius:   var(--radius-md);
+  object-fit:      cover;
+  background:      var(--input-bg);
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  font-size:       3rem;
+  margin-bottom:   10px;
+  overflow:        hidden;
+}
+
+.product-price { color: var(--orange); font-weight: 800; font-size: 1.05rem; }
+
+.btn-add-cart {
+  width:         100%;
+  padding:       11px;
+  border:        none;
+  border-radius: var(--radius-md);
+  background:    var(--navy);
+  color:         #fff;
+  font-weight:   800;
+  font-family:   var(--font-main);
+  cursor:        pointer;
+  margin-top:    10px;
+  font-size:     var(--font-size-md);
+  transition:    all var(--transition-fast);
+}
+.btn-add-cart:active   { transform: scale(0.97); }
+.btn-add-cart:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
+.btn-add-cart.in-cart  { background: var(--green); }
+
+[data-theme="dark"] .btn-add-cart       { background: var(--teal); }
+[data-theme="dark"] .btn-add-cart.in-cart { background: var(--green); }
+
+/* ═══════════════════════════════════════
+   📍 عنصر العنوان
+═══════════════════════════════════════ */
+.addr-wrap { position: relative; }
+
+.addr-suggestions {
+  position:      absolute;
+  top:           calc(100% - 8px);
+  right:         0;
+  left:          0;
+  background:    var(--card);
+  border:        1.5px solid var(--teal);
+  border-top:    none;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  z-index:       20;
+  box-shadow:    0 6px 16px var(--shadow);
+  overflow:      hidden;
+}
+
+.addr-suggestion-item {
+  padding:    11px 14px;
+  cursor:     pointer;
+  font-size:  var(--font-size-sm);
+  font-weight: 600;
+  transition: background var(--transition-fast);
+}
+.addr-suggestion-item:hover { background: var(--light-teal); color: var(--navy); }
+
+/* ═══════════════════════════════════════
+   🎟️ حقل الكوبون
+═══════════════════════════════════════ */
+.coupon-row {
+  display:       flex;
+  gap:           8px;
+  margin-bottom: 14px;
+}
+.coupon-row input { flex: 1; margin-bottom: 0; }
+
+.btn-apply-coupon {
+  background:    var(--teal);
+  color:         #fff;
+  border:        none;
+  border-radius: var(--radius-md);
+  padding:       0 18px;
+  font-weight:   800;
+  cursor:        pointer;
+  font-family:   var(--font-main);
+  font-size:     var(--font-size-sm);
+  white-space:   nowrap;
+}
+
+/* ═══════════════════════════════════════
+   ⚡ Express Card
+═══════════════════════════════════════ */
+.express-card {
+  border:      2px solid var(--express);
+  background:  linear-gradient(135deg, rgba(147, 51, 234, 0.05), rgba(124, 58, 237, 0.08));
+  transition:  all var(--transition-base);
+}
+.express-card.active {
+  border-color: var(--green);
+  background:   linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(5, 150, 105, 0.12));
+}
+
+/* ═══════════════════════════════════════
+   📊 شريط التقدم
+═══════════════════════════════════════ */
+.progress-bar-wrap {
+  background:    var(--border-soft);
+  border-radius: var(--radius-full);
+  height:        6px;
+  overflow:      hidden;
+  margin:        10px 0;
+}
+.progress-bar {
+  height:        100%;
+  border-radius: var(--radius-full);
+  background:    linear-gradient(90deg, var(--teal), var(--navy));
+  transition:    width 0.4s ease;
+}
+
+/* ═══════════════════════════════════════
+   🏆 شاشة النجاح
+═══════════════════════════════════════ */
+.success-screen {
+  text-align: center;
+  padding:    20px 0;
+}
+.success-icon {
+  font-size:   4rem;
+  display:     block;
+  margin:      0 auto 16px;
+  animation:   popIn 0.5s ease;
+}
+
+/* ═══════════════════════════════════════
+   🌐 Onboarding
+═══════════════════════════════════════ */
+#onboarding {
+  position:       fixed;
+  inset:          0;
+  background:     rgba(13, 59, 102, 0.93);
+  backdrop-filter: blur(6px);
+  display:        flex;
+  align-items:    center;
+  justify-content: center;
+  z-index:        500;
+}
+.ob-wrap {
+  background:    var(--card);
+  border-radius: 28px;
+  width:         92%;
+  max-width:     400px;
+  padding:       32px 24px 24px;
+  overflow:      hidden;
+  position:      relative;
+  box-shadow:    0 25px 50px rgba(0, 0, 0, 0.25);
+  animation:     popIn 0.4s ease;
+}
+.ob-track   { display: flex; transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1); }
+.ob-slide   { min-width: 100%; text-align: center; padding: 0 6px; }
+.ob-dots    { display: flex; justify-content: center; gap: 7px; margin: 20px 0 16px; }
+.ob-dot     { width: 8px; height: 8px; border-radius: 50%; background: #e2e8f0; transition: all 0.3s; }
+.ob-dot.active { background: var(--orange); width: 22px; border-radius: 4px; }
