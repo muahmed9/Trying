@@ -45,6 +45,13 @@ export const Config = Object.freeze({
     delivery_free_threshold: 10000,
     express_fee: 1500,
     packaging: { none: 0, cardboard: 500, spiral: 1500 },
+    // فئات الاستنساخ الملون (4 فئات حسب عدد الصفحات)
+    color_copy_tiers: [
+      { min: 1, max: 30, price: 150 },
+      { min: 31, max: 60, price: 120 },
+      { min: 61, max: 100, price: 100 },
+      { min: 101, max: Infinity, price: 80 },
+    ],
   },
   ORDER_STATUSES: {
     received: { label: 'مستلم', css: 'sr', icon: '📥' },

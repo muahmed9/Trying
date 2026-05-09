@@ -95,6 +95,11 @@ export async function adjustSupplyStock(id, type, qty, note = '') {
   await sb.from(T.SUPPLY_LOG).insert({ supply_id: id, type, qty: Number(qty), note: sanitize(note, 200) }).catch(() => {});
 }
 
+export async function deleteSupply(id) {
+  const { error } = await sb.from(T.SUPPLIES).delete().eq('id', id);
+  if (error) throw error;
+}
+
 export async function fetchSupplyLog(supplyId) {
   const { data, error } = await sb.from(T.SUPPLY_LOG).select('*').eq('supply_id', supplyId).order('created_at', { ascending: false }).limit(50);
   if (error) throw error;

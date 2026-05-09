@@ -56,6 +56,7 @@ export async function submitOrder({ name, phone, region, notes, locationUrl }) {
     await sb.from(T.COUPONS).update({ used_count: (coupon.used_count ?? 0) + 1 }).eq('id', coupon.id);
   }
   _notifyAdmin(data.id, orderPayload).catch(() => {});
+  _notifyCustomer(user.id, data.id, orderPayload).catch(() => {});
   return data.id;
 }
 
@@ -84,26 +85,48 @@ export async function validateCoupon(code) {
   if (error || !data)                                         throw new Error('كود الخصم غير صالح');
   if (data.max_uses > 0 && data.used_count >= data.max_uses) throw new Error('تم استنفاد هذا الكوبون');
   if (data.expires_at && new Date(data.expires_at) < new Date()) throw new Error('انتهت صلاحية هذا الكوبون');
-  // تطبيق نطاق الكوبون (scope) — يُعاد data كما هو ويُحسب في calcOrderTotals
   return data;
 }
 
 export function calcOrderTotals({ files, cart, sugCart, pricing, coupon, user }) {
   const P = pricing ?? Config.DEFAULT_PRICING;
 
+  // دالة مساعدة لحساب سعر الاستنساخ الملون بناءً على الفئات
+  function getColorCopyPrice(totalPages) {
+    const tiers = P.color_copy_tiers ?? Config.DEFAULT_PRICING.color_copy_tiers;
+    for (const tier of tiers) {
+      if (totalPages >= tier.min && totalPages <= tier.max) return tier.price;
+    }
+    return tiers[tiers.length - 1].price;
+  }
+
+  // دالة مساعدة لحساب عدد صفحات ملف PPTX
+  function countPptxPages(fileName) {
+    const match = fileName.match(/\[(\d+)\s*p(?:ages?)?\]/i);
+    return match ? parseInt(match[1], 10) : 1;
+  }
+
   // طباعة
   let printSubtotal = 0;
   for (const f of files) {
-    const pages    = (f.pages ?? 1) * (f.copies ?? 1);
     const isColor  = customerState.get('printColor') === 'c';
     const isDouble = customerState.get('printSide') === '2';
+    
+    // حساب عدد الصفحات (مع دعم PPTX)
+    let pages = f.pages ?? 1;
+    if (f.name?.toLowerCase().endsWith('.pptx')) {
+      pages = countPptxPages(f.name);
+    }
+    const totalPages = pages * (f.copies ?? 1);
+    
     let pricePerPage;
     if (isColor) {
-      pricePerPage = isDouble ? (P.c_double ?? 130) : (P.c_single ?? 150);
+      // استخدام فئات التسعير للاستنساخ الملون
+      pricePerPage = getColorCopyPrice(pages);
     } else {
       pricePerPage = isDouble ? P.bw_double : P.bw_single;
     }
-    printSubtotal += Math.max(pages * pricePerPage, P.min_price);
+    printSubtotal += Math.max(totalPages * pricePerPage, P.min_price);
   }
   const pkgKey = customerState.get('packaging') ?? 'none';
   printSubtotal += P.packaging?.[pkgKey] ?? 0;
@@ -162,5 +185,19 @@ async function _notifyAdmin(orderId, payload) {
     }
   } catch (e) {
     console.error('[order] خطأ في إرسال الإشعار:', e.message);
+  }
+}
+
+async function _notifyCustomer(userId, orderId, payload) {
+  try {
+    const msg = `✅ تم استقبال طلبك #${orderId}\n\n📋 التفاصيل:\n💰 الإجمالي: ${payload.total?.toLocaleString()} د.ع\n📍 المنطقة: ${payload.region}\n\nسيتم قبول طلبك قريباً وسنخطرك بأي تحديثات.`;
+    const { error } = await sb.functions.invoke(Config.FUNCTIONS.SEND_TG, { 
+      body: { chat_id: userId, text: msg } 
+    });
+    if (error) {
+      console.error('[order] فشل إرسال إشعار للعميل:', error.message);
+    }
+  } catch (e) {
+    console.error('[order] خطأ في إرسال إشعار العميل:', e.message);
   }
 }
