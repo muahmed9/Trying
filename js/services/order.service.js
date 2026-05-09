@@ -152,6 +152,15 @@ function _buildCartItems(cart, sugCart) {
 }
 
 async function _notifyAdmin(orderId, payload) {
-  const msg = `🆕 طلب جديد #${orderId}\n👤 ${payload.customer_name}\n📞 ${payload.phone}\n🏠 ${payload.region}\n💰 ${payload.total?.toLocaleString()} د.ع`;
-  await sb.functions.invoke(Config.FUNCTIONS.SEND_TG, { body: { chat_id: Config.TELEGRAM.ADMIN_TG_ID, text: msg } });
+  try {
+    const msg = `🆕 طلب جديد #${orderId}\n👤 ${payload.customer_name}\n📞 ${payload.phone}\n🏠 ${payload.region}\n💰 ${payload.total?.toLocaleString()} د.ع`;
+    const { error } = await sb.functions.invoke(Config.FUNCTIONS.SEND_TG, { 
+      body: { chat_id: Config.TELEGRAM.ADMIN_TG_ID, text: msg } 
+    });
+    if (error) {
+      console.error('[order] فشل إرسال إشعار الطلب الجديد:', error.message);
+    }
+  } catch (e) {
+    console.error('[order] خطأ في إرسال الإشعار:', e.message);
+  }
 }

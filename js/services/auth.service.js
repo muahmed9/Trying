@@ -22,7 +22,10 @@ export async function checkExistingSession() {
     if (!profile) return null;
     _applyProfileToState(session.user, profile);
     return { user: session.user, profile };
-  } catch(e) { console.warn('[auth]', e.message); return null; }
+  } catch(e) { 
+    console.error('[auth] خطأ في التحقق من الجلسة:', e.message); 
+    return null; 
+  }
 }
 
 export async function adminLogout() {

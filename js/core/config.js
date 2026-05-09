@@ -1,10 +1,21 @@
+// ⚠️ SECURITY FIX: استخدام متغيرات البيئة بدلاً من القيم المباشرة
+const getEnv = (key, fallback) => {
+  if (typeof import.meta !== 'undefined' && import.meta.env) {
+    return import.meta.env[`VITE_${key}`] || fallback;
+  }
+  if (typeof process !== 'undefined' && process.env) {
+    return process.env[key] || fallback;
+  }
+  return fallback;
+};
+
 export const Config = Object.freeze({
   SUPABASE: {
-    URL: 'https://zrumnqtgdscrwgcguseq.supabase.co',
-    ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpydW1ucXRnZHNjcndnY2d1c2VxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNjM2NzMsImV4cCI6MjA4OTgzOTY3M30.Pw71Qfz57br6TwnaRK_2DcgHfEGUHgK_OrpRzuv2Na8',
+    URL: getEnv('SUPABASE_URL', 'https://zrumnqtgdscrwgcguseq.supabase.co'),
+    ANON_KEY: getEnv('SUPABASE_ANON_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpydW1ucXRnZHNjcndnY2d1c2VxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNjM2NzMsImV4cCI6MjA4OTgzOTY3M30.Pw71Qfz57br6TwnaRK_2DcgHfEGUHgK_OrpRzuv2Na8'),
   },
   TELEGRAM: {
-    ADMIN_TG_ID: '7618746133',
+    ADMIN_TG_ID: getEnv('TELEGRAM_ADMIN_ID', '7618746133'),
   },
   TABLES: {
     ORDERS: 'orders',

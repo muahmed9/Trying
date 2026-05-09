@@ -27,7 +27,12 @@ export async function changeOrderStatus(orderId, fromStatus, toStatus, cancelRea
   if (error) throw error;
   if (order?.user_id) {
     const msg = Config.customerMessage(orderId, toStatus, cancelReason);
-    if (msg) sb.functions.invoke(Config.FUNCTIONS.SEND_TG, { body: { chat_id: order.user_id, text: msg } }).catch(() => {});
+    if (msg) {
+      sb.functions.invoke(Config.FUNCTIONS.SEND_TG, { body: { chat_id: order.user_id, text: msg } })
+        .catch(err => {
+          console.error('[order-admin] فشل إرسال رسالة للعميل:', err.message);
+        });
+    }
   }
   const orders = adminState.get('allOrders') ?? [];
   const idx    = orders.findIndex(o => o.id === orderId);
@@ -69,7 +74,15 @@ export function subscribeToOrders(onNewOrder, onStatusChange) {
       if (idx !== -1) { orders[idx] = updated; adminState.set('allOrders', [...orders]); }
       onStatusChange?.(updated);
     })
-    .subscribe();
+    .subscribe((status, err) => {
+      if (status === 'SUBSCRIBED') {
+        console.info('[realtime] تم الاتصال بنجاح');
+      } else if (status === 'CHANNEL_ERROR') {
+        console.error('[realtime] خطأ في الاتصال:', err);
+      } else if (status === 'CLOSED') {
+        console.warn('[realtime] تم إغلاق الاتصال');
+      }
+    });
   adminState.set('realtimeChannel', channel);
   return channel;
 }
