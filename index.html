@@ -203,12 +203,8 @@
       </div>
     </div>
 
-    <div id="order-summary-bar"
-      style="display:none;background:linear-gradient(135deg,rgba(13,59,102,.06),rgba(90,179,196,.06));border:1px solid var(--border-soft);border-radius:var(--radius-md);padding:10px 14px;margin-bottom:12px;font-size:.82rem;">
-      <div style="font-weight:800;color:var(--navy);margin-bottom:6px;">📋 ملخص طلبك:</div>
-      <div id="summary-files" style="color:var(--text-muted);"></div>
-      <div id="summary-options" style="color:var(--text-muted);margin-top:4px;"></div>
-    </div>
+    <!-- تم حذف ملخص الطلب من الأعلى -->
+    <div id="order-summary-bar" style="display:none;"></div>
 
     <!-- الخطوة 1 -->
     <div class="step-panel active" id="step-1">
@@ -387,7 +383,11 @@
     <!-- الخطوة 4 -->
     <div class="step-panel" id="step-4">
       <div style="background:var(--inv-bg);color:#fff;border-radius:var(--radius-lg);padding:22px;margin-bottom:15px;">
-        <div id="invdet"></div>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:15px;">
+          <tbody id="inv-tbody" style="font-size:0.9rem;">
+            <tr><td colspan="2" style="text-align:center;color:#94a3b8;padding:20px;">جاري تحميل الفاتورة...</td></tr>
+          </tbody>
+        </table>
         <div id="totlbl"
           style="font-size:1.5rem;color:#4eff4e;text-align:center;margin-top:15px;border-top:1px dashed rgba(255,255,255,.2);padding-top:15px;font-weight:800;">
           المجموع النهائي: 0 د.ع</div>

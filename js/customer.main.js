@@ -22,6 +22,35 @@ const tgU = tg?.initDataUnsafe?.user;
 tg?.ready();
 tg?.expand();
 
+// حساب إحصائيات الملفات
+function getFileStatistics() {
+  const files = customerState.get('files') ?? [];
+  let totalPages = 0;
+  let totalImages = 0;
+  let totalFiles = files.length;
+
+  files.forEach(f => {
+    const ext = f.name.split('.').pop().toLowerCase();
+    
+    // حساب الصفحات
+    if (['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(ext)) {
+      if (ext === 'pptx') {
+        const match = f.name.match(/\[(\d+)\s*p(?:ages?)?\]/i);
+        totalPages += match ? parseInt(match[1], 10) * (f.copies ?? 1) : (f.pages ?? 1) * (f.copies ?? 1);
+      } else {
+        totalPages += (f.pages ?? 1) * (f.copies ?? 1);
+      }
+    }
+    
+    // حساب الصور
+    if (['jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
+      totalImages += f.copies ?? 1;
+    }
+  });
+
+  return { totalPages, totalImages, totalFiles };
+}
+
 function updateSummaryBar() {
   const step = customerState.get('currentStep') ?? 1;
   const bar = document.getElementById('order-summary-bar');
@@ -629,10 +658,15 @@ async function sendOrder() {
     updateSummaryBar();
     stepper.reset();
 
-    showToast('✅ تم إرسال طلبك بنجاح! رقم الطلب: ' + orderId, 'success', 5000);
-    goTab('orders');
-    await loadOrders();
-    showOrderDetail(orderId);
+    // عرض واجهة الشكر
+    showThankYouModal(orderId);
+    
+    // بعد إغلاق الواجهة، انتقل لصفحة الطلبات
+    setTimeout(() => {
+      goTab('orders');
+      loadOrders();
+      showOrderDetail(orderId);
+    }, 2000);
   } catch (e) {
     const pcon = document.getElementById('pcon');
     const stxt = document.getElementById('statustxt');
@@ -1066,6 +1100,91 @@ function bindModals() {
 // ═══════════════════════════════════════
 //  Research/Report request submission
 // ═══════════════════════════════════════
+// دالة عرض واجهة الشكر والترحيب
+function showThankYouModal(orderId) {
+  const modal = document.createElement('div');
+  modal.id = 'thank-you-modal';
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.3s ease-in;
+  `;
+
+  const content = document.createElement('div');
+  content.style.cssText = `
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    animation: slideUp 0.4s ease-out;
+  `;
+
+  content.innerHTML = `
+    <div style="font-size: 3rem; margin-bottom: 16px;">✅</div>
+    <h2 style="color: var(--navy); margin-bottom: 8px;">شكراً لك!</h2>
+    <p style="color: var(--text-muted); margin-bottom: 16px;">تم استقبال طلبك بنجاح</p>
+    
+    <div style="background: var(--input-bg); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 4px;">رقم الطلب:</p>
+      <p style="color: var(--navy); font-size: 1.2rem; font-weight: bold;">#${orderId.slice(0, 8)}</p>
+    </div>
+
+    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">
+      سيتم قبول طلبك قريباً وسنخطرك بأي تحديثات عبر البوت
+    </p>
+
+    <button id="close-thank-you" style="
+      background: var(--navy);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+    ">حسناً</button>
+  `;
+
+  modal.appendChild(content);
+  document.body.appendChild(modal);
+
+  document.getElementById('close-thank-you').addEventListener('click', () => {
+    modal.remove();
+  });
+
+  // إغلاق تلقائياً بعد 5 ثوان
+  setTimeout(() => {
+    if (modal.parentElement) modal.remove();
+  }, 5000);
+}
+
+// إضافة CSS animations
+if (!document.getElementById('thank-you-styles')) {
+  const style = document.createElement('style');
+  style.id = 'thank-you-styles';
+  style.textContent = `
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 function bindResearch() {
   document.getElementById('res-btn').addEventListener('click', () => withLoading('res-btn', submitResearch));
 }
